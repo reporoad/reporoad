@@ -27,11 +27,39 @@ export const PLAYLIST = [
 ];
 
 // One audio element: stream the current file, advance only on `ended`, then loop.
-// No viewer-facing track selection and no song changes driven by timers.
+// No viewer-facing track selection. Live mode periodically corrects clock drift.
 export class PlaylistPlayer {
   private audio: HTMLAudioElement;
   private index = 0;
   private disposed = false;
+  sync(now: number) {
+    const durations = [199.992, 158.28, 139.032, 187.704, 122.928];
+    const total = durations.reduce((a, b) => a + b, 0);
+    let offset =
+      ((((now - Date.UTC(2026, 0, 1)) / 1000) % total) + total) % total;
+    let index = 0;
+    while (offset >= durations[index] && index < durations.length - 1) {
+      offset -= durations[index];
+      index++;
+    }
+    const wasPlaying = !this.audio.paused;
+    if (index !== this.index) {
+      this.index = index;
+      this.audio.src = PLAYLIST[index].src;
+      this.onTrack(index);
+    }
+    if (Math.abs(this.audio.currentTime - offset) > 2) {
+      try {
+        this.audio.currentTime = offset;
+      } catch {
+        this.audio.onloadedmetadata = () => {
+          this.audio.currentTime = offset;
+          this.audio.onloadedmetadata = null;
+        };
+      }
+    }
+    if (wasPlaying) void this.play().catch(() => this.onError());
+  }
   private onTrack: (index: number) => void;
   private onState: (playing: boolean) => void;
   private onError: () => void;
@@ -88,6 +116,7 @@ export class PlaylistPlayer {
   dispose() {
     this.disposed = true;
     this.audio.onended = null;
+    this.audio.onloadedmetadata = null;
     this.audio.onplaying = null;
     this.audio.onpause = null;
     this.audio.onerror = null;

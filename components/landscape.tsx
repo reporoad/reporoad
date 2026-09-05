@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-function surfaceTexture(seed: number, size = 256) {
+function surfaceTexture(seed: number, size = 16) {
   const data = new Uint8Array(size * size * 4);
   let state = seed;
   for (let y = 0; y < size; y++)
@@ -19,10 +19,10 @@ function surfaceTexture(seed: number, size = 256) {
     }
   const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestMipmapNearestFilter;
   texture.generateMipmaps = true;
-  texture.anisotropy = 8;
+  texture.anisotropy = 1;
   texture.needsUpdate = true;
   return texture;
 }
@@ -31,47 +31,64 @@ export function LandscapeTree({
   position,
   scale = 1,
   pine = false,
+  season = 'Summer',
 }: {
   position: [number, number, number];
   scale?: number;
   pine?: boolean;
+  season?: string;
 }) {
   const crowns = useRef<THREE.InstancedMesh>(null);
   useEffect(() => {
     if (!crowns.current) return;
     const transform = new THREE.Object3D();
     for (let i = 0; i < 7; i++) {
-      const angle = i * 2.4;
-      transform.position.set(
-        Math.cos(angle) * (pine ? 0.26 : 0.63),
-        2.1 + i * (pine ? 0.28 : 0.13),
-        Math.sin(angle) * (pine ? 0.26 : 0.54),
-      );
-      const radius = pine ? 1.25 - i * 0.115 : 0.84 + (i % 3) * 0.14;
-      transform.scale.set(radius, pine ? 0.65 : 0.83, radius);
-      transform.rotation.set(0.1 * i, angle, 0.12 * i);
+      const positions = [
+        [0, 2.5, 0],
+        [-0.8, 2.5, 0],
+        [0.8, 2.5, 0],
+        [0, 2.5, -0.8],
+        [0, 2.5, 0.8],
+        [0, 3.3, 0],
+        [0.6, 3.3, 0.6],
+      ];
+      if (pine) {
+        transform.position.set(0, 1.8 + i * 0.4, 0);
+        const width = 2.7 - Math.floor(i / 2) * 0.65;
+        transform.scale.set(width, 0.65, width);
+      } else {
+        transform.position.set(...(positions[i] as [number, number, number]));
+        transform.scale.set(1.35, 1.1, 1.35);
+      }
+      transform.rotation.set(0, 0, 0);
       transform.updateMatrix();
       crowns.current.setMatrixAt(i, transform.matrix);
       crowns.current.setColorAt(
         i,
-        new THREE.Color(pine ? '#304f35' : '#486638').multiplyScalar(
-          0.9 + (i % 3) * 0.12,
-        ),
+        new THREE.Color(
+          season === 'Winter'
+            ? '#cbdad0'
+            : season === 'Autumn'
+              ? i % 2
+                ? '#b5813f'
+                : '#a55732'
+              : season === 'Spring' && i % 3 === 0
+                ? '#cda6a2'
+                : pine
+                  ? '#28613b'
+                  : '#529134',
+        ).multiplyScalar(0.9 + (i % 3) * 0.12),
       );
     }
     crowns.current.instanceMatrix.needsUpdate = true;
     if (crowns.current.instanceColor)
       crowns.current.instanceColor.needsUpdate = true;
     crowns.current.computeBoundingSphere();
-  }, [pine]);
+  }, [pine, season]);
   return (
     <group position={position} scale={scale}>
       <mesh position={[0, 1.5, 0]} castShadow>
-        <cylinderGeometry args={[0.09, 0.19, 3, 7]} />
-        <meshStandardMaterial color="#665744" roughness={1} />
-      </mesh>
-      <mesh position={[0.25, 1.9, 0]} rotation={[0, 0, -0.6]} castShadow>
-        <cylinderGeometry args={[0.04, 0.09, 1.2, 6]} />
+        <boxGeometry args={[0.45, 3, 0.45]} />
         <meshStandardMaterial color="#665744" roughness={1} />
       </mesh>
       <instancedMesh
@@ -80,11 +97,7 @@ export function LandscapeTree({
         castShadow
         receiveShadow
       >
-        {pine ? (
-          <coneGeometry args={[1, 1.9, 9]} />
-        ) : (
-          <icosahedronGeometry args={[1, 2]} />
-        )}
+        <boxGeometry />
         <meshStandardMaterial roughness={0.95} />
       </instancedMesh>
     </group>
@@ -94,9 +107,11 @@ export function LandscapeTree({
 export function RoadLandscape({
   night,
   distance,
+  season,
 }: {
   night: boolean;
   distance: { current: number };
+  season: string;
 }) {
   const roadMaterial = useRef<THREE.MeshStandardMaterial>(null);
   const grassMaterial = useRef<THREE.MeshStandardMaterial>(null);
@@ -116,30 +131,14 @@ export function RoadLandscape({
     t.repeat.set(4, 100);
     return t;
   }, []);
-  const terrain = useMemo(() => {
-    const geometry = new THREE.PlaneGeometry(850, 850, 110, 110);
-    geometry.rotateX(-Math.PI / 2);
-    const positions = geometry.attributes.position;
-    for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i),
-        z = positions.getZ(i);
-      const edge = THREE.MathUtils.smoothstep(Math.abs(x), 32, 150);
-      const ridge =
-        Math.sin(x * 0.022 + z * 0.012) * 9 +
-        Math.cos(z * 0.017 - x * 0.011) * 11;
-      positions.setY(i, -0.23 + edge * (18 + ridge));
-    }
-    geometry.computeVertexNormals();
-    return geometry;
-  }, []);
+
   useEffect(
     () => () => {
       asphalt.dispose();
       grass.dispose();
       gravel.dispose();
-      terrain.dispose();
     },
-    [asphalt, grass, gravel, terrain],
+    [asphalt, grass, gravel],
   );
   useFrame(() => {
     const roadMap = roadMaterial.current?.map;
@@ -151,10 +150,23 @@ export function RoadLandscape({
   });
   return (
     <>
-      <mesh geometry={terrain} position={[0, 0, -190]} receiveShadow>
+      <mesh
+        position={[0, -0.25, -190]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[850, 850]} />
         <meshStandardMaterial
           ref={grassMaterial}
-          color={night ? '#455449' : '#667b43'}
+          color={
+            season === 'Winter'
+              ? '#dce4df'
+              : season === 'Autumn'
+                ? '#a99a59'
+                : night
+                  ? '#375c43'
+                  : '#71a644'
+          }
           map={grass}
           roughness={1}
         />
@@ -187,6 +199,7 @@ export function RoadLandscape({
           roughness={0.93}
         />
       </mesh>
+      <VoxelHills night={night} season={season} />
       {[-4.4, 4.4].map((x) => (
         <mesh
           key={x}
@@ -202,31 +215,114 @@ export function RoadLandscape({
 }
 
 export function Atmosphere({ night }: { night: boolean }) {
-  const uniforms = useMemo(
-    () => ({
-      top: { value: new THREE.Color() },
-      horizon: { value: new THREE.Color() },
-      sunColor: { value: new THREE.Color() },
-    }),
-    [],
-  );
-  uniforms.top.value.set(night ? '#142a48' : '#759cba');
-  uniforms.horizon.value.set(night ? '#4e6171' : '#d9d4b8');
-  uniforms.sunColor.value.set(night ? '#c5d5e5' : '#fff0ca');
   return (
-    <mesh>
-      <sphereGeometry args={[430, 32, 16]} />
-      <shaderMaterial
-        side={THREE.BackSide}
-        depthWrite={false}
-        uniforms={uniforms}
-        vertexShader={
-          'varying vec3 direction; void main(){ direction=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }'
+    <>
+      <color attach="background" args={[night ? '#243953' : '#83bee3']} />
+      <mesh position={[-75, 65, -210]}>
+        <boxGeometry args={[22, 22, 2]} />
+        <meshBasicMaterial color={night ? '#e0ebf7' : '#fff1a8'} fog={false} />
+      </mesh>
+      {Array.from({ length: 9 }, (_, i) => (
+        <group
+          key={i}
+          position={[
+            ((i % 3) - 1) * 95,
+            44 + Math.floor(i / 3) * 12,
+            -95 - Math.floor(i / 3) * 80,
+          ]}
+        >
+          <mesh>
+            <boxGeometry args={[38, 3, 15]} />
+            <meshStandardMaterial
+              color={night ? '#71839d' : '#f6f8ed'}
+              roughness={1}
+            />
+          </mesh>
+          <mesh position={[9, 2, -4]}>
+            <boxGeometry args={[24, 4, 17]} />
+            <meshStandardMaterial
+              color={night ? '#71839d' : '#f6f8ed'}
+              roughness={1}
+            />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+
+function VoxelHills({ night, season }: { night: boolean; season: string }) {
+  const dirt = useRef<THREE.InstancedMesh>(null),
+    tops = useRef<THREE.InstancedMesh>(null);
+  const count = 2 * 18 * 40;
+  useEffect(() => {
+    if (!dirt.current || !tops.current) return;
+    const m = new THREE.Object3D();
+    let i = 0;
+    for (const side of [-1, 1])
+      for (let x = 0; x < 18; x++)
+        for (let z = 0; z < 40; z++) {
+          const height =
+            2 +
+            Math.floor(
+              (x * 0.6 +
+                3 +
+                Math.sin(x * 0.5 + z * 0.3) * 3 +
+                Math.cos(z * 0.22) * 2) /
+                2,
+            ) *
+              2;
+          const h = Math.max(2, height);
+          m.position.set(side * (44 + x * 8), h / 2 - 0.25, 48 - z * 8);
+          m.scale.set(8, h, 8);
+          m.updateMatrix();
+          dirt.current.setMatrixAt(i, m.matrix);
+          m.position.y = h - 0.25;
+          m.scale.set(8, 0.5, 8);
+          m.updateMatrix();
+          tops.current.setMatrixAt(i, m.matrix);
+          dirt.current.setColorAt(
+            i,
+            new THREE.Color('#8e7152').multiplyScalar(0.85 + (i % 4) * 0.05),
+          );
+          tops.current.setColorAt(
+            i,
+            new THREE.Color(
+              season === 'Winter'
+                ? '#dae3df'
+                : season === 'Autumn'
+                  ? '#a1924c'
+                  : night
+                    ? '#395d3c'
+                    : '#65973e',
+            ).multiplyScalar(0.9 + (i % 3) * 0.05),
+          );
+          i++;
         }
-        fragmentShader={
-          'varying vec3 direction; uniform vec3 top; uniform vec3 horizon; uniform vec3 sunColor; void main(){ vec3 d=normalize(direction); float h=pow(max(d.y,0.0),0.65); vec3 color=mix(horizon,top,h); float sun=max(dot(d,normalize(vec3(-0.55,0.23,-1.0))),0.0); color=mix(color,sunColor,pow(sun,180.0)*0.45+pow(sun,2400.0)*0.55); gl_FragColor=vec4(color,1.0);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n }'
-        }
-      />
-    </mesh>
+    for (const mesh of [dirt.current, tops.current]) {
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    }
+  }, [night, season]);
+  return (
+    <>
+      <instancedMesh
+        ref={dirt}
+        args={[undefined, undefined, count]}
+        receiveShadow
+      >
+        <boxGeometry />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
+      <instancedMesh
+        ref={tops}
+        args={[undefined, undefined, count]}
+        receiveShadow
+      >
+        <boxGeometry />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
+    </>
   );
 }

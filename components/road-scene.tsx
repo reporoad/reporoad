@@ -10,7 +10,17 @@ import {
   roadSectionZ,
   roadMarkerZ,
 } from '@/lib/road';
-import { Atmosphere, RoadLandscape, LandscapeTree as Tree } from './landscape';
+import { RoadLandscape, LandscapeTree as Tree } from './landscape';
+import {
+  SkyCycle,
+  VoxelCabin,
+  Wildlife,
+  RoadsideAnimal,
+  Precipitation,
+  type Environment,
+  type SharedClock,
+} from './living-world';
+import { worldAt, type WorldPreview } from '@/lib/live-world';
 
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -93,7 +103,7 @@ function Sign({ plot }: { plot: Plot }) {
         plot.status === 'available'
           ? `PLOT ${String(plot.id).padStart(2, '0')}`
           : plot.name;
-      ctx.font = `bold ${title.length > 19 ? 36 : 46}px sans-serif`;
+      ctx.font = `bold ${title.length > 19 ? 36 : 46}px monospace`;
       ctx.fillText(title, 384, logo ? 185 : 115, 690);
       ctx.font = '25px sans-serif';
       ctx.fillText(
@@ -137,7 +147,13 @@ function Sign({ plot }: { plot: Plot }) {
     </mesh>
   );
 }
-export function PlotBuilding({ plot }: { plot: Plot }) {
+export function PlotBuilding({
+  plot,
+  season = 'Summer',
+}: {
+  plot: Plot;
+  season?: string;
+}) {
   const empty = plot.status === 'available';
   const billboard = plot.template === 'billboard' || empty;
   return (
@@ -145,7 +161,15 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
       <Box
         position={[0, -0.02, 0]}
         scale={[10, 0.15, 12]}
-        color={empty ? '#71844e' : '#7c8d57'}
+        color={
+          season === 'Winter'
+            ? '#dfe5d8'
+            : season === 'Autumn'
+              ? '#a89850'
+              : empty
+                ? '#75a447'
+                : '#80ae52'
+        }
       />
       <Box position={[0, 0.08, 4.2]} scale={[3.2, 0.05, 3.5]} color="#d5c8a5" />
       {billboard ? (
@@ -175,23 +199,14 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
           />
           {plot.template === 'cabin' || plot.template === 'cafe' ? (
             <>
-              <Box
-                position={[-1.6, 3.56, -0.4]}
-                scale={[3.6, 0.14, 5.0]}
-                rotation={[0, 0, 0.38]}
-                color={plot.template === 'cabin' ? '#514b40' : '#616a61'}
-              />
-              <Box
-                position={[1.6, 3.56, -0.4]}
-                scale={[3.6, 0.14, 5.0]}
-                rotation={[0, 0, -0.38]}
-                color={plot.template === 'cabin' ? '#514b40' : '#616a61'}
-              />
-              <Box
-                position={[0, 4.23, -0.4]}
-                scale={[0.2, 0.12, 5.05]}
-                color="#73776a"
-              />
+              {Array.from({ length: 4 }, (_, i) => (
+                <Box
+                  key={i}
+                  position={[0, 3.15 + i * 0.4, -0.4]}
+                  scale={[6.8 - i * 1.4, 0.4, 5.2]}
+                  color={plot.template === 'cabin' ? '#6b4630' : '#4d6c64'}
+                />
+              ))}
               <Box
                 position={[1.8, 3.9, -1.6]}
                 scale={[0.52, 1.2, 0.62]}
@@ -233,11 +248,10 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
               />
               <mesh position={[x, 1.35, 1.85]}>
                 <boxGeometry args={[1.3, 1.4, 0.06]} />
-                <meshPhysicalMaterial
+                <meshStandardMaterial
                   color="#668189"
-                  roughness={0.16}
-                  metalness={0.3}
-                  clearcoat={1}
+                  roughness={0.65}
+                  metalness={0}
                   emissive="#d0a75a"
                   emissiveIntensity={0.15}
                 />
@@ -255,7 +269,7 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
                 key={i}
                 position={[-2.45 + i * 0.7, 2.37, 2.35]}
                 scale={[0.7, 0.13, 1.25]}
-                rotation={[0.14, 0, 0]}
+                rotation={[0, 0, 0]}
                 color={i % 2 ? '#ede2bd' : plot.color}
               />
             ))}
@@ -280,6 +294,7 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
           position={[i % 2 ? 3.8 : -3.8, 0.1, -3.8 + Math.floor(i / 2) * 3]}
           scale={0.65 + (i % 2) * 0.15}
           pine={plot.template === 'cabin'}
+          season={season}
         />
       ))}
       {[-4.7, 4.7].map((x) => (
@@ -310,7 +325,7 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
             />
             {[-0.3, 0.3].map((z) => (
               <mesh key={z} position={[z, 0.65, z]}>
-                <icosahedronGeometry args={[0.4, 0]} />
+                <boxGeometry args={[0.65, 0.65, 0.65]} />
                 <meshStandardMaterial color="#7b9860" />
               </mesh>
             ))}
@@ -322,12 +337,18 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
 function World({
   plots,
   playing,
-  night,
+  environment,
+  clock,
+  live,
+  preview,
   focus,
 }: {
   plots: Plot[];
   playing: boolean;
-  night: boolean;
+  environment: Environment;
+  clock: SharedClock;
+  live: boolean;
+  preview?: WorldPreview;
   focus: { id: number; key: number } | null;
 }) {
   const stages = useRef<(THREE.Group | null)[]>([]);
@@ -338,11 +359,12 @@ function World({
     camera.lookAt(1.7, 1.9, -100);
   }, [camera]);
   useEffect(() => {
-    if (focus)
+    if (focus && !live)
       distance.current = Math.floor((focus.id - 1) / 2) * SECTION_SPACING;
-  }, [focus]);
+  }, [focus, live]);
   useFrame((_, delta) => {
-    if (playing)
+    if (live) distance.current = worldAt(clock.current.now()).distance;
+    else if (playing)
       distance.current =
         (distance.current + Math.min(delta, 0.05) * 6.5) % ROAD_LENGTH;
     stages.current.forEach((g, i) => {
@@ -354,28 +376,14 @@ function World({
   });
   return (
     <>
-      <Atmosphere night={night} />
-      <fog attach="fog" args={[night ? '#4e6171' : '#d9d4b8', 95, 265]} />
-      <hemisphereLight
-        args={[night ? '#7792b7' : '#c9dce8', '#4b4939', night ? 0.65 : 1.35]}
+      <SkyCycle clock={clock} preview={live ? undefined : preview} />
+      <RoadLandscape
+        night={environment.daylight < 0.3}
+        distance={distance}
+        season={environment.season}
       />
-      <ambientLight intensity={0.18} />
-      <directionalLight
-        position={[-38, 25, -65]}
-        intensity={night ? 0.6 : 2.7}
-        color={night ? '#aac8ef' : '#fff1cb'}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-50}
-        shadow-camera-right={50}
-        shadow-camera-top={90}
-        shadow-camera-bottom={-50}
-        shadow-camera-far={180}
-        shadow-normalBias={0.045}
-        shadow-bias={-0.00015}
-        shadow-radius={3}
-      />
-      <RoadLandscape night={night} distance={distance} />
+      <Wildlife environment={environment} clock={clock} />
+      <Precipitation environment={environment} clock={clock} />
       {Array.from({ length: 48 }, (_, i) => (
         <mesh
           ref={(m) => {
@@ -396,34 +404,47 @@ function World({
           }}
           position={[0, 0, roadSectionZ(i, 0)]}
         >
-          <group position={[-12.5, 0, -30]} rotation={[0, 0.22, 0]}>
-            <PlotBuilding plot={plots[i * 2]} />
+          <group position={[-12.5, 0, -30]} rotation={[0, 0, 0]}>
+            <PlotBuilding plot={plots[i * 2]} season={environment.season} />
           </group>
-          <group position={[12.5, 0, -30]} rotation={[0, -0.22, 0]}>
-            <PlotBuilding plot={plots[i * 2 + 1]} />
+          <group position={[12.5, 0, -30]} rotation={[0, 0, 0]}>
+            <PlotBuilding plot={plots[i * 2 + 1]} season={environment.season} />
           </group>
+          {i % 3 === 0 && <RoadsideAnimal clock={clock} index={i} />}
           {[-1, 1].map((side) => (
             <group key={side}>
-              <Tree position={[side * 8.5, 0, -13]} scale={1.15} />
+              <Tree
+                position={[side * 8.5, 0, -13]}
+                scale={1.15}
+                season={environment.season}
+              />
               <Tree
                 position={[side * (21 + (i % 3)), 0, -20]}
                 scale={1.5}
                 pine
+                season={environment.season}
               />
-              <Tree position={[side * 29, 0, -6]} scale={2} pine />
+              <Tree
+                position={[side * 29, 0, -6]}
+                scale={2}
+                pine
+                season={environment.season}
+              />
             </group>
           ))}
         </group>
       ))}
-      <Box position={[0, 0.62, 5]} scale={[3.6, 0.18, 2.6]} color="#314941" />
-      <Box position={[0, 0.73, 4.4]} scale={[3.2, 0.04, 0.1]} color="#829488" />
+      <VoxelCabin environment={environment} clock={clock} />
     </>
   );
 }
 export default function RoadScene(props: {
   plots: Plot[];
   playing: boolean;
-  night: boolean;
+  environment: Environment;
+  clock: SharedClock;
+  live: boolean;
+  preview?: WorldPreview;
   focus: { id: number; key: number } | null;
 }) {
   return (

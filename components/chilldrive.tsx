@@ -8,14 +8,12 @@ import {
   Flag,
   MapPin,
   Maximize,
-  Moon,
   Music2,
   Pause,
   Play,
   Route,
   Save,
   Sprout,
-  Sun,
   Undo2,
   Volume2,
   X,
@@ -40,6 +38,9 @@ import {
   type Template,
 } from '@/lib/world';
 import { PLAYLIST, PlaylistPlayer } from '@/lib/playlist';
+import LiveChat from './live-chat';
+import { worldAt, SEASONS, type WorldPreview } from '@/lib/live-world';
+const SHARED_PLOTS = createPlots();
 
 export default function Chilldrive() {
   const [plots, setPlots] = useState<Plot[]>(() => {
@@ -51,11 +52,24 @@ export default function Chilldrive() {
   });
   const [selected, setSelected] = useState(2);
   const [draft, setDraft] = useState<Plot | null>(null);
-  const [tab, setTab] = useState('plots');
+  const [tab, setTab] = useState('chat');
   const [playing, setPlaying] = useState(
     () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
-  const [night, setNight] = useState(false);
+  const [mode, setMode] = useState<'live' | 'studio'>('live');
+  const [preview, setPreview] = useState<WorldPreview>({
+    hour: 16,
+    season: 'Summer',
+    weather: 'Sunny',
+  });
+  const [now, setNow] = useState(Date.now);
+  const [synced, setSynced] = useState(false);
+  const clock = useRef({ now: () => Date.now() });
+  const environment = worldAt(now, mode === 'studio' ? preview : undefined);
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
   const [broadcast, setBroadcast] = useState(
     () => new URLSearchParams(window.location.search).get('broadcast') === '1',
   );
@@ -142,6 +156,35 @@ export default function Chilldrive() {
     };
   }, []);
 
+  useEffect(() => {
+    let stopped = false;
+    const sync = async () => {
+      const start = performance.now();
+      try {
+        const response = await fetch('/api/live', { cache: 'no-store' });
+        if (!response.ok) throw Error();
+        const data = (await response.json()) as { serverTime: number };
+        const end = performance.now();
+        if (stopped) return;
+        const anchor = data.serverTime + (end - start) / 2;
+        clock.current.now = () => anchor + (performance.now() - end);
+        setSynced(true);
+        if (modeRef.current === 'live')
+          radio.current?.sync(clock.current.now());
+      } catch {
+        if (!stopped) setSynced(false);
+      }
+    };
+    void sync();
+    const syncTimer = setInterval(sync, 20000);
+    const tick = setInterval(() => setNow(clock.current.now()), 1000);
+    return () => {
+      stopped = true;
+      clearInterval(syncTimer);
+      clearInterval(tick);
+    };
+  }, []);
+
   function persist(next: Plot[], message: string) {
     setPlots(next);
     try {
@@ -156,12 +199,14 @@ export default function Chilldrive() {
   function edit(id: number) {
     const target = plots.find((p) => p.id === id);
     if (!target || target.status !== 'yours') return;
+    setMode('studio');
     setSelected(id);
     setDraft({ ...target });
     setTab('edit');
     setFocus({ id, key: Date.now() });
   }
   function claim() {
+    setMode('studio');
     const next = claimPlot(plots, selected);
     persist(
       next,
@@ -179,7 +224,7 @@ export default function Chilldrive() {
     }
     try {
       const next = publishPlot(plots, draft);
-      persist(next, 'Your design is on the road. Saved on this browser.');
+      persist(next, 'Your design is saved to your local Studio preview.');
       setDraft({ ...next.find((p) => p.id === draft.id)! });
       setFocus({ id: draft.id, key: Date.now() });
     } catch (error) {
@@ -222,6 +267,7 @@ export default function Chilldrive() {
       setAudioOn(false);
     } else {
       try {
+        if (mode === 'live') radio.current?.sync(clock.current.now());
         await radio.current?.play();
       } catch {
         setNotice(
@@ -241,7 +287,15 @@ export default function Chilldrive() {
   }
   const scene = (
     <div className="drive">
-      <RoadScene plots={plots} playing={playing} night={night} focus={focus} />
+      <RoadScene
+        plots={mode === 'live' ? SHARED_PLOTS : plots}
+        playing={playing}
+        environment={environment}
+        clock={clock}
+        live={mode === 'live'}
+        preview={preview}
+        focus={focus}
+      />
       {!broadcast && (
         <>
           <div className="drive-top">
@@ -250,7 +304,8 @@ export default function Chilldrive() {
               <p className="drive-title">Nowhere to rush.</p>
             </div>
             <span className="drive-tag">
-              {night ? 'BLUE HOUR' : 'GOLDEN HOUR'}
+              {environment.season.toUpperCase()} ·{' '}
+              {environment.weather.toUpperCase()}
             </span>
           </div>
           <div className="drive-bottom">
@@ -258,7 +313,7 @@ export default function Chilldrive() {
               <div>
                 <div className="eyebrow">Cruising at</div>
                 <div className="speed">
-                  {playing ? '24' : '00'}
+                  {mode === 'live' || playing ? '24' : '00'}
                   <small>KM/H</small>
                 </div>
               </div>
@@ -272,19 +327,11 @@ export default function Chilldrive() {
             <div className="actions">
               <button
                 className="btn icon"
+                disabled={mode === 'live'}
                 onClick={() => setPlaying(!playing)}
                 aria-label={playing ? 'Pause the drive' : 'Resume the drive'}
               >
                 {playing ? <Pause size={17} /> : <Play size={17} />}
-              </button>
-              <button
-                className="btn icon"
-                onClick={() => setNight(!night)}
-                aria-label={
-                  night ? 'Switch to golden hour' : 'Switch to blue hour'
-                }
-              >
-                {night ? <Sun size={17} /> : <Moon size={17} />}
               </button>
               <button
                 className="btn icon"
@@ -323,7 +370,7 @@ export default function Chilldrive() {
         <div className="topbar-right">
           <span className="eyebrow">A little place along the way</span>
           <span className="pill">
-            <span className="dot" /> LOCAL PROTOTYPE
+            <span className="dot" /> LIVE WORLD
           </span>
           <button className="btn primary" onClick={browse}>
             Find your plot <ArrowRight size={16} />
@@ -332,6 +379,89 @@ export default function Chilldrive() {
       </header>
       <div className="workspace">
         <section aria-label="Scenic drive and radio">
+          <div className="live-toolbar">
+            <div className="actions">
+              <button
+                className={`btn ${mode === 'live' ? 'primary' : ''}`}
+                onClick={() => {
+                  setMode('live');
+                  radio.current?.sync(clock.current.now());
+                }}
+              >
+                Live view
+              </button>
+              <button
+                className={`btn ${mode === 'studio' ? 'primary' : ''}`}
+                onClick={() => setMode('studio')}
+              >
+                Studio preview
+              </button>
+            </div>
+            <span className="fine">
+              {mode === 'live'
+                ? synced
+                  ? '● Synced with everyone'
+                  : 'Reconnecting to live clock…'
+                : 'Local preview · only you'}{' '}
+              · {String(Math.floor(environment.hour)).padStart(2, '0')}:
+              {String(Math.floor((environment.hour % 1) * 60)).padStart(2, '0')}
+            </span>
+          </div>
+          {mode === 'studio' && (
+            <div className="preview-controls">
+              <label htmlFor="preview-hour">
+                Time of day
+                <Slider
+                  id="preview-hour"
+                  aria-label="Preview time of day"
+                  min={0}
+                  max={23.9}
+                  step={0.1}
+                  value={[preview.hour]}
+                  onValueChange={(v) =>
+                    setPreview({
+                      ...preview,
+                      hour: Array.isArray(v) ? v[0] : v,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Season
+                <NativeSelect
+                  aria-label="Preview season"
+                  value={preview.season}
+                  onChange={(e) =>
+                    setPreview({
+                      ...preview,
+                      season: e.target.value as WorldPreview['season'],
+                    })
+                  }
+                >
+                  {SEASONS.map((s) => (
+                    <NativeSelectOption key={s}>{s}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </label>
+              <label>
+                Weather
+                <NativeSelect
+                  aria-label="Preview weather"
+                  value={preview.weather}
+                  onChange={(e) =>
+                    setPreview({
+                      ...preview,
+                      weather: e.target.value as WorldPreview['weather'],
+                    })
+                  }
+                >
+                  {['Sunny', 'Rain', 'Snow'].map((w) => (
+                    <NativeSelectOption key={w}>{w}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </label>
+            </div>
+          )}
           {scene}
           <div className="radio">
             <div className="record">
@@ -382,8 +512,8 @@ export default function Chilldrive() {
           </div>
           <div className="footer">
             <span>
-              Prototype: plots and designs stay in this browser. No purchases or
-              live YouTube connection.
+              Live view shares the same drive, weather and music timeline.
+              Studio designs stay on this browser. No real purchases yet.
             </span>
             <span>Made for a slower internet.</span>
           </div>
@@ -391,10 +521,10 @@ export default function Chilldrive() {
         <aside className="panel" ref={panel} aria-label="Roadside plots">
           <div className="panel-heading">
             <div className="eyebrow">Your roadside story</div>
-            <h2>A small plot. All yours.</h2>
+            <h2>Good company. Open road.</h2>
             <p>
-              A coffee stop, a cosy cabin, a sign for your shop. What will you
-              put along the way?
+              Chat with fellow travelers, or try designing your own roadside
+              place.
             </p>
           </div>
           <Tabs
@@ -412,8 +542,9 @@ export default function Chilldrive() {
             }}
           >
             <TabsList>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="plots">
-                <MapPin size={15} /> Find a plot
+                <MapPin size={15} /> Plots
               </TabsTrigger>
               <TabsTrigger value="edit">
                 <Sprout size={15} /> My place
@@ -439,6 +570,9 @@ export default function Chilldrive() {
                   </button>
                 </output>
               )}
+              <TabsContent value="chat">
+                <LiveChat />
+              </TabsContent>
               <TabsContent value="plots">
                 <div className="map-legend">
                   <span>
@@ -466,6 +600,7 @@ export default function Chilldrive() {
                           aria-label={`Plot ${p.id}, ${p.status === 'example' ? p.name + ', example shop' : p.status}`}
                           aria-pressed={p.id === selected}
                           onClick={() => {
+                            setMode('studio');
                             setSelected(p.id);
                             setFocus({ id: p.id, key: Date.now() });
                           }}
@@ -712,7 +847,7 @@ export default function Chilldrive() {
                         style={{ flex: 1 }}
                         onClick={save}
                       >
-                        <Save size={15} /> Save to the road
+                        <Save size={15} /> Save to Studio
                       </button>
                       <button
                         className="btn icon"
