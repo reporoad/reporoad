@@ -730,12 +730,13 @@ button svg {
     display: none;
   }
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .drive {
-    height: 56vh;
-    min-height: 350px;
-    max-height: 580px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+    max-height: none;
   }
   .drive-top {
     top: 17px;
@@ -787,4 +788,26 @@ button svg {
     scroll-behavior: auto !important;
     transition: none !important;
   }
+}
+
+/* Keep the scene unobstructed; the cockpit is the driving interface. */
+.drive-top > div,
+.drive-meta {
+  display: none;
+}
+.drive-top {
+  justify-content: flex-end;
+}
+.drive-bottom {
+  background: none;
+  padding: 12px;
+  justify-content: flex-end;
+}
+.drive-tag {
+  background: #253325cc;
+  color: #eee0b6;
+  border-color: #ad946c55;
+}
+.workspace > section {
+  min-width: 0;
 }

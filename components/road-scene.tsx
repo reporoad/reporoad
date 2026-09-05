@@ -10,7 +10,12 @@ import {
   roadSectionZ,
   roadMarkerZ,
 } from '@/lib/road';
-import { RoadLandscape, LandscapeTree as Tree } from './landscape';
+import {
+  voxelGrain,
+  RoadLandscape,
+  RoadsideVerge,
+  LandscapeTree as Tree,
+} from './landscape';
 import {
   SkyCycle,
   VoxelCabin,
@@ -65,10 +70,72 @@ function Box({
       receiveShadow
     >
       <boxGeometry />
-      <meshStandardMaterial color={color} roughness={0.85} />
+      <meshStandardMaterial color={color} map={voxelGrain} roughness={0.95} />
     </mesh>
   );
 }
+function StaticVoxels({
+  children,
+  plot,
+  season,
+}: {
+  children: ReactNode;
+  plot: Plot;
+  season: string;
+}) {
+  const root = useRef<THREE.Group>(null);
+  useEffect(() => {
+    const group = root.current;
+    if (!group) return;
+    group.updateWorldMatrix(true, true);
+    const boxes: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>[] =
+      [];
+    group.traverse((object) => {
+      const mesh = object as THREE.Mesh<
+        THREE.BoxGeometry,
+        THREE.MeshStandardMaterial
+      >;
+      if (
+        mesh.isMesh &&
+        !(mesh as unknown as THREE.InstancedMesh).isInstancedMesh &&
+        mesh.geometry.type === 'BoxGeometry' &&
+        mesh.material.map === voxelGrain
+      )
+        boxes.push(mesh);
+    });
+    if (!boxes.length) return;
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshStandardMaterial({
+      map: voxelGrain,
+      roughness: 0.95,
+    });
+    const batch = new THREE.InstancedMesh(geometry, material, boxes.length);
+    const inverse = group.matrixWorld.clone().invert();
+    boxes.forEach((mesh, i) => {
+      batch.setMatrixAt(
+        i,
+        new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld),
+      );
+      batch.setColorAt(i, mesh.material.color);
+      mesh.visible = false;
+    });
+    batch.castShadow = true;
+    batch.receiveShadow = true;
+    batch.computeBoundingSphere();
+    group.add(batch);
+    return () => {
+      group.remove(batch);
+      boxes.forEach((mesh) => {
+        mesh.visible = true;
+      });
+      geometry.dispose();
+      material.dispose();
+      batch.dispose();
+    };
+  }, [plot, season]);
+  return <group ref={root}>{children}</group>;
+}
+
 function Sign({ plot }: { plot: Plot }) {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas');
@@ -81,12 +148,12 @@ function Sign({ plot }: { plot: Plot }) {
       ctx = canvas.getContext('2d')!;
     let cancelled = false;
     const draw = (logo?: HTMLImageElement) => {
-      ctx.fillStyle = plot.status === 'available' ? '#e4edce' : '#f5eacb';
+      ctx.fillStyle = plot.status === 'available' ? '#34432f' : '#3e4931';
       ctx.fillRect(0, 0, 768, 320);
-      ctx.strokeStyle = '#35523e';
+      ctx.strokeStyle = '#ab8651';
       ctx.lineWidth = 7;
       ctx.strokeRect(14, 14, 740, 292);
-      ctx.fillStyle = '#304834';
+      ctx.fillStyle = '#eed9a4';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       if (logo) {
@@ -103,7 +170,7 @@ function Sign({ plot }: { plot: Plot }) {
         plot.status === 'available'
           ? `PLOT ${String(plot.id).padStart(2, '0')}`
           : plot.name;
-      ctx.font = `bold ${title.length > 19 ? 36 : 46}px monospace`;
+      ctx.font = `bold ${title.length > 19 ? 40 : 58}px monospace`;
       ctx.fillText(title, 384, logo ? 185 : 115, 690);
       ctx.font = '25px sans-serif';
       ctx.fillText(
@@ -157,7 +224,7 @@ export function PlotBuilding({
   const empty = plot.status === 'available';
   const billboard = plot.template === 'billboard' || empty;
   return (
-    <group>
+    <StaticVoxels plot={plot} season={season}>
       <Box
         position={[0, -0.02, 0]}
         scale={[10, 0.15, 12]}
@@ -167,8 +234,8 @@ export function PlotBuilding({
             : season === 'Autumn'
               ? '#a89850'
               : empty
-                ? '#75a447'
-                : '#80ae52'
+                ? '#969b53'
+                : '#939a50'
         }
       />
       <Box position={[0, 0.08, 4.2]} scale={[3.2, 0.05, 3.5]} color="#d5c8a5" />
@@ -304,13 +371,13 @@ export function PlotBuilding({
               key={z}
               position={[x, 0.5, z]}
               scale={[0.15, 1, 0.15]}
-              color="#dfd5b0"
+              color="#967449"
             />
           ))}
           <Box
             position={[x, 0.7, 0]}
             scale={[0.12, 0.13, 9.5]}
-            color="#dfd5b0"
+            color="#967449"
           />
         </group>
       ))}
@@ -331,7 +398,71 @@ export function PlotBuilding({
             ))}
           </group>
         ))}
-    </group>
+      {!billboard && (
+        <group>
+          {/* Timber veranda, deep eaves and flower boxes soften each shop. */}
+          <Box
+            position={[0, 0.13, 2.8]}
+            scale={[6.5, 0.24, 2]}
+            color="#9c825c"
+          />
+          <Box
+            position={[0, 2.55, 2.65]}
+            scale={[6.7, 0.17, 2]}
+            color="#6b7046"
+          />
+          {[-2.8, 2.8].map((x) => (
+            <group key={x}>
+              <Box
+                position={[x, 1.3, 3.3]}
+                scale={[0.18, 2.5, 0.18]}
+                color="#78603b"
+              />
+              <Box
+                position={[x, 2.22, 3.1]}
+                scale={[0.25, 0.32, 0.25]}
+                color="#e9b968"
+              />
+              <Box
+                position={[x, 0.4, 3.65]}
+                scale={[1.45, 0.55, 0.7]}
+                color="#8e6a3e"
+              />
+              {Array.from({ length: 9 }, (_, i) => (
+                <group key={i}>
+                  <Box
+                    position={[
+                      x - 0.55 + (i % 3) * 0.5,
+                      0.8 + (i % 2) * 0.13,
+                      3.4 + Math.floor(i / 3) * 0.2,
+                    ]}
+                    scale={[0.1, 0.4, 0.1]}
+                    color="#64783a"
+                  />
+                  <Box
+                    position={[
+                      x - 0.55 + (i % 3) * 0.5,
+                      1 + (i % 2) * 0.13,
+                      3.4 + Math.floor(i / 3) * 0.2,
+                    ]}
+                    scale={[0.22, 0.13, 0.22]}
+                    color={['#d7b084', '#b5a1be', '#e2d2a9'][i % 3]}
+                  />
+                </group>
+              ))}
+            </group>
+          ))}
+          {Array.from({ length: 8 }, (_, i) => (
+            <Box
+              key={i}
+              position={[-2.5 + i * 0.72, 0.1, 3]}
+              scale={[0.65, 0.06, 1.65]}
+              color={i % 2 ? '#9a7d50' : '#a5895c'}
+            />
+          ))}
+        </group>
+      )}
+    </StaticVoxels>
   );
 }
 function World({
@@ -356,7 +487,7 @@ function World({
   const distance = useRef(0);
   const { camera } = useThree();
   useEffect(() => {
-    camera.lookAt(1.7, 1.9, -100);
+    camera.lookAt(1.7, -7.75, -100);
   }, [camera]);
   useEffect(() => {
     if (focus && !live)
@@ -404,10 +535,11 @@ function World({
           }}
           position={[0, 0, roadSectionZ(i, 0)]}
         >
-          <group position={[-12.5, 0, -30]} rotation={[0, 0, 0]}>
+          <RoadsideVerge season={environment.season} />
+          <group position={[-10, 0, -30]} rotation={[0, 0, 0]}>
             <PlotBuilding plot={plots[i * 2]} season={environment.season} />
           </group>
-          <group position={[12.5, 0, -30]} rotation={[0, 0, 0]}>
+          <group position={[10, 0, -30]} rotation={[0, 0, 0]}>
             <PlotBuilding plot={plots[i * 2 + 1]} season={environment.season} />
           </group>
           {i % 3 === 0 && <RoadsideAnimal clock={clock} index={i} />}
@@ -415,18 +547,18 @@ function World({
             <group key={side}>
               <Tree
                 position={[side * 8.5, 0, -13]}
-                scale={1.15}
+                scale={1.75}
                 season={environment.season}
               />
               <Tree
                 position={[side * (21 + (i % 3)), 0, -20]}
-                scale={1.5}
+                scale={2.2}
                 pine
                 season={environment.season}
               />
               <Tree
                 position={[side * 29, 0, -6]}
-                scale={2}
+                scale={2.8}
                 pine
                 season={environment.season}
               />

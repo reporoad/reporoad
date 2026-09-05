@@ -12,7 +12,7 @@ function surfaceTexture(seed: number, size = 16) {
       state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
       const grain = state / 4294967296;
       const value =
-        140 + grain * 90 + 10 * Math.sin(x * 0.19) * Math.sin(y * 0.13);
+        195 + grain * 35 + 10 * Math.sin(x * 0.19) * Math.sin(y * 0.13);
       const i = (y * size + x) * 4;
       data[i] = data[i + 1] = data[i + 2] = value;
       data[i + 3] = 255;
@@ -26,6 +26,9 @@ function surfaceTexture(seed: number, size = 16) {
   texture.needsUpdate = true;
   return texture;
 }
+
+export const voxelGrain = surfaceTexture(923, 32);
+voxelGrain.repeat.set(2, 2);
 
 export function LandscapeTree({
   position,
@@ -42,7 +45,7 @@ export function LandscapeTree({
   useEffect(() => {
     if (!crowns.current) return;
     const transform = new THREE.Object3D();
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < (pine ? 7 : 95); i++) {
       const positions = [
         [0, 2.5, 0],
         [-0.8, 2.5, 0],
@@ -53,12 +56,24 @@ export function LandscapeTree({
         [0.6, 3.3, 0.6],
       ];
       if (pine) {
-        transform.position.set(0, 1.8 + i * 0.4, 0);
-        const width = 2.7 - Math.floor(i / 2) * 0.65;
+        transform.position.set(0, 1.8 + (i % 7) * 0.4, 0);
+        const width = 2.7 - Math.floor((i % 7) / 2) * 0.65;
         transform.scale.set(width, 0.65, width);
       } else {
-        transform.position.set(...(positions[i] as [number, number, number]));
-        transform.scale.set(1.35, 1.1, 1.35);
+        const ring =
+          i < 7
+            ? positions[i]
+            : [
+                Math.sin(i * 2.4) * (1.1 + (i % 5) * 0.13),
+                2.2 + (i % 5) * 0.36,
+                Math.cos(i * 2.4) * (1.1 + (i % 3) * 0.2),
+              ];
+        transform.position.set(...(ring as [number, number, number]));
+        transform.scale.set(
+          i < 7 ? 1.15 : 0.48,
+          i < 7 ? 1 : 0.48,
+          i < 7 ? 1.15 : 0.7,
+        );
       }
       transform.rotation.set(0, 0, 0);
       transform.updateMatrix();
@@ -75,11 +90,12 @@ export function LandscapeTree({
               : season === 'Spring' && i % 3 === 0
                 ? '#cda6a2'
                 : pine
-                  ? '#28613b'
-                  : '#529134',
+                  ? '#536f39'
+                  : '#7c8d3f',
         ).multiplyScalar(0.9 + (i % 3) * 0.12),
       );
     }
+    crowns.current.count = pine ? 7 : 95;
     crowns.current.instanceMatrix.needsUpdate = true;
     if (crowns.current.instanceColor)
       crowns.current.instanceColor.needsUpdate = true;
@@ -93,12 +109,12 @@ export function LandscapeTree({
       </mesh>
       <instancedMesh
         ref={crowns}
-        args={[undefined, undefined, 7]}
+        args={[undefined, undefined, 95]}
         castShadow
         receiveShadow
       >
         <boxGeometry />
-        <meshStandardMaterial roughness={0.95} />
+        <meshStandardMaterial roughness={0.95} map={voxelGrain} />
       </instancedMesh>
     </group>
   );
@@ -165,7 +181,7 @@ export function RoadLandscape({
                 ? '#a99a59'
                 : night
                   ? '#375c43'
-                  : '#71a644'
+                  : '#9a9d55'
           }
           map={grass}
           roughness={1}
@@ -189,10 +205,10 @@ export function RoadLandscape({
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
       >
-        <planeGeometry args={[9.4, 440]} />
+        <planeGeometry args={[7.4, 440]} />
         <meshStandardMaterial
           ref={roadMaterial}
-          color="#414441"
+          color="#655e50"
           map={asphalt}
           bumpMap={asphalt}
           bumpScale={0.018}
@@ -200,7 +216,8 @@ export function RoadLandscape({
         />
       </mesh>
       <VoxelHills night={night} season={season} />
-      {[-4.4, 4.4].map((x) => (
+      <DistantValley season={season} />
+      {[-3.5, 3.5].map((x) => (
         <mesh
           key={x}
           position={[x, 0.012, -170]}
@@ -251,6 +268,108 @@ export function Atmosphere({ night }: { night: boolean }) {
   );
 }
 
+function DistantValley({ season }: { season: string }) {
+  const terrain = useRef<THREE.InstancedMesh>(null);
+  const forest = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    if (!terrain.current || !forest.current) return;
+    const m = new THREE.Object3D();
+    let i = 0;
+    for (let row = 0; row < 5; row++)
+      for (let x = -18; x <= 18; x++) {
+        const height =
+          8 + Math.abs(x) * 1.8 + Math.sin(x * 0.5 + row) * 8 + row * 3;
+        m.position.set(x * 9, height / 2, -190 - row * 16);
+        m.scale.set(9, height, 18);
+        m.updateMatrix();
+        terrain.current.setMatrixAt(i, m.matrix);
+        terrain.current.setColorAt(
+          i++,
+          new THREE.Color(
+            season === 'Winter' ? '#b8c5bc' : '#8b9263',
+          ).multiplyScalar(0.85 + row * 0.055),
+        );
+        for (let tree = 0; tree < 4; tree++) {
+          const tier = tree % 2;
+          m.position.set(
+            x * 9 + (tree < 2 ? -2.5 : 2),
+            height + 1.5 + tier * 2,
+            -188 - row * 16 + (tree < 2 ? -3 : 3),
+          );
+          m.scale.set(tier ? 2.5 : 4, 3, tier ? 2.5 : 4);
+          m.updateMatrix();
+          forest.current.setMatrixAt((i - 1) * 4 + tree, m.matrix);
+          forest.current.setColorAt(
+            (i - 1) * 4 + tree,
+            new THREE.Color(
+              season === 'Winter' ? '#c5cabb' : '#6f7f44',
+            ).multiplyScalar(0.85 + (i % 4) * 0.08),
+          );
+        }
+      }
+    terrain.current.instanceMatrix.needsUpdate = true;
+    if (terrain.current.instanceColor)
+      terrain.current.instanceColor.needsUpdate = true;
+    terrain.current.computeBoundingSphere();
+    forest.current.instanceMatrix.needsUpdate = true;
+    if (forest.current.instanceColor)
+      forest.current.instanceColor.needsUpdate = true;
+    forest.current.computeBoundingSphere();
+  }, [season]);
+  return (
+    <>
+      <instancedMesh ref={terrain} args={[undefined, undefined, 185]}>
+        <boxGeometry />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
+      <instancedMesh ref={forest} args={[undefined, undefined, 740]}>
+        <boxGeometry />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
+    </>
+  );
+}
+
+export function RoadsideVerge({ season }: { season: string }) {
+  const plants = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    if (!plants.current) return;
+    const m = new THREE.Object3D();
+    for (let i = 0; i < 360; i++) {
+      const side = i % 2 ? 1 : -1;
+      const flower = i % 3 === 0;
+      m.position.set(
+        side * (4.2 + ((((Math.sin(i * 87.31) * 43758.54) % 1) + 1) % 1) * 1.8),
+        flower ? 0.3 : 0.13,
+        -((((Math.sin(i * 23.17) * 17843.17) % 1) + 1) % 1) * 32,
+      );
+      m.scale.set(flower ? 0.16 : 0.14, flower ? 0.16 : 0.32, 0.14);
+      m.updateMatrix();
+      plants.current.setMatrixAt(i, m.matrix);
+      plants.current.setColorAt(
+        i,
+        new THREE.Color(
+          season === 'Winter'
+            ? '#dce4df'
+            : flower
+              ? ['#d9ac68', '#b49abf', '#ddcca1'][i % 3]
+              : '#8c954c',
+        ),
+      );
+    }
+    plants.current.instanceMatrix.needsUpdate = true;
+    if (plants.current.instanceColor)
+      plants.current.instanceColor.needsUpdate = true;
+    plants.current.computeBoundingSphere();
+  }, [season]);
+  return (
+    <instancedMesh ref={plants} args={[undefined, undefined, 360]} castShadow>
+      <boxGeometry />
+      <meshStandardMaterial roughness={1} />
+    </instancedMesh>
+  );
+}
+
 function VoxelHills({ night, season }: { night: boolean; season: string }) {
   const dirt = useRef<THREE.InstancedMesh>(null),
     tops = useRef<THREE.InstancedMesh>(null);
@@ -294,7 +413,7 @@ function VoxelHills({ night, season }: { night: boolean; season: string }) {
                   ? '#a1924c'
                   : night
                     ? '#395d3c'
-                    : '#65973e',
+                    : '#8b9454',
             ).multiplyScalar(0.9 + (i % 3) * 0.05),
           );
           i++;

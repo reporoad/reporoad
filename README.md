@@ -36,7 +36,7 @@ node --experimental-strip-types --test tests/*.test.mjs
 npm run build
 ```
 
-The domain tests cover claim restrictions, persistence recovery, publication validation, unsafe shop URLs automatic playlist progression, audio error recovery and two-lap road-recycling regression checks. Visual/browser interaction and an extended OBS soak test remain to be run on the target streaming machine.
+The domain tests cover claim restrictions, persistence recovery, publication validation, unsafe shop URLs, automatic playlist progression, audio error recovery, synchronized world time and two-lap road-recycling regression checks. The cosy scene has been iteratively compared against the selected concept using actual browser renders, including daytime, rain, snowy night and mobile framing. Static shop geometry is batched and the rear-view mirror updates twice per second. Software-rendered browser motion checks are not a hardware performance guarantee; an extended OBS/GPU soak test remains to be run on the target streaming machine. The real-time scene follows the concept's composition and palette, but is not a pixel-identical reproduction of the generated artwork.
 
 The application lint check excludes the untouched generated `components/ui` catalogue and its `use-mobile` hook, which contain starter lint findings. New application code is checked. Compatible React, Vinext and Vite security updates were applied. npm still reports advisories in transitive development/build tooling (`undici` under Miniflare/dotenvx and `esbuild` under Vite/Wrangler); no application feature uses these packages at runtime. Review the toolchain advisories before broader deployment.
 
