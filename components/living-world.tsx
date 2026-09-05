@@ -59,10 +59,10 @@ export function SkyCycle({
     moon.current?.position.set(-cos * 140, -sin * 130, -170);
     if (light.current) {
       light.current.position.set(-cos * 60, Math.max(12, sin * 45), -40);
-      light.current.intensity = 0.25 + w.daylight * 3.1;
-      light.current.color.set('#ffe2b5');
+      light.current.intensity = 0.25 + w.daylight * 3.6;
+      light.current.color.set('#ffdda0');
     }
-    if (ambient.current) ambient.current.intensity = 0.5 + w.daylight * 1.3;
+    if (ambient.current) ambient.current.intensity = 0.45 + w.daylight * 0.85;
     color.current
       .set('#142638')
       .lerp(
@@ -90,14 +90,18 @@ export function SkyCycle({
             'varying vec3 direction; void main(){ direction = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }'
           }
           fragmentShader={
-            'varying vec3 direction; uniform float daylight; uniform float wet; void main(){ float h = smoothstep(0.0,0.8,normalize(direction).y); vec3 day = mix(vec3(0.94,0.85,0.69),vec3(0.54,0.68,0.76),h); vec3 night = mix(vec3(0.09,0.15,0.21),vec3(0.035,0.07,0.13),h); vec3 sky = mix(night,day,daylight); gl_FragColor = vec4(mix(sky,vec3(0.38,0.43,0.45),wet*0.45),1.0); }'
+            'varying vec3 direction; uniform float daylight; uniform float wet; void main(){ float h = smoothstep(0.0,0.8,normalize(direction).y); vec3 day = mix(vec3(0.95,0.61,0.32),vec3(0.30,0.48,0.64),h); vec3 night = mix(vec3(0.018,0.033,0.055),vec3(0.004,0.01,0.025),h); vec3 sky = mix(night,day,daylight); gl_FragColor = vec4(mix(sky,vec3(0.24,0.29,0.32),wet*0.45),1.0); }'
           }
         />
       </mesh>
       <fog attach="fog" args={['#a9c8cc', 90, 265]} />
       <mesh ref={sun}>
-        <boxGeometry args={[17, 17, 2]} />
-        <meshBasicMaterial color="#fff9dc" fog={false} toneMapped={false} />
+        <circleGeometry args={[6.5, 12]} />
+        <meshBasicMaterial
+          color={[8, 5.5, 2.5]}
+          fog={false}
+          toneMapped={false}
+        />
         <mesh position={[0, 0, -1.1]}>
           <planeGeometry args={[65, 65]} />
           <shaderMaterial
@@ -121,13 +125,14 @@ export function SkyCycle({
       <directionalLight
         ref={light}
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-32}
         shadow-camera-right={32}
         shadow-camera-top={55}
         shadow-camera-bottom={-30}
         shadow-camera-far={180}
-        shadow-normalBias={0.05}
+        shadow-normalBias={0.035}
+        shadow-bias={-0.00015}
         shadow-radius={3}
       />
       <VoxelModel parts={clouds} shadows={false} />
@@ -184,7 +189,7 @@ function DashboardPanel({ radio = false }: { radio?: boolean }) {
   }, [radio]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
-    <mesh position={radio ? [-0.38, -0.75, -1.43] : [0.58, -0.43, -1.49]}>
+    <mesh position={radio ? [0.02, -0.65, -1.38] : [0.82, -0.53, -1.49]}>
       <planeGeometry args={radio ? [0.56, 0.19] : [0.7, 0.2]} />
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
@@ -202,7 +207,7 @@ export function VoxelCabin({
   const wipers = useRef<(THREE.Group | null)[]>([]);
   const cabin = useRef<THREE.Group>(null);
   const rear = useMemo(() => {
-    const target = new THREE.WebGLRenderTarget(256, 96);
+    const target = new THREE.WebGLRenderTarget(384, 144);
     const camera = new THREE.PerspectiveCamera(55, 256 / 96, 0.1, 265);
     camera.position.set(1.7, 2, 7);
     camera.lookAt(1.7, 2, 100);
@@ -215,7 +220,7 @@ export function VoxelCabin({
   useFrame(({ gl, scene, clock: renderClock }) => {
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
-    if (cabin.current && now - lastMirrorFrame.current > 500) {
+    if (cabin.current && now - lastMirrorFrame.current > 100) {
       lastMirrorFrame.current = now;
       const target = gl.getRenderTarget();
       const shadows = gl.shadowMap.autoUpdate;
@@ -259,12 +264,12 @@ export function VoxelCabin({
         color="#927653"
       />
       <Block
-        position={[-1.22, -0.8, -1.42]}
-        scale={[0.98, 0.32, 0.055]}
+        position={[-0.98, -0.72, -1.42]}
+        scale={[1.28, 0.45, 0.055]}
         color="#65705a"
       />
       <Block
-        position={[-1.22, -0.79, -1.384]}
+        position={[-0.98, -0.72, -1.384]}
         scale={[0.3, 0.035, 0.025]}
         color="#343e30"
       />
@@ -292,11 +297,11 @@ export function VoxelCabin({
         </group>
       ))}
       <Block
-        position={[-0.38, -0.91, -1.42]}
+        position={[0.02, -0.86, -1.42]}
         scale={[0.63, 0.1, 0.045]}
         color="#66533a"
       />
-      {[-0.62, -0.5, -0.38, -0.26, -0.14].map((x, i) => (
+      {[-0.22, -0.1, 0.02, 0.14, 0.26].map((x, i) => (
         <group key={x}>
           <Block
             position={[x, -0.905, -1.385]}
@@ -310,7 +315,7 @@ export function VoxelCabin({
           />
         </group>
       ))}
-      {[-0.75, 0.02].map((x) => (
+      {[-0.35, 0.39].map((x) => (
         <Block
           key={x}
           position={[x, -0.77, -1.4]}
@@ -345,17 +350,17 @@ export function VoxelCabin({
       />
       {/* Small mirror tucked under the roof, outside the central road view. */}
       <Block
-        position={[0, 1.13, -1.88]}
-        scale={[0.035, 0.23, 0.045]}
+        position={[0, 1.04, -1.88]}
+        scale={[0.045, 0.36, 0.045]}
         color="#303932"
       />
       <Block
-        position={[0, 0.98, -1.84]}
-        scale={[0.48, 0.17, 0.065]}
+        position={[0, 0.83, -1.84]}
+        scale={[0.68, 0.22, 0.065]}
         color="#303932"
       />
-      <mesh position={[0, 0.98, -1.801]} scale={[-1, 1, 1]}>
-        <planeGeometry args={[0.4, 0.11]} />
+      <mesh position={[0, 0.83, -1.801]} scale={[-1, 1, 1]}>
+        <planeGeometry args={[0.6, 0.16]} />
         <meshBasicMaterial
           map={rear.target.texture}
           side={THREE.DoubleSide}
@@ -364,13 +369,28 @@ export function VoxelCabin({
       </mesh>
       {/* Recessed instrument binnacle, aligned behind the steering wheel. */}
       <Block
-        position={[0.58, -0.43, -1.66]}
+        position={[0.82, -0.53, -1.66]}
         scale={[0.8, 0.24, 0.28]}
         color="#39423a"
       />
-      <group position={[0.65, -0.76, -1.4]}>
+      <group position={[0.85, -0.6, -1.35]} scale={1.05}>
         <VoxelModel parts={wheel} />
       </group>
+      {/* Upholstered foreground corners complete the enclosed car silhouette. */}
+      {[-1.16, 1.4].map((x) => (
+        <group key={x} position={[x, -0.86, -1.1]}>
+          <Block
+            position={[0, 0, 0]}
+            scale={[0.74, 0.46, 0.5]}
+            color="#757951"
+          />
+          <Block
+            position={[0, 0.24, -0.02]}
+            scale={[0.71, 0.06, 0.43]}
+            color="#939569"
+          />
+        </group>
+      ))}
       {/* Each wiper pivots at its own mount; blades park along the dash. */}
       {[-0.8, 0.72].map((x, i) => (
         <group key={x} position={[x, -0.48, -2.12]}>

@@ -1,10 +1,17 @@
 'use client';
 
-import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import {
+  Component,
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Plot } from '@/lib/world';
-import { vergeModel } from '@/lib/voxel-models';
+import { vergeModel, shopDetailModel } from '@/lib/voxel-models';
 import VoxelModel from './voxel-model';
 import {
   ROAD_LENGTH,
@@ -28,6 +35,7 @@ import {
   type SharedClock,
 } from './living-world';
 import { worldAt, type WorldPreview } from '@/lib/live-world';
+import SceneFinish from './scene-finish';
 
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -233,7 +241,7 @@ function ShopFlowers({ season, seed }: { season: string; seed: number }) {
   return <VoxelModel parts={parts} shadows={false} />;
 }
 
-export function PlotBuilding({
+export const PlotBuilding = memo(function PlotBuilding({
   plot,
   season = 'Summer',
 }: {
@@ -242,6 +250,10 @@ export function PlotBuilding({
 }) {
   const empty = plot.status === 'available';
   const billboard = plot.template === 'billboard' || empty;
+  const details = useMemo(
+    () => shopDetailModel(plot.id, season),
+    [plot.id, season],
+  );
   return (
     <StaticVoxels plot={plot} season={season}>
       <Box
@@ -427,6 +439,7 @@ export function PlotBuilding({
         ))}
       {!billboard && (
         <group>
+          <VoxelModel parts={details} />
           <ShopFlowers season={season} seed={plot.id} />
           {/* Timber veranda, deep eaves and flower boxes soften each shop. */}
           {[-2.85, -0.7, 0.7, 2.85].map((x) => (
@@ -577,7 +590,7 @@ export function PlotBuilding({
       )}
     </StaticVoxels>
   );
-}
+});
 function World({
   plots,
   playing,
@@ -604,7 +617,7 @@ function World({
   }, [camera]);
   useEffect(() => {
     if (focus && !live)
-      distance.current = Math.floor((focus.id - 1) / 2) * SECTION_SPACING;
+      distance.current = Math.floor((focus.id - 1) / 2) * SECTION_SPACING + 22;
   }, [focus, live]);
   useFrame((_, delta) => {
     if (live) distance.current = worldAt(clock.current.now()).distance;
@@ -636,7 +649,7 @@ function World({
           key={i}
           position={[0, 0.02, roadMarkerZ(i, 0)]}
         >
-          <boxGeometry args={[0.1, 0.01, 3.5]} />
+          <boxGeometry args={[0.14, 0.01, 3.5]} />
           <meshStandardMaterial color="#ded8b5" />
         </mesh>
       ))}
@@ -649,18 +662,18 @@ function World({
           position={[0, 0, roadSectionZ(i, 0)]}
         >
           <RoadsideVerge season={environment.season} seed={i} />
-          <group position={[-10, 0, -30]} rotation={[0, 0, 0]}>
+          <group position={[-10, 0, -30]} scale={[1, 1.25, 1]}>
             <PlotBuilding plot={plots[i * 2]} season={environment.season} />
           </group>
-          <group position={[10, 0, -30]} rotation={[0, 0, 0]}>
+          <group position={[10, 0, -30]} scale={[1, 1.25, 1]}>
             <PlotBuilding plot={plots[i * 2 + 1]} season={environment.season} />
           </group>
           {i % 3 === 0 && <RoadsideAnimal clock={clock} index={i} />}
           {[-1, 1].map((side) => (
             <group key={side}>
               <Tree
-                position={[side * 8.5, 0, -13]}
-                scale={1.75}
+                position={[side * (8.5 + (i % 3) * 1.1), 0, -13 + (i % 3) * 2]}
+                scale={1.35 + (i % 4) * 0.16}
                 season={environment.season}
               />
               <Tree
@@ -670,8 +683,8 @@ function World({
                 season={environment.season}
               />
               <Tree
-                position={[side * 29, 0, -6]}
-                scale={2.8}
+                position={[side * 34, 0, -6]}
+                scale={1.8}
                 pine
                 season={environment.season}
               />
@@ -699,8 +712,8 @@ export default function RoadScene(props: {
     >
       <SceneBoundary>
         <Canvas
-          shadows
-          dpr={[1, 1.5]}
+          shadows="soft"
+          dpr={[1, 2]}
           camera={{ position: [1.7, 1.9, 7], fov: 68, near: 0.1, far: 500 }}
           gl={{
             antialias: true,
@@ -709,6 +722,7 @@ export default function RoadScene(props: {
           }}
         >
           <World {...props} />
+          <SceneFinish />
         </Canvas>
       </SceneBoundary>
     </figure>

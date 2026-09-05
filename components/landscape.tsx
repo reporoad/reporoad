@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { treeModel, vergeModel } from '@/lib/voxel-models';
 import VoxelModel from './voxel-model';
+import { groundTextureOffset } from '@/lib/road';
 
 function surfaceTexture(seed: number, size = 16) {
   const data = new Uint8Array(size * size * 4);
@@ -22,9 +23,9 @@ function surfaceTexture(seed: number, size = 16) {
   const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestMipmapNearestFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.generateMipmaps = true;
-  texture.anisotropy = 1;
+  texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
 }
@@ -43,7 +44,11 @@ export function LandscapeTree({
   pine?: boolean;
   season?: string;
 }) {
-  const parts = useMemo(() => treeModel(pine, season), [pine, season]);
+  const seed = Math.round(position[0] * 11 + position[2] * 7);
+  const parts = useMemo(
+    () => treeModel(pine, season, seed),
+    [pine, season, seed],
+  );
   return (
     <group position={position} scale={scale}>
       <VoxelModel parts={parts} />
@@ -70,12 +75,12 @@ export function RoadLandscape({
   }, []);
   const grass = useMemo(() => {
     const t = surfaceTexture(103);
-    t.repeat.set(95, 95);
+    t.repeat.set(850 / 8, 850 / 8);
     return t;
   }, []);
   const gravel = useMemo(() => {
     const t = surfaceTexture(341);
-    t.repeat.set(4, 100);
+    t.repeat.set(4, 110);
     return t;
   }, []);
 
@@ -91,9 +96,10 @@ export function RoadLandscape({
     const roadMap = roadMaterial.current?.map;
     const grassMap = grassMaterial.current?.map;
     const gravelMap = gravelMaterial.current?.map;
-    if (roadMap) roadMap.offset.y = -distance.current / 2;
-    if (gravelMap) gravelMap.offset.y = -distance.current / 4.4;
-    if (grassMap) grassMap.offset.y = -distance.current / (850 / 95);
+    if (roadMap) roadMap.offset.y = groundTextureOffset(distance.current, 2);
+    if (gravelMap)
+      gravelMap.offset.y = groundTextureOffset(distance.current, 4);
+    if (grassMap) grassMap.offset.y = groundTextureOffset(distance.current, 8);
   });
   return (
     <>
@@ -275,9 +281,10 @@ export function RoadsideVerge({
 function VoxelHills({ night, season }: { night: boolean; season: string }) {
   const dirt = useRef<THREE.InstancedMesh>(null),
     tops = useRef<THREE.InstancedMesh>(null);
+  const ridgeTrees = useRef<THREE.InstancedMesh>(null);
   const count = 2 * 18 * 40;
   useEffect(() => {
-    if (!dirt.current || !tops.current) return;
+    if (!dirt.current || !tops.current || !ridgeTrees.current) return;
     const m = new THREE.Object3D();
     let i = 0;
     for (const side of [-1, 1])
@@ -318,9 +325,30 @@ function VoxelHills({ night, season }: { night: boolean; season: string }) {
                     : '#8b9454',
             ).multiplyScalar(0.9 + (i % 3) * 0.05),
           );
+          // Forest silhouettes break up the old bare, horizontal terraces.
+          for (let tier = 0; tier < 3; tier++) {
+            m.position.set(
+              side * (44 + x * 8) + Math.sin(i * 7) * 2,
+              h + 1 + tier * 1.25,
+              48 - z * 8 + Math.cos(i * 3) * 2,
+            );
+            m.scale.set(3.7 - tier * 0.9, 2.3, 3.7 - tier * 0.9);
+            m.updateMatrix();
+            ridgeTrees.current.setMatrixAt(i * 3 + tier, m.matrix);
+            ridgeTrees.current.setColorAt(
+              i * 3 + tier,
+              new THREE.Color(
+                season === 'Winter'
+                  ? '#b9c7ac'
+                  : season === 'Autumn'
+                    ? '#9c823d'
+                    : '#6d7d3e',
+              ).multiplyScalar(0.85 + (i % 4) * 0.05),
+            );
+          }
           i++;
         }
-    for (const mesh of [dirt.current, tops.current]) {
+    for (const mesh of [dirt.current, tops.current, ridgeTrees.current]) {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.computeBoundingSphere();
@@ -328,6 +356,14 @@ function VoxelHills({ night, season }: { night: boolean; season: string }) {
   }, [night, season]);
   return (
     <>
+      <instancedMesh
+        ref={ridgeTrees}
+        args={[undefined, undefined, count * 3]}
+        receiveShadow
+      >
+        <boxGeometry />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
       <instancedMesh
         ref={dirt}
         args={[undefined, undefined, count]}

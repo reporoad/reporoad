@@ -6,7 +6,26 @@ import {
   ROAD_LENGTH,
   CAMERA_Z,
   RECYCLE_BEHIND_Z,
+  groundTextureOffset,
 } from '../lib/road.ts';
+
+test('ground texture features move with lane markers and wrap without a seam', () => {
+  for (const tile of [2, 4, 8]) {
+    const delta = 0.05;
+    const displacement =
+      (groundTextureOffset(1 + delta, tile) - groundTextureOffset(1, tile)) *
+      tile;
+    assert.ok(Math.abs(displacement - delta) < 1e-9);
+    assert.ok(
+      Math.abs(displacement - (roadMarkerZ(5, 1 + delta) - roadMarkerZ(5, 1))) <
+        1e-9,
+    );
+    assert.equal(
+      groundTextureOffset(ROAD_LENGTH, tile),
+      groundTextureOffset(0, tile),
+    );
+  }
+});
 
 test('plots travel past the camera instead of disappearing on approach', () => {
   // Previous implementation jumped from section z=20 to z=-364 at distance=0,

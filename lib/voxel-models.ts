@@ -8,7 +8,11 @@ export const noise = (n: number) => {
   return value - Math.floor(value);
 };
 
-export function treeModel(pine: boolean, season: string): VoxelPart[] {
+export function treeModel(
+  pine: boolean,
+  season: string,
+  seed = 0,
+): VoxelPart[] {
   const parts: VoxelPart[] = [];
   const add = (
     position: VoxelPart['position'],
@@ -35,21 +39,26 @@ export function treeModel(pine: boolean, season: string): VoxelPart[] {
           : pine
             ? ['#627b3d', '#82964d', '#4d6737']
             : ['#819342', '#a0ab58', '#657c3b'];
-  for (let x = -5; x <= 5; x++)
-    for (let y = 0; y < 10; y++)
-      for (let z = -5; z <= 5; z++) {
-        const n = noise(x * 97 + y * 31 + z * 7);
-        const xx = x * 0.34,
-          zz = z * 0.34,
-          yy = 2 + y * 0.34;
+  for (let x = -7; x <= 7; x++)
+    for (let y = 0; y < 14; y++)
+      for (let z = -7; z <= 7; z++) {
+        const n = noise(x * 97 + y * 31 + z * 7 + seed * 13);
+        const xx = x * 0.24,
+          zz = z * 0.24,
+          yy = 2 + y * 0.24;
         const radius = pine
-          ? 1.75 - y * 0.145
+          ? 1.75 - y * 0.104
           : 1.65 * Math.sqrt(Math.max(0, 1 - ((yy - 3.45) / 1.8) ** 2));
-        if (Math.hypot(xx, zz) > radius + (n - 0.5) * 0.38 || n < 0.075)
+        const radial = Math.hypot(xx, zz);
+        // Keep only the crown shell: hidden interior cubes add cost, not detail.
+        if (
+          radial > radius + (n - 0.5) * 0.3 ||
+          (radial < radius - 0.42 && y > 0 && y < 13)
+        )
           continue;
         add(
           [xx, yy, zz],
-          [0.33, 0.34, 0.33],
+          [0.245, 0.245, 0.245],
           palette[Math.floor(n * palette.length)],
         );
       }
@@ -111,7 +120,8 @@ export function vergeModel(season: string, seed = 0): VoxelPart[] {
     season === 'Winter'
       ? ['#d8e0d5', '#e6e9df', '#c8d2c6']
       : ['#c5a3c4', '#ece2bd', '#d3ac68', '#a7a1c3'];
-  for (let i = 0; i < 170; i++) {
+  // Dense, irregular verge; low groundcover anchors flowers to the soil.
+  for (let i = 0; i < 280; i++) {
     const n = i + seed * 311;
     const side = i % 2 ? 1 : -1;
     const x = side * (4.2 + noise(n + 2) * 1.8),
@@ -122,6 +132,12 @@ export function vergeModel(season: string, seed = 0): VoxelPart[] {
       [0.035, h, 0.035],
       season === 'Winter' ? '#b9c7ad' : '#6b853a',
     );
+    if (i % 4 === 0)
+      add(
+        [x, 0.06, z],
+        [0.38, 0.13, 0.3],
+        season === 'Winter' ? '#d8dfd0' : '#71833f',
+      );
     add(
       [x + 0.055, h * 0.55, z],
       [0.13, 0.05, 0.06],
@@ -137,6 +153,43 @@ export function vergeModel(season: string, seed = 0): VoxelPart[] {
       [0, 0.08],
     ])
       add([x + dx, h, z + dz], [0.1, 0.055, 0.1], color);
+  }
+  return parts;
+}
+
+// Solid timber siding, end-grain and creeping roof plants. All pieces are
+// batched, with a small physical offset rather than coplanar decals.
+export function shopDetailModel(seed: number, season: string): VoxelPart[] {
+  const parts: VoxelPart[] = [];
+  for (let row = 0; row < 16; row++) {
+    const y = 0.2 + row * 0.165;
+    for (const side of [-1, 1]) {
+      parts.push({
+        position: [side * 2.92, y, -0.4],
+        size: [0.09, 0.15, 4.3],
+        color: row % 3 ? '#745b3a' : '#896c45',
+      });
+      for (const x of [0.82, 2.78])
+        parts.push({
+          position: [side * x, y, 1.79],
+          size: [0.29, 0.15, 0.08],
+          color: row % 3 ? '#806039' : '#9a7444',
+        });
+    }
+  }
+  for (let i = 0; i < 65; i++) {
+    const n = noise(seed * 99 + i * 17);
+    const x = -3.15 + (i % 22) * 0.3;
+    const y = 2.72 + Math.floor(i / 22) * 0.19;
+    if (n < 0.23) continue;
+    parts.push({
+      position: [x, y, 3.45 - Math.floor(i / 22) * 0.32],
+      size: [0.27, 0.24, 0.3],
+      color:
+        season === 'Winter'
+          ? '#d6dbc6'
+          : ['#687835', '#879343', '#a1a254'][i % 3],
+    });
   }
   return parts;
 }

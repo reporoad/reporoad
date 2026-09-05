@@ -1,15 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { treeModel, steeringWheelModel, cloudModel, vergeModel } from '../lib/voxel-models.ts';
+import {
+  treeModel,
+  steeringWheelModel,
+  cloudModel,
+  vergeModel,
+  shopDetailModel,
+} from '../lib/voxel-models.ts';
 
 test('voxel models are deterministic, finite and have positive dimensions', () => {
-  for (const model of [() => treeModel(false, 'Summer'), () => treeModel(true, 'Winter'), steeringWheelModel, cloudModel, () => vergeModel('Spring', 4)]) {
+  for (const model of [
+    () => treeModel(false, 'Summer'),
+    () => treeModel(true, 'Winter'),
+    steeringWheelModel,
+    cloudModel,
+    () => vergeModel('Spring', 4),
+    () => shopDetailModel(1, 'Summer'),
+  ]) {
     const parts = model();
     assert.deepEqual(parts, model());
     assert.ok(parts.length > 0 && parts.length < 2000);
     for (const p of parts) {
       assert.ok(p.position.every(Number.isFinite));
-      assert.ok(p.size.every(n => Number.isFinite(n) && n > 0));
+      assert.ok(p.size.every((n) => Number.isFinite(n) && n > 0));
       assert.match(p.color, /^#[0-9a-f]{6}$/i);
     }
   }
@@ -22,7 +35,7 @@ test('roadside flowers remain outside the road and inside the recycling section'
       assert.ok(Math.abs(p.position[0]) - p.size[0] / 2 > 3.7);
       assert.ok(p.position[2] > -33 && p.position[2] < 1);
     }
-    assert.ok(new Set(parts.map(p => p.color)).size > 5);
+    assert.ok(new Set(parts.map((p) => p.color)).size > 5);
   }
 });
 

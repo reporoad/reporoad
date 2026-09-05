@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { VoxelPart } from '@/lib/voxel-models';
 
-export default function VoxelModel({
+export default memo(function VoxelModel({
   parts,
   shadows = true,
 }: {
@@ -37,4 +37,4 @@ export default function VoxelModel({
       <meshStandardMaterial roughness={0.92} />
     </instancedMesh>
   );
-}
+});
