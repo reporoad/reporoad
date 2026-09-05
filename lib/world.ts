@@ -19,26 +19,6 @@ export type Plot = {
   logo?: string;
 };
 export const STORAGE_KEY = 'chilldrive-prototype-v1';
-export const TRACKS = [
-  {
-    name: 'Golden hour',
-    mood: 'Warm keys · slow afternoon',
-    root: 130.81,
-    beat: 0.48,
-  },
-  {
-    name: 'Forest notes',
-    mood: 'Soft chimes · fresh air',
-    root: 146.83,
-    beat: 0.6,
-  },
-  {
-    name: 'Blue mile',
-    mood: 'Mellow tones · evening drive',
-    root: 110,
-    beat: 0.54,
-  },
-];
 export function createPlots(): Plot[] {
   const examples: Record<number, [string, string, Template]> = {
     1: ['MOSS & MUG', 'Coffee. Slowly.', 'cafe'],
@@ -134,12 +114,4 @@ export function publishPlot(plots: Plot[], draft: Plot): Plot[] {
       ? { ...draft, name: draft.name.trim(), tagline: draft.tagline.trim() }
       : p,
   );
-}
-export function chooseTrack(vote: number | null, current: number): number {
-  return vote !== null &&
-    Number.isInteger(vote) &&
-    vote >= 0 &&
-    vote < TRACKS.length
-    ? vote
-    : (current + 1) % TRACKS.length;
 }

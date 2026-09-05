@@ -521,46 +521,6 @@ button svg {
   margin-bottom: 15px;
   line-height: 1.5;
 }
-.radio-panel {
-  padding: 21px;
-  margin-top: 18px;
-  border-top: 1px solid var(--border);
-  background: #17231c;
-}
-.radio-panel h3 {
-  font-size: 16px;
-  font-weight: 550;
-  margin: 6px 0 5px;
-}
-.radio-panel p {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 0 0 13px;
-}
-.vote {
-  position: relative;
-  width: 100%;
-  margin: 6px 0;
-  text-align: left;
-  background: #223025;
-  border: 1px solid #3c4d3c;
-  border-radius: 7px;
-  color: #e0e9d7;
-  padding: 11px 12px;
-  font-size: 13px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.vote[aria-pressed='true'] {
-  border-color: #a1bb68;
-  color: var(--primary);
-  background: #31422b;
-}
-.vote small {
-  color: var(--muted-foreground);
-}
 .footer {
   margin-top: 17px;
   display: flex;

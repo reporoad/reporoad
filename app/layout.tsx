@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Chilldrive — a little place along the way',
   description:
-    'Take the scenic route. Explore roadside plots, customise your own little shop, and choose the soundtrack in the Chilldrive prototype.',
+    'Take the scenic route. Explore roadside plots, customise your own little shop, and enjoy a continuous lofi soundtrack in the Chilldrive prototype.',
 };
 
 export default function RootLayout({

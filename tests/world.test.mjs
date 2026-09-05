@@ -6,7 +6,6 @@ import {
   safeShopUrl,
   claimPlot,
   publishPlot,
-  chooseTrack,
 } from '../lib/world.ts';
 
 test('a demo claim survives storage and cannot take an example shop', () => {
@@ -64,10 +63,4 @@ test('shop links accept only web destinations', () => {
     safeShopUrl('https://example.com/shop'),
     'https://example.com/shop',
   );
-});
-test('a vote chooses the next track and empty rounds rotate', () => {
-  assert.equal(chooseTrack(2, 0), 2);
-  assert.equal(chooseTrack(0, 2), 0);
-  assert.equal(chooseTrack(null, 2), 0);
-  assert.equal(chooseTrack(99, 0), 1);
 });

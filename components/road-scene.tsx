@@ -4,6 +4,13 @@ import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Plot } from '@/lib/world';
+import {
+  ROAD_LENGTH,
+  SECTION_SPACING,
+  roadSectionZ,
+  roadMarkerZ,
+} from '@/lib/road';
+import { Atmosphere, RoadLandscape, LandscapeTree as Tree } from './landscape';
 
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -50,38 +57,6 @@ function Box({
       <boxGeometry />
       <meshStandardMaterial color={color} roughness={0.85} />
     </mesh>
-  );
-}
-function Tree({
-  position,
-  scale = 1,
-  pine = false,
-}: {
-  position: [number, number, number];
-  scale?: number;
-  pine?: boolean;
-}) {
-  return (
-    <group position={position} scale={scale}>
-      <Box position={[0, 1.1, 0]} scale={[0.27, 2.2, 0.27]} color="#796047" />
-      <mesh position={[0, 2.4, 0]} castShadow>
-        {pine ? (
-          <coneGeometry args={[1.15, 3, 6]} />
-        ) : (
-          <icosahedronGeometry args={[1.4, 0]} />
-        )}
-        <meshStandardMaterial
-          color={pine ? '#44674d' : '#719052'}
-          flatShading
-        />
-      </mesh>
-      {pine && (
-        <mesh position={[0, 3.4, 0]} castShadow>
-          <coneGeometry args={[0.85, 2.2, 6]} />
-          <meshStandardMaterial color="#557857" flatShading />
-        </mesh>
-      )}
-    </group>
   );
 }
 function Sign({ plot }: { plot: Plot }) {
@@ -170,7 +145,7 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
       <Box
         position={[0, -0.02, 0]}
         scale={[10, 0.15, 12]}
-        color={empty ? '#a8b77b' : '#a5b67a'}
+        color={empty ? '#71844e' : '#7c8d57'}
       />
       <Box position={[0, 0.08, 4.2]} scale={[3.2, 0.05, 3.5]} color="#d5c8a5" />
       {billboard ? (
@@ -193,22 +168,57 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
             scale={[5.8, 2.9, 4.3]}
             color={plot.color}
           />
-          {plot.template === 'cabin' ? (
-            <mesh
-              position={[0, 3.45, -0.4]}
-              rotation={[0, Math.PI / 4, 0]}
-              castShadow
-            >
-              <coneGeometry args={[4.4, 2.5, 4]} />
-              <meshStandardMaterial color="#5e6e57" flatShading />
-            </mesh>
+          <Box
+            position={[0, 0.14, -0.4]}
+            scale={[6.15, 0.3, 4.65]}
+            color="#a59e8d"
+          />
+          {plot.template === 'cabin' || plot.template === 'cafe' ? (
+            <>
+              <Box
+                position={[-1.6, 3.56, -0.4]}
+                scale={[3.6, 0.14, 5.0]}
+                rotation={[0, 0, 0.38]}
+                color={plot.template === 'cabin' ? '#514b40' : '#616a61'}
+              />
+              <Box
+                position={[1.6, 3.56, -0.4]}
+                scale={[3.6, 0.14, 5.0]}
+                rotation={[0, 0, -0.38]}
+                color={plot.template === 'cabin' ? '#514b40' : '#616a61'}
+              />
+              <Box
+                position={[0, 4.23, -0.4]}
+                scale={[0.2, 0.12, 5.05]}
+                color="#73776a"
+              />
+              <Box
+                position={[1.8, 3.9, -1.6]}
+                scale={[0.52, 1.2, 0.62]}
+                color="#817569"
+              />
+            </>
           ) : (
             <Box
               position={[0, 3.06, -0.4]}
-              scale={[6.4, 0.35, 4.9]}
-              color={plot.template === 'garage' ? '#586c65' : '#5c7154'}
+              scale={[6.4, 0.25, 4.9]}
+              color="#5b625d"
             />
           )}
+          {plot.template === 'cabin' &&
+            Array.from({ length: 10 }, (_, i) => (
+              <Box
+                key={i}
+                position={[0, 0.35 + i * 0.25, 1.765]}
+                scale={[5.8, 0.018, 0.035]}
+                color="#7e6c55"
+              />
+            ))}
+          <Box
+            position={[0, 0.15, 2.1]}
+            scale={[1.6, 0.3, 0.85]}
+            color="#b7b3a4"
+          />
           <Box
             position={[0, 1.05, 1.8]}
             scale={[1.1, 2.1, 0.08]}
@@ -221,11 +231,17 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
                 scale={[1.5, 1.6, 0.08]}
                 color="#eaddb7"
               />
-              <Box
-                position={[x, 1.35, 1.85]}
-                scale={[1.3, 1.4, 0.06]}
-                color="#75969a"
-              />
+              <mesh position={[x, 1.35, 1.85]}>
+                <boxGeometry args={[1.3, 1.4, 0.06]} />
+                <meshPhysicalMaterial
+                  color="#668189"
+                  roughness={0.16}
+                  metalness={0.3}
+                  clearcoat={1}
+                  emissive="#d0a75a"
+                  emissiveIntensity={0.15}
+                />
+              </mesh>
               <Box
                 position={[x, 1.35, 1.9]}
                 scale={[0.07, 1.45, 0.08]}
@@ -253,7 +269,7 @@ export function PlotBuilding({ plot }: { plot: Plot }) {
         </>
       )}
       <group
-        position={billboard ? [0, 0, 0] : [0, 2, -0.4]}
+        position={billboard ? [0, 0, 0] : [0, 1.4, 0.95]}
         scale={billboard ? 1 : 0.7}
       >
         <Sign plot={plot} />
@@ -319,72 +335,57 @@ function World({
   const distance = useRef(0);
   const { camera } = useThree();
   useEffect(() => {
-    camera.lookAt(0, 2.4, -70);
+    camera.lookAt(1.7, 1.9, -100);
   }, [camera]);
   useEffect(() => {
-    if (focus) distance.current = Math.floor((focus.id - 1) / 2) * 32;
+    if (focus)
+      distance.current = Math.floor((focus.id - 1) / 2) * SECTION_SPACING;
   }, [focus]);
   useFrame((_, delta) => {
     if (playing)
-      distance.current = (distance.current + Math.min(delta, 0.05) * 6.5) % 384;
+      distance.current =
+        (distance.current + Math.min(delta, 0.05) * 6.5) % ROAD_LENGTH;
     stages.current.forEach((g, i) => {
-      if (g) g.position.z = 20 - ((i * 32 - distance.current + 384) % 384);
+      if (g) g.position.z = roadSectionZ(i, distance.current);
     });
     markers.current.forEach((m, i) => {
-      if (m) m.position.z = 16 - ((i * 10 - distance.current + 400) % 400);
+      if (m) m.position.z = roadMarkerZ(i, distance.current);
     });
   });
   return (
     <>
-      <color attach="background" args={[night ? '#263d52' : '#d5dfd0']} />
-      <fog attach="fog" args={[night ? '#263d52' : '#d5dfd0', 65, 235]} />
-      <ambientLight intensity={night ? 0.8 : 1.5} />
+      <Atmosphere night={night} />
+      <fog attach="fog" args={[night ? '#4e6171' : '#d9d4b8', 95, 265]} />
+      <hemisphereLight
+        args={[night ? '#7792b7' : '#c9dce8', '#4b4939', night ? 0.65 : 1.35]}
+      />
+      <ambientLight intensity={0.18} />
       <directionalLight
-        position={[-25, 45, -40]}
-        intensity={night ? 0.55 : 2.5}
+        position={[-38, 25, -65]}
+        intensity={night ? 0.6 : 2.7}
         color={night ? '#aac8ef' : '#fff1cb'}
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-50}
         shadow-camera-right={50}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
+        shadow-camera-top={90}
+        shadow-camera-bottom={-50}
         shadow-camera-far={180}
-        shadow-normalBias={0.08}
+        shadow-normalBias={0.045}
+        shadow-bias={-0.00015}
+        shadow-radius={3}
       />
-      <Box
-        position={[0, -0.3, -175]}
-        scale={[700, 0.3, 700]}
-        color={night ? '#536958' : '#a5b983'}
-      />
-      <Box
-        position={[0, -0.09, -180]}
-        scale={[12.3, 0.13, 430]}
-        color="#d4c6a3"
-      />
-      <Box
-        position={[0, 0.005, -180]}
-        scale={[10, 0.05, 430]}
-        color="#70766b"
-      />
-      {[-4.6, 4.6].map((x) => (
-        <Box
-          key={x}
-          position={[x, 0.04, -180]}
-          scale={[0.1, 0.01, 430]}
-          color="#e7e5c8"
-        />
-      ))}
-      {Array.from({ length: 40 }, (_, i) => (
+      <RoadLandscape night={night} distance={distance} />
+      {Array.from({ length: 48 }, (_, i) => (
         <mesh
           ref={(m) => {
             markers.current[i] = m;
           }}
           key={i}
-          position={[0, 0.04, -i * 10]}
+          position={[0, 0.02, roadMarkerZ(i, 0)]}
         >
-          <boxGeometry args={[0.12, 0.015, 3.8]} />
-          <meshStandardMaterial color="#e7dfb7" />
+          <boxGeometry args={[0.1, 0.01, 3.5]} />
+          <meshStandardMaterial color="#ded8b5" />
         </mesh>
       ))}
       {Array.from({ length: 12 }, (_, i) => (
@@ -393,7 +394,7 @@ function World({
           ref={(g) => {
             stages.current[i] = g;
           }}
-          position={[0, 0, -i * 32]}
+          position={[0, 0, roadSectionZ(i, 0)]}
         >
           <group position={[-12.5, 0, -30]} rotation={[0, 0.22, 0]}>
             <PlotBuilding plot={plots[i * 2]} />
@@ -414,23 +415,6 @@ function World({
           ))}
         </group>
       ))}
-      {Array.from({ length: 11 }, (_, i) => (
-        <mesh
-          key={i}
-          position={[(i - 5) * 40, 8, -240 - (i % 3) * 25]}
-          scale={[1.4, 0.7 + (i % 3) * 0.15, 1]}
-        >
-          <icosahedronGeometry args={[40 + (i % 4) * 8, 1]} />
-          <meshStandardMaterial
-            color={i % 2 ? '#879f89' : '#96aa90'}
-            flatShading
-          />
-        </mesh>
-      ))}
-      <mesh position={[-62, 52, -170]}>
-        <sphereGeometry args={[12, 24, 16]} />
-        <meshBasicMaterial color={night ? '#e0e9d5' : '#fff1c2'} />
-      </mesh>
       <Box position={[0, 0.62, 5]} scale={[3.6, 0.18, 2.6]} color="#314941" />
       <Box position={[0, 0.73, 4.4]} scale={[3.2, 0.04, 0.1]} color="#829488" />
     </>
@@ -451,8 +435,12 @@ export default function RoadScene(props: {
         <Canvas
           shadows
           dpr={[1, 1.5]}
-          camera={{ position: [1.7, 2.25, 7], fov: 62, near: 0.1, far: 450 }}
-          gl={{ antialias: true }}
+          camera={{ position: [1.7, 1.9, 7], fov: 68, near: 0.1, far: 500 }}
+          gl={{
+            antialias: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.08,
+          }}
         >
           <World {...props} />
         </Canvas>

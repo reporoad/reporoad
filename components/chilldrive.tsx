@@ -1,27 +1,17 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-} from 'react';
-import { flushSync } from 'react-dom';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import {
   ArrowRight,
-  Check,
   ChevronRight,
   ExternalLink,
   Flag,
-  Headphones,
   MapPin,
   Maximize,
   Moon,
   Music2,
   Pause,
   Play,
-  Radio,
   Route,
   Save,
   Sprout,
@@ -41,9 +31,7 @@ import {
   COLORS,
   STORAGE_KEY,
   TEMPLATES,
-  TRACKS,
   claimPlot,
-  chooseTrack,
   createPlots,
   publishPlot,
   restorePlots,
@@ -51,7 +39,7 @@ import {
   type Plot,
   type Template,
 } from '@/lib/world';
-import { ScenicRadio } from '@/lib/synth';
+import { PLAYLIST, PlaylistPlayer } from '@/lib/playlist';
 
 export default function Chilldrive() {
   const [plots, setPlots] = useState<Plot[]>(() => {
@@ -75,24 +63,15 @@ export default function Chilldrive() {
   const [notice, setNotice] = useState('');
   const [audioOn, setAudioOn] = useState(false);
   const [track, setTrack] = useState(0);
-  const [vote, setVote] = useState<number | null>(null);
-  const [remaining, setRemaining] = useState(45);
   const [volume, setVolume] = useState(30);
-  const radio = useRef<ScenicRadio | null>(null);
-  const voteRef = useRef<number | null>(null);
-  const trackRef = useRef(0);
+  const radio = useRef<PlaylistPlayer | null>(null);
   const plotsRef = useRef(plots);
   useEffect(() => {
     plotsRef.current = plots;
   }, [plots]);
-  const roundEnd = useRef(0);
   const panel = useRef<HTMLElement | null>(null);
   const plot = plots.find((p) => p.id === selected)!;
   const ownedCount = plots.filter((p) => p.status === 'yours').length;
-  const castVote = useCallback((index: number) => {
-    voteRef.current = index;
-    setVote(index);
-  }, []);
 
   useEffect(() => {
     type Tool = {
@@ -134,37 +113,6 @@ export default function Chilldrive() {
           })),
         }),
       },
-      {
-        name: 'vote_chilldrive_demo_music',
-        description:
-          'Cast or replace this browser’s one vote for the next local music round. Does not submit to YouTube.',
-        inputSchema: {
-          type: 'object',
-          properties: { track: { type: 'integer', minimum: 0, maximum: 2 } },
-          required: ['track'],
-          additionalProperties: false,
-        },
-        annotations: { readOnlyHint: false, untrustedContentHint: false },
-        execute: (input) => {
-          const index =
-            input && typeof input === 'object' && 'track' in input
-              ? input.track
-              : undefined;
-          if (
-            typeof index !== 'number' ||
-            !Number.isInteger(index) ||
-            index < 0 ||
-            index > 2
-          )
-            throw new Error('track must be 0, 1 or 2');
-          flushSync(() => castVote(index));
-          return {
-            vote: voteRef.current,
-            name: TRACKS[index].name,
-            scope: 'local demo',
-          };
-        },
-      },
     ];
     for (const tool of tools) {
       try {
@@ -176,33 +124,19 @@ export default function Chilldrive() {
       }
     }
     return () => lifecycle.abort();
-  }, [castVote]);
+  }, []);
 
   useEffect(() => {
-    radio.current = new ScenicRadio();
-    roundEnd.current = Date.now() + 45000;
-    const timer = setInterval(() => {
-      const left = Math.max(
-        0,
-        Math.ceil((roundEnd.current - Date.now()) / 1000),
-      );
-      if (left === 0) {
-        const next = chooseTrack(voteRef.current, trackRef.current);
-        trackRef.current = next;
-        setTrack(next);
-        radio.current?.select(next);
-        voteRef.current = null;
-        setVote(null);
-        roundEnd.current = Date.now() + 45000;
-        setRemaining(45);
-      } else setRemaining(left);
-    }, 250);
+    radio.current = new PlaylistPlayer(setTrack, setAudioOn, () =>
+      setNotice(
+        'The music could not load. Check your connection, then press play to retry.',
+      ),
+    );
     const escape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setBroadcast(false);
     };
     window.addEventListener('keydown', escape);
     return () => {
-      clearInterval(timer);
       radio.current?.dispose();
       window.removeEventListener('keydown', escape);
     };
@@ -288,8 +222,7 @@ export default function Chilldrive() {
       setAudioOn(false);
     } else {
       try {
-        await radio.current?.play(track);
-        setAudioOn(true);
+        await radio.current?.play();
       } catch {
         setNotice(
           'Audio could not start in this browser. Try pressing play again.',
@@ -406,11 +339,11 @@ export default function Chilldrive() {
             </div>
             <div className="radio-text">
               <span className="eyebrow">Chilldrive radio</span>
-              <strong>{TRACKS[track].name}</strong>
+              <strong>{PLAYLIST[track].name}</strong>
               <small>
                 {audioOn
-                  ? TRACKS[track].mood
-                  : 'Press play to listen · original synth music'}
+                  ? PLAYLIST[track].collection + ' · continuous lofi'
+                  : 'Press play · settle into the soundtrack'}
               </small>
             </div>
             <div className="volume">
@@ -439,8 +372,8 @@ export default function Chilldrive() {
             <div>
               <h1>Take the long way home.</h1>
               <p>
-                Settle into the drive, choose the soundtrack, and make a little
-                corner of the road your own.
+                Settle into the drive, enjoy the music, and make a little corner
+                of the road your own.
               </p>
             </div>
             <span className="scenic-label">
@@ -455,11 +388,7 @@ export default function Chilldrive() {
             <span>Made for a slower internet.</span>
           </div>
         </section>
-        <aside
-          className="panel"
-          ref={panel}
-          aria-label="Plots and music voting"
-        >
+        <aside className="panel" ref={panel} aria-label="Roadside plots">
           <div className="panel-heading">
             <div className="eyebrow">Your roadside story</div>
             <h2>A small plot. All yours.</h2>
@@ -822,46 +751,6 @@ export default function Chilldrive() {
               </TabsContent>
             </div>
           </Tabs>
-          <section className="radio-panel" aria-label="Vote for music">
-            <div className="row" style={{ justifyContent: 'space-between' }}>
-              <span className="eyebrow">
-                <Radio
-                  size={12}
-                  style={{ display: 'inline', marginRight: 6 }}
-                />
-                You choose the soundtrack
-              </span>
-              <span className="pill">{remaining}s</span>
-            </div>
-            <h3>Where do we go next?</h3>
-            <p>
-              Choose the next synth track. Your latest choice counts in this
-              local demo round.
-            </p>
-            {TRACKS.map((t, i) => (
-              <button
-                key={t.name}
-                className="vote"
-                aria-pressed={vote === i}
-                onClick={() => castVote(i)}
-              >
-                <span className="row" style={{ gap: 9 }}>
-                  <Headphones size={14} />
-                  {t.name}
-                </span>
-                {vote === i ? (
-                  <span className="row" style={{ gap: 5, fontSize: 12 }}>
-                    Your vote <Check size={13} />
-                  </span>
-                ) : (
-                  <span style={{ color: '#a7ba99' }}>Vote</span>
-                )}
-              </button>
-            ))}
-            <p style={{ margin: '10px 0 0' }}>
-              Original procedural audio · no YouTube votes connected yet.
-            </p>
-          </section>
         </aside>
       </div>
     </main>
