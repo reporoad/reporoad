@@ -4,6 +4,8 @@ import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Plot } from '@/lib/world';
+import { vergeModel } from '@/lib/voxel-models';
+import VoxelModel from './voxel-model';
 import {
   ROAD_LENGTH,
   SECTION_SPACING,
@@ -170,8 +172,8 @@ function Sign({ plot }: { plot: Plot }) {
         plot.status === 'available'
           ? `PLOT ${String(plot.id).padStart(2, '0')}`
           : plot.name;
-      ctx.font = `bold ${title.length > 19 ? 40 : 58}px monospace`;
-      ctx.fillText(title, 384, logo ? 185 : 115, 690);
+      ctx.font = `bold ${title.length > 19 ? 68 : 88}px monospace`;
+      ctx.fillText(title, 384, logo ? 185 : 112, 690);
       ctx.font = '25px sans-serif';
       ctx.fillText(
         plot.status === 'available'
@@ -214,6 +216,23 @@ function Sign({ plot }: { plot: Plot }) {
     </mesh>
   );
 }
+function ShopFlowers({ season, seed }: { season: string; seed: number }) {
+  const parts = useMemo(
+    () =>
+      vergeModel(season, seed).map((part) => ({
+        ...part,
+        position: [
+          Math.sign(part.position[0]) *
+            (2.8 + (Math.abs(part.position[0]) - 5.1) * 0.6),
+          part.position[1] + 0.68,
+          3.8 + part.position[2] * 0.02,
+        ] as [number, number, number],
+      })),
+    [season, seed],
+  );
+  return <VoxelModel parts={parts} shadows={false} />;
+}
+
 export function PlotBuilding({
   plot,
   season = 'Summer',
@@ -266,12 +285,20 @@ export function PlotBuilding({
           />
           {plot.template === 'cabin' || plot.template === 'cafe' ? (
             <>
-              {Array.from({ length: 4 }, (_, i) => (
+              {Array.from({ length: 10 }, (_, i) => (
                 <Box
                   key={i}
-                  position={[0, 3.15 + i * 0.4, -0.4]}
-                  scale={[6.8 - i * 1.4, 0.4, 5.2]}
-                  color={plot.template === 'cabin' ? '#6b4630' : '#4d6c64'}
+                  position={[0, 3.05 + i * 0.16, -0.4]}
+                  scale={[6.8 - i * 0.6, 0.16, 5.2]}
+                  color={
+                    plot.template === 'cabin'
+                      ? i % 2
+                        ? '#6b5842'
+                        : '#78654a'
+                      : i % 2
+                        ? '#616b51'
+                        : '#75805a'
+                  }
                 />
               ))}
               <Box
@@ -316,11 +343,11 @@ export function PlotBuilding({
               <mesh position={[x, 1.35, 1.85]}>
                 <boxGeometry args={[1.3, 1.4, 0.06]} />
                 <meshStandardMaterial
-                  color="#668189"
+                  color="#8a794f"
                   roughness={0.65}
                   metalness={0}
                   emissive="#d0a75a"
-                  emissiveIntensity={0.15}
+                  emissiveIntensity={0.28}
                 />
               </mesh>
               <Box
@@ -350,8 +377,8 @@ export function PlotBuilding({
         </>
       )}
       <group
-        position={billboard ? [0, 0, 0] : [0, 1.4, 0.95]}
-        scale={billboard ? 1 : 0.7}
+        position={billboard ? [0, 0, 0] : [0, 1.9, 0.3]}
+        scale={billboard ? [0.72, 1.1, 1] : [1.22, 0.55, 1]}
       >
         <Sign plot={plot} />
       </group>
@@ -400,7 +427,93 @@ export function PlotBuilding({
         ))}
       {!billboard && (
         <group>
+          <ShopFlowers season={season} seed={plot.id} />
           {/* Timber veranda, deep eaves and flower boxes soften each shop. */}
+          {[-2.85, -0.7, 0.7, 2.85].map((x) => (
+            <Box
+              key={x}
+              position={[x, 1.45, 1.84]}
+              scale={[0.14, 2.8, 0.12]}
+              color="#715636"
+            />
+          ))}
+          {[0.32, 2.75].map((y) => (
+            <Box
+              key={y}
+              position={[0, y, 1.84]}
+              scale={[5.9, 0.15, 0.12]}
+              color="#856841"
+            />
+          ))}
+          {[-1.95, 1.95].map((x) => (
+            <group key={x}>
+              <Box
+                position={[x, 1.35, 1.94]}
+                scale={[1.35, 0.06, 0.06]}
+                color="#a28756"
+              />
+              <Box
+                position={[x, 0.56, 2]}
+                scale={[1.75, 0.12, 0.3]}
+                color="#9c7f4f"
+              />
+              {[-0.37, 0.37].map((dx) => (
+                <Box
+                  key={dx}
+                  position={[x + dx, 1.35, 1.94]}
+                  scale={[0.035, 1.4, 0.06]}
+                  color="#a28756"
+                />
+              ))}
+            </group>
+          ))}
+          <Box
+            position={[0, 1.4, 1.87]}
+            scale={[0.68, 0.86, 0.04]}
+            color="#b2965f"
+          />
+          <Box
+            position={[0, 1.4, 1.9]}
+            scale={[0.035, 0.88, 0.04]}
+            color="#74593b"
+          />
+          <Box
+            position={[0, 1.4, 1.9]}
+            scale={[0.68, 0.035, 0.04]}
+            color="#74593b"
+          />
+          <Box
+            position={[0.4, 0.92, 1.9]}
+            scale={[0.07, 0.07, 0.1]}
+            color="#c2a36c"
+          />
+          {Array.from({ length: 13 }, (_, i) => (
+            <Box
+              key={i}
+              position={[-3 + i * 0.5, 2.58, 3.55]}
+              scale={[0.46, 0.16, 0.25]}
+              color={i % 3 ? '#96914f' : '#a39c5a'}
+            />
+          ))}
+          {[-2.8, 2.8].map((x) => (
+            <group key={x}>
+              <Box
+                position={[x, 2.02, 3.15]}
+                scale={[0.4, 0.46, 0.36]}
+                color="#59462d"
+              />
+              <Box
+                position={[x, 2.02, 3.35]}
+                scale={[0.25, 0.3, 0.04]}
+                color="#e7ba6b"
+              />
+              <Box
+                position={[x, 2.02, 3.38]}
+                scale={[0.035, 0.31, 0.04]}
+                color="#725533"
+              />
+            </group>
+          ))}
           <Box
             position={[0, 0.13, 2.8]}
             scale={[6.5, 0.24, 2]}
@@ -535,7 +648,7 @@ function World({
           }}
           position={[0, 0, roadSectionZ(i, 0)]}
         >
-          <RoadsideVerge season={environment.season} />
+          <RoadsideVerge season={environment.season} seed={i} />
           <group position={[-10, 0, -30]} rotation={[0, 0, 0]}>
             <PlotBuilding plot={plots[i * 2]} season={environment.season} />
           </group>
@@ -592,7 +705,7 @@ export default function RoadScene(props: {
           gl={{
             antialias: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.08,
+            toneMappingExposure: 1.22,
           }}
         >
           <World {...props} />

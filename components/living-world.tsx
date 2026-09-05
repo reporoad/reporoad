@@ -4,6 +4,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { worldAt, type WorldPreview } from '@/lib/live-world';
 import { voxelGrain } from './landscape';
+import { steeringWheelModel, cloudModel } from '@/lib/voxel-models';
+import VoxelModel from './voxel-model';
 export type Environment = ReturnType<typeof worldAt>;
 export type SharedClock = { current: { now: () => number } };
 function Block({
@@ -38,6 +40,7 @@ export function SkyCycle({
   clock: SharedClock;
   preview?: WorldPreview;
 }) {
+  const clouds = useMemo(() => cloudModel(), []);
   const sun = useRef<THREE.Mesh>(null),
     moon = useRef<THREE.Mesh>(null),
     light = useRef<THREE.DirectionalLight>(null),
@@ -56,17 +59,17 @@ export function SkyCycle({
     moon.current?.position.set(-cos * 140, -sin * 130, -170);
     if (light.current) {
       light.current.position.set(-cos * 60, Math.max(12, sin * 45), -40);
-      light.current.intensity = 0.2 + w.daylight * 2.3;
-      light.current.color.set('#ffd39a');
+      light.current.intensity = 0.25 + w.daylight * 3.1;
+      light.current.color.set('#ffe2b5');
     }
-    if (ambient.current) ambient.current.intensity = 0.45 + w.daylight * 1.4;
+    if (ambient.current) ambient.current.intensity = 0.5 + w.daylight * 1.3;
     color.current
       .set('#142638')
       .lerp(
         new THREE.Color('#d3b595'),
         Math.max(0, 1 - Math.abs(sin) * 3) * 0.7,
       )
-      .lerp(new THREE.Color('#efd4a4'), w.daylight * 0.9);
+      .lerp(new THREE.Color('#e9d9b7'), w.daylight * 0.9);
     color.current.lerp(new THREE.Color('#6a7c85'), (w.rain + w.snow) * 0.35);
     scene.background = color.current;
     if (scene.fog instanceof THREE.Fog) {
@@ -87,45 +90,47 @@ export function SkyCycle({
             'varying vec3 direction; void main(){ direction = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }'
           }
           fragmentShader={
-            'varying vec3 direction; uniform float daylight; uniform float wet; void main(){ float h = smoothstep(0.0,0.8,normalize(direction).y); vec3 day = mix(vec3(0.94,0.79,0.55),vec3(0.48,0.64,0.68),h); vec3 night = mix(vec3(0.09,0.15,0.21),vec3(0.035,0.07,0.13),h); vec3 sky = mix(night,day,daylight); gl_FragColor = vec4(mix(sky,vec3(0.38,0.43,0.45),wet*0.45),1.0); }'
+            'varying vec3 direction; uniform float daylight; uniform float wet; void main(){ float h = smoothstep(0.0,0.8,normalize(direction).y); vec3 day = mix(vec3(0.94,0.85,0.69),vec3(0.54,0.68,0.76),h); vec3 night = mix(vec3(0.09,0.15,0.21),vec3(0.035,0.07,0.13),h); vec3 sky = mix(night,day,daylight); gl_FragColor = vec4(mix(sky,vec3(0.38,0.43,0.45),wet*0.45),1.0); }'
           }
         />
       </mesh>
       <fog attach="fog" args={['#a9c8cc', 90, 265]} />
       <mesh ref={sun}>
         <boxGeometry args={[17, 17, 2]} />
-        <meshBasicMaterial color="#ffdf97" fog={false} />
+        <meshBasicMaterial color="#fff9dc" fog={false} toneMapped={false} />
+        <mesh position={[0, 0, -1.1]}>
+          <planeGeometry args={[65, 65]} />
+          <shaderMaterial
+            transparent
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            vertexShader={
+              'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }'
+            }
+            fragmentShader={
+              'varying vec2 vUv; void main(){float a=pow(max(0.0,1.0-length(vUv-0.5)*2.0),3.0)*0.24;gl_FragColor=vec4(1.0,0.78,0.38,a); }'
+            }
+          />
+        </mesh>
       </mesh>
       <mesh ref={moon}>
         <boxGeometry args={[12, 12, 2]} />
         <meshBasicMaterial color="#e0e8f4" fog={false} />
       </mesh>
-      <hemisphereLight ref={ambient} args={['#e9dfc1', '#84765e', 1]} />
+      <hemisphereLight ref={ambient} args={['#d7e3e8', '#9a927a', 1]} />
       <directionalLight
         ref={light}
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-50}
-        shadow-camera-right={50}
-        shadow-camera-top={90}
-        shadow-camera-bottom={-45}
+        shadow-camera-left={-32}
+        shadow-camera-right={32}
+        shadow-camera-top={55}
+        shadow-camera-bottom={-30}
         shadow-camera-far={180}
         shadow-normalBias={0.05}
         shadow-radius={3}
       />
-      {Array.from({ length: 7 }, (_, i) => (
-        <group
-          key={i}
-          position={[
-            ((i % 3) - 1) * 70,
-            40 + Math.floor(i / 3) * 9,
-            -80 - Math.floor(i / 3) * 65,
-          ]}
-        >
-          <Block position={[0, 0, 0]} scale={[24, 2, 10]} color="#cbd2d0" />
-          <Block position={[6, 1, -3]} scale={[13, 3, 11]} color="#d8dbd2" />
-        </group>
-      ))}
+      <VoxelModel parts={clouds} shadows={false} />
     </>
   );
 }
@@ -193,6 +198,7 @@ export function VoxelCabin({
   environment: Environment;
   clock: SharedClock;
 }) {
+  const wheel = useMemo(() => steeringWheelModel(), []);
   const wipers = useRef<(THREE.Group | null)[]>([]);
   const cabin = useRef<THREE.Group>(null);
   const rear = useMemo(() => {
@@ -206,19 +212,23 @@ export function VoxelCabin({
   useEffect(() => () => rear.target.dispose(), [rear]);
   const { size } = useThree();
   const frameX = Math.max(1.2, (size.width / size.height) * 1.32);
-  useFrame(({ gl, scene }) => {
-    const now = clock.current.now();
+  useFrame(({ gl, scene, clock: renderClock }) => {
+    // Refresh cadence must not stall when the shared clock is corrected.
+    const now = renderClock.elapsedTime * 1000;
     if (cabin.current && now - lastMirrorFrame.current > 500) {
       lastMirrorFrame.current = now;
       const target = gl.getRenderTarget();
       const shadows = gl.shadowMap.autoUpdate;
       gl.shadowMap.autoUpdate = false;
       cabin.current.visible = false;
-      gl.setRenderTarget(rear.target);
-      gl.render(scene, rear.camera);
-      gl.setRenderTarget(target);
-      gl.shadowMap.autoUpdate = shadows;
-      cabin.current.visible = true;
+      try {
+        gl.setRenderTarget(rear.target);
+        gl.render(scene, rear.camera);
+      } finally {
+        gl.setRenderTarget(target);
+        gl.shadowMap.autoUpdate = shadows;
+        cabin.current.visible = true;
+      }
     }
     const sweep =
       environment.rain > 0.05
@@ -258,6 +268,56 @@ export function VoxelCabin({
         scale={[0.3, 0.035, 0.025]}
         color="#343e30"
       />
+      {/* Recessed vents and console controls, kept below the windshield. */}
+      {[-1.78, 1.55].map((x) => (
+        <group key={x}>
+          <Block
+            position={[x, -0.77, -1.4]}
+            scale={[0.28, 0.22, 0.055]}
+            color="#8c7957"
+          />
+          <Block
+            position={[x, -0.77, -1.365]}
+            scale={[0.23, 0.17, 0.02]}
+            color="#29362b"
+          />
+          {[-0.05, 0, 0.05].map((y) => (
+            <Block
+              key={y}
+              position={[x, -0.77 + y, -1.35]}
+              scale={[0.2, 0.014, 0.018]}
+              color="#697259"
+            />
+          ))}
+        </group>
+      ))}
+      <Block
+        position={[-0.38, -0.91, -1.42]}
+        scale={[0.63, 0.1, 0.045]}
+        color="#66533a"
+      />
+      {[-0.62, -0.5, -0.38, -0.26, -0.14].map((x, i) => (
+        <group key={x}>
+          <Block
+            position={[x, -0.905, -1.385]}
+            scale={[0.075, 0.065, 0.035]}
+            color={i === 4 ? '#8f5135' : '#353e2e'}
+          />
+          <Block
+            position={[x, -0.902, -1.363]}
+            scale={[0.025, 0.012, 0.01]}
+            color="#c5ab6e"
+          />
+        </group>
+      ))}
+      {[-0.75, 0.02].map((x) => (
+        <Block
+          key={x}
+          position={[x, -0.77, -1.4]}
+          scale={[0.038, 0.28, 0.05]}
+          color="#313c2d"
+        />
+      ))}
       {/* Slim, continuous frame. Dark seals sit against the glass opening. */}
       {[-1, 1].map((side) => (
         <group key={side}>
@@ -308,50 +368,8 @@ export function VoxelCabin({
         scale={[0.8, 0.24, 0.28]}
         color="#39423a"
       />
-      {/* Stepped rim: a single voxel silhouette with three joined spokes. */}
-      <group position={[0.58, -0.64, -1.28]}>
-        <Block
-          position={[0, -0.18, -0.12]}
-          scale={[0.12, 0.42, 0.22]}
-          color="#353c32"
-        />
-        {[-1, 1].map((side) => (
-          <group key={side}>
-            <Block
-              position={[0, side * 0.29, 0]}
-              scale={[0.38, 0.075, 0.09]}
-              color="#3a352d"
-            />
-            <Block
-              position={[side * 0.29, 0, 0]}
-              scale={[0.075, 0.38, 0.09]}
-              color="#3a352d"
-            />
-            {[-1, 1].map((y) => (
-              <Block
-                key={y}
-                position={[side * 0.235, y * 0.235, 0]}
-                scale={[0.14, 0.14, 0.09]}
-                color="#3a352d"
-              />
-            ))}
-            <Block
-              position={[side * 0.16, 0, 0]}
-              scale={[0.24, 0.055, 0.07]}
-              color="#74624a"
-            />
-          </group>
-        ))}
-        <Block
-          position={[0, -0.16, 0]}
-          scale={[0.055, 0.24, 0.07]}
-          color="#74624a"
-        />
-        <Block
-          position={[0, 0, 0.025]}
-          scale={[0.19, 0.13, 0.1]}
-          color="#514b3b"
-        />
+      <group position={[0.65, -0.76, -1.4]}>
+        <VoxelModel parts={wheel} />
       </group>
       {/* Each wiper pivots at its own mount; blades park along the dash. */}
       {[-0.8, 0.72].map((x, i) => (

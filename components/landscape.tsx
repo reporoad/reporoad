@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { treeModel, vergeModel } from '@/lib/voxel-models';
+import VoxelModel from './voxel-model';
 
 function surfaceTexture(seed: number, size = 16) {
   const data = new Uint8Array(size * size * 4);
@@ -41,81 +43,10 @@ export function LandscapeTree({
   pine?: boolean;
   season?: string;
 }) {
-  const crowns = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    if (!crowns.current) return;
-    const transform = new THREE.Object3D();
-    for (let i = 0; i < (pine ? 7 : 95); i++) {
-      const positions = [
-        [0, 2.5, 0],
-        [-0.8, 2.5, 0],
-        [0.8, 2.5, 0],
-        [0, 2.5, -0.8],
-        [0, 2.5, 0.8],
-        [0, 3.3, 0],
-        [0.6, 3.3, 0.6],
-      ];
-      if (pine) {
-        transform.position.set(0, 1.8 + (i % 7) * 0.4, 0);
-        const width = 2.7 - Math.floor((i % 7) / 2) * 0.65;
-        transform.scale.set(width, 0.65, width);
-      } else {
-        const ring =
-          i < 7
-            ? positions[i]
-            : [
-                Math.sin(i * 2.4) * (1.1 + (i % 5) * 0.13),
-                2.2 + (i % 5) * 0.36,
-                Math.cos(i * 2.4) * (1.1 + (i % 3) * 0.2),
-              ];
-        transform.position.set(...(ring as [number, number, number]));
-        transform.scale.set(
-          i < 7 ? 1.15 : 0.48,
-          i < 7 ? 1 : 0.48,
-          i < 7 ? 1.15 : 0.7,
-        );
-      }
-      transform.rotation.set(0, 0, 0);
-      transform.updateMatrix();
-      crowns.current.setMatrixAt(i, transform.matrix);
-      crowns.current.setColorAt(
-        i,
-        new THREE.Color(
-          season === 'Winter'
-            ? '#cbdad0'
-            : season === 'Autumn'
-              ? i % 2
-                ? '#b5813f'
-                : '#a55732'
-              : season === 'Spring' && i % 3 === 0
-                ? '#cda6a2'
-                : pine
-                  ? '#536f39'
-                  : '#7c8d3f',
-        ).multiplyScalar(0.9 + (i % 3) * 0.12),
-      );
-    }
-    crowns.current.count = pine ? 7 : 95;
-    crowns.current.instanceMatrix.needsUpdate = true;
-    if (crowns.current.instanceColor)
-      crowns.current.instanceColor.needsUpdate = true;
-    crowns.current.computeBoundingSphere();
-  }, [pine, season]);
+  const parts = useMemo(() => treeModel(pine, season), [pine, season]);
   return (
     <group position={position} scale={scale}>
-      <mesh position={[0, 1.5, 0]} castShadow>
-        <boxGeometry args={[0.45, 3, 0.45]} />
-        <meshStandardMaterial color="#665744" roughness={1} />
-      </mesh>
-      <instancedMesh
-        ref={crowns}
-        args={[undefined, undefined, 95]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry />
-        <meshStandardMaterial roughness={0.95} map={voxelGrain} />
-      </instancedMesh>
+      <VoxelModel parts={parts} />
     </group>
   );
 }
@@ -134,7 +65,7 @@ export function RoadLandscape({
   const gravelMaterial = useRef<THREE.MeshStandardMaterial>(null);
   const asphalt = useMemo(() => {
     const t = surfaceTexture(71);
-    t.repeat.set(2.5, 110);
+    t.repeat.set(10, 220);
     return t;
   }, []);
   const grass = useMemo(() => {
@@ -160,7 +91,7 @@ export function RoadLandscape({
     const roadMap = roadMaterial.current?.map;
     const grassMap = grassMaterial.current?.map;
     const gravelMap = gravelMaterial.current?.map;
-    if (roadMap) roadMap.offset.y = -distance.current / 4;
+    if (roadMap) roadMap.offset.y = -distance.current / 2;
     if (gravelMap) gravelMap.offset.y = -distance.current / 4.4;
     if (grassMap) grassMap.offset.y = -distance.current / (850 / 95);
   });
@@ -181,7 +112,7 @@ export function RoadLandscape({
                 ? '#a99a59'
                 : night
                   ? '#375c43'
-                  : '#9a9d55'
+                  : '#8d9f58'
           }
           map={grass}
           roughness={1}
@@ -330,44 +261,15 @@ function DistantValley({ season }: { season: string }) {
   );
 }
 
-export function RoadsideVerge({ season }: { season: string }) {
-  const plants = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    if (!plants.current) return;
-    const m = new THREE.Object3D();
-    for (let i = 0; i < 360; i++) {
-      const side = i % 2 ? 1 : -1;
-      const flower = i % 3 === 0;
-      m.position.set(
-        side * (4.2 + ((((Math.sin(i * 87.31) * 43758.54) % 1) + 1) % 1) * 1.8),
-        flower ? 0.3 : 0.13,
-        -((((Math.sin(i * 23.17) * 17843.17) % 1) + 1) % 1) * 32,
-      );
-      m.scale.set(flower ? 0.16 : 0.14, flower ? 0.16 : 0.32, 0.14);
-      m.updateMatrix();
-      plants.current.setMatrixAt(i, m.matrix);
-      plants.current.setColorAt(
-        i,
-        new THREE.Color(
-          season === 'Winter'
-            ? '#dce4df'
-            : flower
-              ? ['#d9ac68', '#b49abf', '#ddcca1'][i % 3]
-              : '#8c954c',
-        ),
-      );
-    }
-    plants.current.instanceMatrix.needsUpdate = true;
-    if (plants.current.instanceColor)
-      plants.current.instanceColor.needsUpdate = true;
-    plants.current.computeBoundingSphere();
-  }, [season]);
-  return (
-    <instancedMesh ref={plants} args={[undefined, undefined, 360]} castShadow>
-      <boxGeometry />
-      <meshStandardMaterial roughness={1} />
-    </instancedMesh>
-  );
+export function RoadsideVerge({
+  season,
+  seed = 0,
+}: {
+  season: string;
+  seed?: number;
+}) {
+  const parts = useMemo(() => vergeModel(season, seed), [season, seed]);
+  return <VoxelModel parts={parts} shadows={false} />;
 }
 
 function VoxelHills({ night, season }: { night: boolean; season: string }) {
@@ -402,7 +304,7 @@ function VoxelHills({ night, season }: { night: boolean; season: string }) {
           tops.current.setMatrixAt(i, m.matrix);
           dirt.current.setColorAt(
             i,
-            new THREE.Color('#8e7152').multiplyScalar(0.85 + (i % 4) * 0.05),
+            new THREE.Color('#71824a').multiplyScalar(0.85 + (i % 4) * 0.05),
           );
           tops.current.setColorAt(
             i,
