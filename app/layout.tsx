@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Chilldrive — a little place along the way',
+  title: 'Chilldrive — a world of repositories',
   description:
-    'Take the scenic route. Explore roadside plots, customise your own little shop, and enjoy a continuous lofi soundtrack in the Chilldrive prototype.',
+    'Take a cosy voxel drive through open source. Explore GitHub repository buildings whose floors reflect their stars, with community chat and a shared lofi soundtrack.',
 };
 
 export default function RootLayout({

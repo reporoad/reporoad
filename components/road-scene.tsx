@@ -36,6 +36,8 @@ import {
 } from './living-world';
 import { worldAt, type WorldPreview } from '@/lib/live-world';
 import SceneFinish from './scene-finish';
+import RepositoryBuilding from './repository-building';
+import type { Repository } from '@/lib/repositories';
 
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -593,6 +595,7 @@ export const PlotBuilding = memo(function PlotBuilding({
 });
 function World({
   plots,
+  repositories,
   playing,
   environment,
   clock,
@@ -601,6 +604,7 @@ function World({
   focus,
 }: {
   plots: Plot[];
+  repositories?: Repository[];
   playing: boolean;
   environment: Environment;
   clock: SharedClock;
@@ -663,10 +667,31 @@ function World({
         >
           <RoadsideVerge season={environment.season} seed={i} />
           <group position={[-10, 0, -30]} scale={[1, 1.25, 1]}>
-            <PlotBuilding plot={plots[i * 2]} season={environment.season} />
+            {repositories ? (
+              repositories[i * 2] && (
+                <RepositoryBuilding
+                  repo={repositories[i * 2]}
+                  season={environment.season}
+                />
+              )
+            ) : (
+              <PlotBuilding plot={plots[i * 2]} season={environment.season} />
+            )}
           </group>
           <group position={[10, 0, -30]} scale={[1, 1.25, 1]}>
-            <PlotBuilding plot={plots[i * 2 + 1]} season={environment.season} />
+            {repositories ? (
+              repositories[i * 2 + 1] && (
+                <RepositoryBuilding
+                  repo={repositories[i * 2 + 1]}
+                  season={environment.season}
+                />
+              )
+            ) : (
+              <PlotBuilding
+                plot={plots[i * 2 + 1]}
+                season={environment.season}
+              />
+            )}
           </group>
           {i % 3 === 0 && <RoadsideAnimal clock={clock} index={i} />}
           {[-1, 1].map((side) => (
@@ -698,6 +723,7 @@ function World({
 }
 export default function RoadScene(props: {
   plots: Plot[];
+  repositories?: Repository[];
   playing: boolean;
   environment: Environment;
   clock: SharedClock;
@@ -708,7 +734,7 @@ export default function RoadScene(props: {
   return (
     <figure
       className="scene"
-      aria-label="A moving 3D countryside road with customisable shops and plots on both sides"
+      aria-label="A moving 3D road through a voxel town of GitHub repository buildings"
     >
       <SceneBoundary>
         <Canvas

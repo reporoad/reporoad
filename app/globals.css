@@ -790,6 +790,176 @@ button svg {
   }
 }
 
+/* Repository directory: compact working surface beside the shared drive. */
+.repo-brand-label {
+  font:
+    500 13px/1.4 var(--font-sans),
+    sans-serif;
+  color: var(--muted-foreground);
+  margin-left: 12px;
+}
+.repo-panel {
+  min-width: 0;
+  align-self: start;
+}
+.repo-directory-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+.repo-directory-head h2,
+.repo-style-guide h2 {
+  font-size: 20px;
+  margin: 0;
+}
+.repo-directory-head > span {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.repo-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.repo-search input {
+  min-width: 0;
+}
+.repo-data-status {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  margin: 12px 0 16px;
+}
+.repo-list {
+  display: grid;
+  gap: 12px;
+  max-height: 760px;
+  overflow: auto;
+  padding-right: 4px;
+}
+.repo-card {
+  background: #192920;
+  border: 1px solid #34473a;
+  border-radius: 10px;
+  padding: 16px;
+}
+.repo-card.is-selected {
+  border-color: var(--primary);
+}
+.repo-card-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+.repo-card-title strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.repo-floor-count {
+  white-space: nowrap;
+  color: var(--primary);
+  font-size: 13px;
+}
+.repo-card p {
+  font-size: 14px;
+  color: #bac7b8;
+  line-height: 1.6;
+  margin: 8px 0 12px;
+}
+.repo-card-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: #cad5ba;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.repo-card-meta span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.repo-card .btn {
+  font-size: 13px;
+  padding: 7px 10px;
+  min-height: 34px;
+}
+.repo-style-guide {
+  display: grid;
+  gap: 16px;
+  font-size: 15px;
+  line-height: 1.65;
+  min-width: 0;
+}
+.repo-style-guide h2 {
+  line-height: 1.3;
+}
+.repo-style-guide p {
+  margin: 0;
+}
+.repo-style-guide code {
+  overflow-wrap: anywhere;
+  color: #d6e7a4;
+}
+.repo-style-guide pre {
+  background: #0c1911;
+  border: 1px solid #34473a;
+  border-radius: 8px;
+  padding: 16px;
+  overflow: auto;
+  font-size: 14px;
+  margin: 0;
+}
+.repo-style-guide label {
+  display: grid;
+  gap: 8px;
+}
+.repo-style-guide ul {
+  padding-left: 20px;
+  margin: 0;
+}
+.repo-config-state {
+  padding: 12px;
+  background: #26372a;
+  border-radius: 6px;
+}
+.repo-rule {
+  font-size: 14px;
+  color: #c1cdbb;
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+.repo-scene-caption {
+  font-size: 13px;
+  color: #e4ebdc;
+  text-shadow: 0 1px 4px #000;
+}
+.repo-empty {
+  padding: 24px 0;
+  color: var(--muted-foreground);
+}
+@media (max-width: 700px) {
+  .repo-brand-label {
+    display: none;
+  }
+  .repository-world .topbar .btn {
+    font-size: 12px;
+  }
+  .repo-card-title {
+    flex-wrap: wrap;
+  }
+  .repo-list {
+    max-height: none;
+  }
+  .repo-scene-caption {
+    max-width: 55%;
+    font-size: 11px;
+  }
+}
+
 /* Keep the scene unobstructed; the cockpit is the driving interface. */
 .drive-top > div,
 .drive-meta {

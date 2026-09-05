@@ -1,4 +1,10 @@
 import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core';
+export const repositoryWorldCache = sqliteTable('repository_world_cache', {
+  id: text('id').primaryKey(),
+  payload: text('payload').notNull(),
+  refreshedAt: integer('refreshed_at').notNull(),
+  refreshAfter: integer('refresh_after').notNull(),
+});
 export const messages = sqliteTable(
   'chat_messages',
   {
