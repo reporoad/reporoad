@@ -712,7 +712,7 @@ export default function RoadScene(props: {
     >
       <SceneBoundary>
         <Canvas
-          shadows="soft"
+          shadows="percentage"
           dpr={[1, 2]}
           camera={{ position: [1.7, 1.9, 7], fov: 68, near: 0.1, far: 500 }}
           gl={{
