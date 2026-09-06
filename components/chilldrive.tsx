@@ -31,6 +31,7 @@ import { usePresence } from './use-presence';
 import { useChickens } from './use-chickens';
 import { PLAYLIST, PLAYLIST_EPOCH, playlistMix, PlaylistPlayer } from '@/lib/playlist';
 import { RadioContext } from './radio-context';
+import { broadcastStatus } from '@/lib/broadcast-status';
 import RepositoryAvatar from './repository-avatar';
 import { worldAt, SEASONS, type WorldPreview } from '@/lib/live-world';
 import {
@@ -74,6 +75,7 @@ export default function RepoRoad() {
   });
   const [now, setNow] = useState(Date.now);
   const chickens = useChickens(now);
+  const crossingStatus = broadcastStatus(chickens);
   const [synced, setSynced] = useState(false);
   const clock = useRef({ now: () => Date.now() });
   const modeRef = useRef(mode);
@@ -301,6 +303,14 @@ export default function RepoRoad() {
     return (
       <main className="app broadcast">
         {scene}
+        <aside className="broadcast-crossing" aria-label="Chicken crossing status">
+          <span className="broadcast-crossing-icon" aria-hidden="true">🐔</span>
+          <div>
+            <strong>{crossingStatus.headline}</strong>
+            <span>{crossingStatus.detail}</span>
+            <small>Add chickens at reporoad.suppers.chatgpt.site</small>
+          </div>
+        </aside>
         <button
           className="btn broadcast-exit"
           onClick={() => setBroadcast(false)}

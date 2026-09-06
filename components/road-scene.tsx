@@ -57,7 +57,7 @@ class SceneBoundary extends Component<
         <p>
           Enable hardware acceleration or try another browser.
           <br />
-          You can still use the plot editor below.
+          This source needs a browser with working WebGL graphics.
         </p>
       </div>
     ) : (
@@ -774,6 +774,7 @@ export default function RoadScene(props: {
     >
       <SceneBoundary>
         <Canvas
+          fallback={<div className="scene-fallback"><strong>RepoRoad needs WebGL to render the drive.</strong><p>This browser source does not provide a compatible 3D renderer.</p></div>}
           shadows="percentage"
           dpr={[1, 2]}
           camera={{ position: [1.7, 1.9, 7], fov: 68, near: 0.1, far: 500 }}
