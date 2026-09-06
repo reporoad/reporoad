@@ -6,9 +6,15 @@ const noStore = { 'Cache-Control': 'no-store' };
 export async function GET(request: Request) {
   try {
     const now = Date.now();
-    const cache = (caches as unknown as { default?: Cache }).default;
     const key = new Request(new URL(`/api/chickens?bucket=${Math.floor(now / 5000)}`, request.url));
-    const cached = await cache?.match(key);
+    let cache: Cache | undefined;
+    let cached: Response | undefined;
+    // Some hosted runtimes do not expose the Cache API. It is an optimization,
+    // never a prerequisite for reading the authoritative D1 schedule.
+    try {
+      cache = typeof caches === 'undefined' ? undefined : (caches as unknown as { default?: Cache }).default;
+      cached = await cache?.match(key);
+    } catch { cache = undefined; }
     // Vinext adds response headers; Cache API responses have immutable headers.
     if (cached && now < (await cached.clone().json() as {stopAt: number}).stopAt) {
       const response = new Response(cached.body, cached);
@@ -19,10 +25,13 @@ export async function GET(request: Request) {
     const rows = await database().prepare('SELECT round, SUM(total) AS total FROM chicken_clicks WHERE round >= ? AND round <= ? GROUP BY round').bind(round - 1, round).all<{round: number; total: number}>();
     const response = Response.json({ ...schedule, queued: rows.results.find(r => r.round === round)?.total || 0 },
       { headers: { 'Cache-Control': 'public, max-age=5' } });
-    await cache?.put(key, response.clone());
+    try { await cache?.put(key, response.clone()); } catch { /* Keep the fresh database response. */ }
     response.headers.set('Cache-Control', 'no-store');
     return response;
-  } catch { return Response.json({ error: 'Chicken crossing is temporarily unavailable.' }, { status: 503, headers: noStore }); }
+  } catch (error) {
+    console.error('Chicken schedule GET failed', error instanceof Error ? error.message : 'Unknown error');
+    return Response.json({ error: 'Chicken crossing is temporarily unavailable.' }, { status: 503, headers: noStore });
+  }
 }
 export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin)
