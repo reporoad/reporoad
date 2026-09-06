@@ -41,7 +41,7 @@ test('chat validates text without interpreting markup', () => {
   assert.equal(messageBody('<script>hi</script>'), '<script>hi</script>');
 });
 
-test('late joiners hear the same track position without autoplay', () => {
+test('late joiners hear the same crossfaded track position without autoplay', async () => {
   const audio = {
     src: '',
     paused: true,
@@ -62,11 +62,13 @@ test('late joiners hear the same track position without autoplay', () => {
     () => {},
     () => {},
     audio,
+    { ...audio },
   );
   player.sync(EPOCH + 210000);
+  assert.equal(audio.plays, 0);
+  await player.play();
   assert.equal(selected, 1);
   assert.equal(audio.src, PLAYLIST[1].src);
-  assert.ok(Math.abs(audio.currentTime - 10.008) < 0.001);
-  assert.equal(audio.plays, 0);
+  assert.ok(Math.abs(audio.currentTime - 15.008) < 0.1);
   player.dispose();
 });

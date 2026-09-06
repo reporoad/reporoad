@@ -1,7 +1,10 @@
 'use client';
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
+import { Send } from 'lucide-react';
 type Message = { id: number; name: string; body: string; createdAt: number };
-export default function LiveChat() {
+export default function LiveChat({ online }: { online: number | null }) {
+  const [signedIn, setSignedIn] = useState(false);
+  const [signInUrl, setSignInUrl] = useState('/signin-with-chatgpt?return_to=%2F');
   const [messages, setMessages] = useState<Message[]>([]),
     [body, setBody] = useState(''),
     [error, setError] = useState(''),
@@ -20,9 +23,11 @@ export default function LiveChat() {
           signal: controller.signal,
         });
         if (!r.ok) throw Error();
-        const data = (await r.json()) as { messages: Message[] };
+        const data = (await r.json()) as { messages: Message[]; signedIn: boolean; signInUrl: string };
         if (!stopped) {
           setMessages(data.messages);
+          setSignedIn(data.signedIn);
+          setSignInUrl(data.signInUrl);
           setConnected(true);
         }
       } catch {
@@ -72,9 +77,8 @@ export default function LiveChat() {
     <section className="live-chat">
       <div className="chat-heading">
         <strong>Along for the ride</strong>
-        <span className="pill">{connected ? 'Connected' : 'Connecting…'}</span>
+        <span className="pill" title="Active browsers in the last 90 seconds, including guests">{online === null ? 'Online count unavailable' : `${online} online`}</span>
       </div>
-      <p className="fine">One road. A little company along the way.</p>
       <div
         className="messages"
         ref={list}
@@ -111,36 +115,34 @@ export default function LiveChat() {
           ))
         )}
       </div>
-      <form onSubmit={send}>
-        <label htmlFor="chat-message" className="field-label">
-          Message the car
+      {!signedIn ? <a className="chat-sign-in" href={signInUrl} target="_top">Sign in to say hello…</a> : <form onSubmit={send}>
+        <label htmlFor="chat-message" className="sr-only">
+          Chat message
         </label>
+        <div className="chat-compose">
         <textarea
           id="chat-message"
           maxLength={300}
-          rows={2}
+          rows={1}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Say hello…"
         />
-        <div
-          className="row"
-          style={{ justifyContent: 'space-between', marginTop: 8 }}
-        >
-          <span className="fine">{body.length}/300</span>
           <button
-            className="btn primary"
+            className="btn icon"
+            aria-label={sending ? 'Sending message' : 'Send message'}
             disabled={sending || !connected || !body.trim()}
           >
-            {sending ? 'Sending…' : 'Send'}
+            <Send size={20} />
           </button>
         </div>
+        <div className="chat-compose-meta"><span>{connected ? 'Along for the ride' : 'Reconnecting…'}</span><span>{body.length}/300</span></div>
         {error && (
           <p role="alert" className="fine">
             {error}
           </p>
         )}
-      </form>
+      </form>}
     </section>
   );
 }

@@ -2,10 +2,19 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { worldAt, type WorldPreview } from '@/lib/live-world';
 import { voxelGrain } from './landscape';
 import { steeringWheelModel, cloudModel } from '@/lib/voxel-models';
+import { driverSeatPosition, driverSeatScale, wheelPosition, wheelScale, wheelRotation } from '@/lib/cabin-layout';
 import VoxelModel from './voxel-model';
+import { cabinDashboardModel, cabinSurroundModel } from '@/lib/cabin-model';
+import CabinMaterial from './cabin-material';
+import { cabinPadGeometry } from '@/lib/cabin-pad';
+import { cabinBolsterGeometry, cabinCushionGeometry, shadeCabinFabric } from '@/lib/cabin-cushion';
+import { cabinMirror } from '@/lib/cabin-mirror';
+RectAreaLightUniformsLib.init();
 export type Environment = ReturnType<typeof worldAt>;
 export type SharedClock = { current: { now: () => number } };
 function Block({
@@ -13,22 +22,56 @@ function Block({
   scale,
   color,
   glow = 0,
+  grain = true,
+  fabric = false,
+  wood = false,
+  cushion = false,
 }: {
   position: [number, number, number];
   scale: [number, number, number];
   color: string;
   glow?: number;
+  grain?: boolean;
+  fabric?: boolean;
+  wood?: boolean;
+  cushion?: boolean;
 }) {
+  const softenedGeometry = useMemo(
+    () => {
+      if (cushion) return cabinCushionGeometry(scale);
+      if (grain) return null;
+      const geometry = new RoundedBoxGeometry(
+        scale[0], scale[1], scale[2], 1,
+        Math.min(0.005, Math.min(...scale) * 0.1),
+      );
+      return fabric ? shadeCabinFabric(geometry) : geometry;
+    },
+    [cushion, fabric, grain, scale[0], scale[1], scale[2]],
+  );
+  useEffect(() => () => softenedGeometry?.dispose(), [softenedGeometry]);
   return (
     <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={scale} />
-      <meshStandardMaterial
-        map={voxelGrain}
-        color={color}
-        roughness={0.88}
-        emissive={color}
-        emissiveIntensity={glow}
-      />
+      {softenedGeometry ? (
+        <primitive object={softenedGeometry} attach="geometry" />
+      ) : (
+        <boxGeometry args={scale} />
+      )}
+      {!grain && !glow ? (
+        <CabinMaterial
+          color={color}
+          fabric={fabric}
+          wood={wood}
+          vertexColors={cushion || fabric}
+        />
+      ) : (
+        <meshStandardMaterial
+          map={grain ? voxelGrain : undefined}
+          color={color}
+          roughness={0.88}
+          emissive={color}
+          emissiveIntensity={glow}
+        />
+      )}
     </mesh>
   );
 }
@@ -122,6 +165,8 @@ export function SkyCycle({
         <meshBasicMaterial color="#e0e8f4" fog={false} />
       </mesh>
       <hemisphereLight ref={ambient} args={['#d7e3e8', '#9a927a', 1]} />
+      {/* Radius zero keeps hardware PCF filtering without the screen-space
+          rotated sampling pattern that stippled the cabin's sunlit edges. */}
       <directionalLight
         ref={light}
         castShadow
@@ -133,7 +178,7 @@ export function SkyCycle({
         shadow-camera-far={180}
         shadow-normalBias={0.035}
         shadow-bias={-0.00015}
-        shadow-radius={3}
+        shadow-radius={0}
       />
       <VoxelModel parts={clouds} shadows={false} />
     </>
@@ -145,54 +190,129 @@ export function SkyCycle({
 function DashboardPanel({ radio = false }: { radio?: boolean }) {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 160;
+    canvas.width = 768;
+    canvas.height = 240;
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#19221a';
-    ctx.fillRect(0, 0, 512, 160);
-    ctx.strokeStyle = '#79613e';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(4, 4, 504, 152);
-    ctx.fillStyle = '#e6b56b';
-    ctx.font = '24px monospace';
+    ctx.fillStyle = '#161b15';
+    ctx.fillRect(0, 0, 768, 240);
+    const amber = radio ? '#c67e32' : '#de8246';
+    ctx.fillStyle = amber;
+    ctx.font = '30px monospace';
     if (radio) {
-      ctx.fillText('CHILLDRIVE', 28, 48);
-      ctx.font = '17px monospace';
-      ctx.fillText('LOFI RADIO', 28, 79);
-      for (let i = 0; i < 22; i++)
-        ctx.fillRect(
-          28 + i * 20,
-          132 - ((i % 5) + 1) * 7,
-          11,
-          ((i % 5) + 1) * 7,
-        );
+      ctx.font = '51px monospace';
+      ctx.fillText('REPOROAD', 80, 80);
+      ctx.font = '57px monospace';
+      ctx.fillText('04:35 PM', 80, 132);
+      ctx.font = '22px monospace';
+      ctx.fillText('FM', 80, 194);
+      const levels = [1, 1, 2, 3, 4, 7, 5, 8, 1];
+      for (let i = 0; i < levels.length; i++)
+        for (let j = 0; j < levels[i]; j++)
+          ctx.fillRect(270 + i * 43, 194 - j * 15, 32, 8);
     } else {
       for (let gauge = 0; gauge < 3; gauge++) {
-        const x = 88 + gauge * 166;
-        for (let i = 0; i < 9; i++) {
-          const angle = Math.PI + (i * Math.PI) / 8;
-          ctx.fillRect(
-            x + Math.cos(angle) * 55,
-            97 + Math.sin(angle) * 55,
-            7,
-            11,
-          );
+        const x = 125 + gauge * 255;
+        if (gauge > 0) {
+          ctx.font = '16px monospace';
+          if (gauge === 1) {
+            ctx.fillText('FUEL', x - 45, 34);
+            for (let row = 0; row < 12; row++) {
+              ctx.fillStyle = row < 3 ? '#52391f' : amber;
+              ctx.fillRect(x - 60, 48 + row * 12, row % 3 ? 50 : 34, 9);
+              ctx.fillRect(x + 3, 48 + row * 12, 12, 8);
+            }
+            ctx.fillStyle = amber;
+            ctx.font = '13px monospace';
+            ctx.fillText('F', x + 26, 57);
+            ctx.fillText('½', x + 26, 119);
+            ctx.fillText('E', x + 26, 184);
+            ctx.fillText('12.8 V', x - 45, 220);
+          } else {
+            for (let row = 0; row < 2; row++) {
+              const y = 58 + row * 78;
+              ctx.font = '15px monospace';
+              ctx.fillText(row ? 'OIL PRESS' : 'COOLANT', x - 87, y - 17);
+              for (let col = 0; col < 12; col++) {
+                ctx.fillStyle = col > (row ? 8 : 6) ? '#52391f' : amber;
+                ctx.fillRect(x - 87 + col * 13, y, 9, 12);
+              }
+              ctx.fillStyle = amber;
+              ctx.font = '12px monospace';
+              ctx.fillText(
+                row ? '0     40     80' : 'C     85      H',
+                x - 87,
+                y + 27,
+              );
+            }
+            for (let col = 0; col < 8; col++)
+              ctx.fillRect(x - 85 + col * 20, 211, 9, 5);
+          }
+          continue;
         }
-        ctx.fillText(['24', 'F', 'C'][gauge], x - 14, 107);
-        ctx.fillRect(x - 3, 66, 5, 22);
+        for (let i = 0; i < 25; i++) {
+          const angle = Math.PI * 0.85 + (i * Math.PI * 1.3) / 24;
+          ctx.fillRect(
+            x + Math.cos(angle) * 106,
+            123 + Math.sin(angle) * 83,
+            i % 4 ? 6 : 10,
+            i % 4 ? 6 : 11,
+          );
+          if (i % 4 === 0) {
+            ctx.font = '16px monospace';
+            ctx.fillText(
+              String(i * (gauge === 0 ? 7.5 : 3.75)),
+              x + Math.cos(angle) * 82 - 9,
+              123 + Math.sin(angle) * 64 + 4,
+            );
+          }
+        }
+        ctx.font = '17px monospace';
+        ctx.fillText(['km/h', 'FUEL', 'TEMP'][gauge], x - 25, 174);
+        ctx.fillText(['24', '3/4', '85'][gauge], x - 16, 141);
+        ctx.save();
+        ctx.translate(x, 123);
+        ctx.scale(1.28, 1);
+        ctx.rotate([-0.7, 0.4, 0.2][gauge]);
+        ctx.fillRect(-2, -64, 4, 64);
+        ctx.restore();
+        for (let i = 0; i < 5; i++) ctx.fillRect(x - 42 + i * 20, 211, 11, 6);
+        ctx.font = '13px monospace';
+        ctx.fillText(['012486', '12.8 V', 'OIL  OK'][gauge], x - 30, 196);
+        for (let row = 0; row < 5; row++)
+          for (let col = 0; col < 3; col++) {
+            ctx.fillStyle = (row + col) % 4 ? '#ab642c' : '#5b4325';
+            ctx.fillRect(x + 97 + col * 8, 77 + row * 12, 5, 7);
+          }
+        ctx.fillStyle = amber;
       }
     }
     const t = new THREE.CanvasTexture(canvas);
     t.colorSpace = THREE.SRGBColorSpace;
-    t.magFilter = THREE.NearestFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.anisotropy = 8;
     return t;
   }, [radio]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
-    <mesh position={radio ? [0.02, -0.65, -1.38] : [0.82, -0.53, -1.49]}>
-      <planeGeometry args={radio ? [0.56, 0.19] : [0.7, 0.2]} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
-    </mesh>
+    <group position={radio ? [0, -0.535, -1.359] : [0.83, -0.53, -1.488]}>
+      <mesh>
+        <planeGeometry args={radio ? [0.36, 0.1148] : [0.52, 0.235]} />
+        <meshBasicMaterial map={texture} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, 0, 0.003]}>
+        <planeGeometry args={radio ? [0.36, 0.1148] : [0.52, 0.235]} />
+        <meshPhysicalMaterial
+          color="#a6a88f"
+          transparent
+          opacity={radio ? 0.025 : 0.075}
+          roughness={radio ? 0.65 : 0.28}
+          clearcoat={radio ? 0.2 : 0.7}
+          clearcoatRoughness={radio ? 0.6 : 0.2}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -204,11 +324,64 @@ export function VoxelCabin({
   clock: SharedClock;
 }) {
   const wheel = useMemo(() => steeringWheelModel(), []);
+  const dashboard = useMemo(() => cabinDashboardModel(), []);
+  const padGeometry = useMemo(() => cabinPadGeometry(), []);
+  const padSeamGeometry = useMemo(() => cabinPadGeometry(true), []);
+  const bolsters = useMemo(() => [cabinBolsterGeometry(1), cabinBolsterGeometry(-1)], []);
+  useEffect(
+    () => () => {
+      padGeometry.dispose();
+      padSeamGeometry.dispose();
+      bolsters.forEach((geometry) => geometry.dispose());
+    },
+    [padGeometry, padSeamGeometry, bolsters],
+  );
   const wipers = useRef<(THREE.Group | null)[]>([]);
   const cabin = useRef<THREE.Group>(null);
+  const cabinLightTarget = useMemo(() => {
+    const target = new THREE.Object3D();
+    target.position.set(-0.2, -0.7, -0.7);
+    return target;
+  }, []);
+  const canopyLight = useMemo(() => {
+    // A fixed, softly filtered canopy mask gives the stylized sun a little
+    // variation. It is not regenerated per frame, so parked pixels stay stable.
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 256;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#444438';
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.translate(256, 0);
+    ctx.scale(-1, 1);
+    ctx.filter = 'blur(1.2px)';
+    for (let i = 0; i < 240; i++) {
+      const n = Math.sin(i * 127.1 + 17.7) * 43758.5453;
+      const random = n - Math.floor(n);
+      ctx.fillStyle = `rgba(255, 255, 245, ${0.65 + random * 0.3})`;
+      ctx.fillRect(
+        (i * 47) % 250,
+        (i * 79) % 250,
+        5 + random * 10,
+        3 + random * 6,
+      );
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    return texture;
+  }, []);
+  useEffect(() => () => canopyLight.dispose(), [canopyLight]);
   const rear = useMemo(() => {
-    const target = new THREE.WebGLRenderTarget(384, 144);
-    const camera = new THREE.PerspectiveCamera(55, 256 / 96, 0.1, 265);
+    const target = new THREE.WebGLRenderTarget(
+      cabinMirror.targetWidth,
+      cabinMirror.targetHeight,
+    );
+    const camera = new THREE.PerspectiveCamera(
+      cabinMirror.verticalFov,
+      cabinMirror.aspect,
+      0.1,
+      265,
+    );
     camera.position.set(1.7, 2, 7);
     camera.lookAt(1.7, 2, 100);
     return { target, camera };
@@ -216,7 +389,14 @@ export function VoxelCabin({
   const lastMirrorFrame = useRef(0);
   useEffect(() => () => rear.target.dispose(), [rear]);
   const { size } = useThree();
-  const frameX = Math.max(1.2, (size.width / size.height) * 1.32);
+  const frameX = Math.max(1.2, (size.width / size.height) * 1.19);
+  const surround = useMemo(() => cabinSurroundModel(frameX), [frameX]);
+  const pillarParts = useMemo(() => [-1, 1].map(side => surround
+    .filter(part => side * part.position[0] > frameX - 0.13)
+    .map(part => ({ ...part, position: [part.position[0] - side * frameX,
+      part.position[1] + 0.4, part.position[2] + 1.95] as [number, number, number] }))), [surround, frameX]);
+  const fixedSurround = useMemo(() => surround.filter(part =>
+    Math.abs(part.position[0]) <= frameX - 0.13), [surround, frameX]);
   useFrame(({ gl, scene, clock: renderClock }) => {
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
@@ -247,154 +427,145 @@ export function VoxelCabin({
     <group ref={cabin} position={[1.7, 1.9, 7]} rotation={[-0.09, 0, 0]}>
       <DashboardPanel />
       <DashboardPanel radio />
-      {/* One continuous dash, a wood fascia and a narrow padded upper lip. */}
-      <Block
-        position={[0, -0.97, -1.82]}
-        scale={[7, 0.85, 0.7]}
-        color="#485348"
-      />
-      <Block
-        position={[0, -0.61, -1.87]}
-        scale={[7, 0.14, 0.58]}
-        color="#596454"
-      />
-      <Block
-        position={[0, -0.79, -1.455]}
-        scale={[7, 0.27, 0.04]}
-        color="#927653"
-      />
-      <Block
-        position={[-0.98, -0.72, -1.42]}
-        scale={[1.28, 0.45, 0.055]}
-        color="#65705a"
-      />
-      <Block
-        position={[-0.98, -0.72, -1.384]}
-        scale={[0.3, 0.035, 0.025]}
-        color="#343e30"
-      />
-      {/* Recessed vents and console controls, kept below the windshield. */}
-      {[-1.78, 1.55].map((x) => (
-        <group key={x}>
-          <Block
-            position={[x, -0.77, -1.4]}
-            scale={[0.28, 0.22, 0.055]}
-            color="#8c7957"
-          />
-          <Block
-            position={[x, -0.77, -1.365]}
-            scale={[0.23, 0.17, 0.02]}
-            color="#29362b"
-          />
-          {[-0.05, 0, 0.05].map((y) => (
-            <Block
-              key={y}
-              position={[x, -0.77 + y, -1.35]}
-              scale={[0.2, 0.014, 0.018]}
-              color="#697259"
-            />
-          ))}
-        </group>
-      ))}
-      <Block
-        position={[0.02, -0.86, -1.42]}
-        scale={[0.63, 0.1, 0.045]}
-        color="#66533a"
-      />
-      {[-0.22, -0.1, 0.02, 0.14, 0.26].map((x, i) => (
-        <group key={x}>
-          <Block
-            position={[x, -0.905, -1.385]}
-            scale={[0.075, 0.065, 0.035]}
-            color={i === 4 ? '#8f5135' : '#353e2e'}
-          />
-          <Block
-            position={[x, -0.902, -1.363]}
-            scale={[0.025, 0.012, 0.01]}
-            color="#c5ab6e"
-          />
-        </group>
-      ))}
-      {[-0.35, 0.39].map((x) => (
-        <Block
+      <VoxelModel parts={dashboard} cabin />
+      <mesh
+        geometry={padGeometry}
+        position={[0, -0.53, -1.9]}
+        castShadow
+        receiveShadow
+      >
+        <CabinMaterial color="#c59d69" edgeWearStrength={1.6} topPaintStrength={0.45} vertexColors />
+      </mesh>
+      {[-0.32, 0.4].map((x) => (
+        <mesh
           key={x}
-          position={[x, -0.77, -1.4]}
-          scale={[0.038, 0.28, 0.05]}
-          color="#313c2d"
-        />
+          geometry={padSeamGeometry}
+          position={[x, -0.487, -1.9]}
+          castShadow
+          receiveShadow
+        >
+          <CabinMaterial color="#4b503e" />
+        </mesh>
       ))}
+      <VoxelModel parts={fixedSurround} cabin />
       {/* Slim, continuous frame. Dark seals sit against the glass opening. */}
       {[-1, 1].map((side) => (
         <group key={side}>
           <Block
-            position={[side * frameX, 0.08, -1.96]}
-            scale={[0.13, 2.5, 0.18]}
-            color="#66705b"
+            grain={false}
+            position={[side * (frameX + 0.05), -0.67, -1.45]}
+            scale={[0.32, 0.62, 1.1]}
+            color="#60533c"
           />
           <Block
-            position={[side * (frameX - 0.08), 0.08, -1.97]}
-            scale={[0.025, 2.4, 0.08]}
-            color="#303932"
+            grain={false}
+            position={[side * frameX, -0.49, -1.48]}
+            scale={[0.39, 0.085, 1.05]}
+            color="#8a7955"
           />
+          <group position={[side * frameX, -0.4, -1.95]} rotation={[0, 0, side * 0.045]}>
+            <VoxelModel parts={pillarParts[side < 0 ? 0 : 1]} cabin edgeWearStrength={3} />
+            <Block grain={false} position={[0, 0.48, -0.01]}
+              scale={[0.13, 2.5, 0.18]} color="#6c4d35" />
+          </group>
         </group>
       ))}
       <Block
-        position={[0, 1.32, -1.96]}
-        scale={[frameX * 2 + 0.13, 0.18, 0.18]}
-        color="#66705b"
+        grain={false}
+        position={[0, 1.25, -1.96]}
+        scale={[frameX * 2 + 0.13, 0.25, 0.3]}
+        color="#6c5238"
+        wood
       />
       <Block
-        position={[0, 1.22, -1.97]}
+        grain={false}
+        position={[0, 1.12, -1.97]}
         scale={[frameX * 2, 0.025, 0.08]}
         color="#303932"
       />
       {/* Small mirror tucked under the roof, outside the central road view. */}
       <Block
-        position={[0, 1.04, -1.88]}
-        scale={[0.045, 0.36, 0.045]}
+        grain={false}
+        position={[0.045, 0.99, -1.88]}
+        scale={[0.13, 0.32, 0.10]}
         color="#303932"
       />
       <Block
-        position={[0, 0.83, -1.84]}
-        scale={[0.68, 0.22, 0.065]}
-        color="#303932"
+        grain={false}
+        position={[0.045, 1.065, -1.79]}
+        scale={[0.15, 0.13, 0.11]}
+        color="#30332a"
       />
-      <mesh position={[0, 0.83, -1.801]} scale={[-1, 1, 1]}>
-        <planeGeometry args={[0.6, 0.16]} />
+      <Block
+        grain={false}
+        position={[0.045, 0.79, -1.84]}
+        scale={[0.73, 0.26, 0.085]}
+        color="#37372c"
+      />
+      <mesh position={[0.045, 0.79, -1.791]} scale={[-1, 1, 1]}>
+        <planeGeometry args={[cabinMirror.width, cabinMirror.height]} />
         <meshBasicMaterial
           map={rear.target.texture}
           side={THREE.DoubleSide}
           toneMapped={false}
         />
       </mesh>
-      {/* Recessed instrument binnacle, aligned behind the steering wheel. */}
-      <Block
-        position={[0.82, -0.53, -1.66]}
-        scale={[0.8, 0.24, 0.28]}
-        color="#39423a"
-      />
-      <group position={[0.85, -0.6, -1.35]} scale={1.05}>
-        <VoxelModel parts={wheel} />
+      <group
+        position={wheelPosition}
+        scale={wheelScale}
+        rotation={wheelRotation}
+      >
+        <VoxelModel parts={wheel} cabin edgeWearStrength={5} />
       </group>
       {/* Upholstered foreground corners complete the enclosed car silhouette. */}
-      {[-1.16, 1.4].map((x) => (
-        <group key={x} position={[x, -0.86, -1.1]}>
+      {[-1.13, 1.31].map((x) => (
+        <group
+          key={x}
+          position={x > 0 ? driverSeatPosition : [x, -0.98, -1.07456]}
+          scale={x > 0 ? driverSeatScale : [1.06, 1.06, 1.166]}
+        >
           <Block
-            position={[0, 0, 0]}
-            scale={[0.74, 0.46, 0.5]}
-            color="#757951"
+            grain={false}
+            fabric
+            position={[0, 0, -0.11]}
+            scale={[0.74, 0.46, 0.28]}
+            color="#9e8d60"
           />
           <Block
-            position={[0, 0.24, -0.02]}
-            scale={[0.71, 0.06, 0.43]}
-            color="#939569"
+            grain={false}
+            fabric
+            position={[0, 0.24, -0.13]}
+            scale={[0.71, 0.06, 0.21]}
+            color="#b7a16b"
+            cushion
           />
+          {[-0.355, 0.355].map((edge) => (
+            <Block
+              grain={false}
+              fabric
+              key={edge}
+              position={[edge, 0.26, -0.13]}
+              scale={[0.014, 0.018, 0.22]}
+              color="#c0a477"
+            />
+          ))}
+          <mesh geometry={bolsters[x < 0 ? 0 : 1]} castShadow receiveShadow>
+            <CabinMaterial color="#9b8b5f" fabric vertexColors />
+          </mesh>
         </group>
       ))}
+      {/* The bonnet stays attached to the car, below the windshield sightline. */}
+      <Block
+        grain={false}
+        position={[0, -0.62, -2.72]}
+        scale={[3.8, 0.075, 1.12]}
+        color="#ba9667"
+      />
       {/* Each wiper pivots at its own mount; blades park along the dash. */}
-      {[-0.8, 0.72].map((x, i) => (
-        <group key={x} position={[x, -0.48, -2.12]}>
+      {[-1.35, -0.1].map((x, i) => (
+        <group key={x} position={[x, -0.46, -2.12]}>
           <Block
+            grain={false}
             position={[0, 0, 0]}
             scale={[0.07, 0.05, 0.06]}
             color="#303932"
@@ -405,23 +576,72 @@ export function VoxelCabin({
             }}
           >
             <Block
-              position={[0.27, 0.025, 0]}
-              scale={[0.54, 0.025, 0.03]}
+              grain={false}
+              position={[i === 0 ? 0.14 : 0.27, 0.025, 0]}
+              scale={[i === 0 ? 0.28 : 0.54, 0.015, 0.025]}
               color="#303932"
             />
             <Block
-              position={[0.47, 0.045, 0]}
-              scale={[0.66, 0.035, 0.035]}
-              color="#242d27"
+              grain={false}
+              position={[i === 0 ? 0.16 : 0.47, 0.041, 0]}
+              scale={[i === 0 ? 0.88 : 0.66, 0.018, 0.025]}
+              color="#414336"
             />
           </group>
         </group>
       ))}
       <pointLight
         position={[0, -0.65, -1]}
-        intensity={0.7 + (1 - environment.daylight) * 0.35}
+        intensity={0.16 + (1 - environment.daylight) * 0.25}
         color="#ffcc8b"
         distance={3}
+      />
+      <pointLight
+        position={[1.65, 1.4, -2.7]}
+        intensity={environment.daylight * 1.2}
+        color="#ffe2ad"
+        distance={5}
+        decay={2}
+      />
+      <primitive object={cabinLightTarget} />
+      <spotLight
+        position={[1.6, 1.8, -3.1]}
+        target={cabinLightTarget}
+        map={canopyLight}
+        intensity={environment.daylight * 35}
+        color="#ffdf9d"
+        distance={7}
+        angle={0.9}
+        penumbra={0.65}
+        decay={2}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-near={0.1}
+        shadow-camera-far={7}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.003}
+      />
+      <pointLight
+        position={[-1.1, 0.1, -0.1]}
+        intensity={environment.daylight * 0.8}
+        color="#ffd1a0"
+        distance={3.5}
+        decay={2}
+      />
+      <pointLight
+        position={[frameX - 0.5, 0.25, -1.95]}
+        intensity={environment.daylight * 0.28}
+        color="#ffe0ad"
+        distance={1.1}
+        decay={2}
+      />
+      <rectAreaLight
+        position={[0, 0.5, -1.6]}
+        rotation={[Math.PI / 2, 0, 0]}
+        width={3.5}
+        height={1.4}
+        intensity={environment.daylight * 0.55}
+        color="#ffe0a9"
       />
     </group>
   );

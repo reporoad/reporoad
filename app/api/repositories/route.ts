@@ -1,96 +1,115 @@
+import { env } from 'cloudflare:workers';
 import { database } from '@/lib/db';
-import { REPOSITORY_SEED } from '@/lib/repository-seed';
-import { fetchRepository, type Repository } from '@/lib/repositories';
+import { CATEGORY_SEED } from '@/lib/category-seed';
+import {
+  checkPublicStyle,
+  discoverCategory,
+  isCategory,
+  sharedSample,
+  type CategoryData,
+} from '@/lib/repository-categories';
 export const dynamic = 'force-dynamic';
 const REFRESH_MS = 6 * 60 * 60 * 1000;
+const CHECK_MS = 5 * 60 * 1000;
 const headers = { 'Cache-Control': 'no-store' };
-export async function GET() {
+export async function GET(request: Request) {
+  const category = new URL(request.url).searchParams.get('category') || 'top';
+  if (!isCategory(category))
+    return Response.json(
+      { error: 'Unknown repository category' },
+      { status: 400, headers },
+    );
+  const seed = CATEGORY_SEED[category];
+  const token = (env as unknown as { GITHUB_READ_TOKEN?: string })
+    .GITHUB_READ_TOKEN;
   try {
     const db = database(),
-      now = Date.now();
+      now = Date.now(),
+      id = `category-v1:${category}`;
     await db
       .prepare(
         'INSERT OR IGNORE INTO repository_world_cache (id,payload,refreshed_at,refresh_after) VALUES (?,?,?,?)',
       )
-      .bind('github-v1', JSON.stringify(REPOSITORY_SEED), 0, 0)
+      .bind(id, JSON.stringify(seed), 0, 0)
       .run();
     const row = await db
       .prepare(
         'SELECT payload,refreshed_at AS refreshedAt,refresh_after AS refreshAfter FROM repository_world_cache WHERE id=?',
       )
-      .bind('github-v1')
+      .bind(id)
       .first<{ payload: string; refreshedAt: number; refreshAfter: number }>();
     if (!row) throw Error('Cache unavailable');
-    let repositories: Repository[] = JSON.parse(row.payload);
-    let refreshedAt = row.refreshedAt;
-    // Atomic lease prevents many viewers from all consuming the GitHub quota.
+    let data: CategoryData = JSON.parse(row.payload);
     const lease = await db
       .prepare(
         'UPDATE repository_world_cache SET refresh_after=? WHERE id=? AND refresh_after<=?',
       )
-      .bind(now + REFRESH_MS, 'github-v1', now)
+      .bind(now + CHECK_MS, id, now)
       .run();
     if (lease.meta.changes) {
-      const next: Repository[] = [];
-      for (let i = 0; i < repositories.length; i += 4) {
-        next.push(
-          ...(await Promise.all(
-            repositories.slice(i, i + 4).map((repo) =>
-              fetchRepository(repo).catch((error) => {
-                console.warn(
-                  'Repository sync failed',
-                  repo.fullName,
-                  error instanceof Error
-                    ? error.message
-                    : 'Unknown fetch error',
-                );
-                return repo;
-              }),
-            ),
-          )),
-        );
+      try {
         if (
-          next
-            .slice(i)
-            .every(
-              (repo, offset) =>
-                repo.fetchedAt === repositories[i + offset].fetchedAt,
-            )
-        ) {
-          // Stop a failed/rate-limited batch instead of hammering GitHub.
-          next.push(...repositories.slice(i + 4));
-          break;
+          category === 'community' ||
+          !row.refreshedAt ||
+          now - data.refreshedAt >= REFRESH_MS
+        )
+          data = await discoverCategory(category, data, now, token);
+        if (category === 'top' || category === 'trending') {
+          const checks = [...data.repositories]
+            .sort((a, b) => (a.configCheckedAt || 0) - (b.configCheckedAt || 0))
+            .filter((r) => now - (r.configCheckedAt || 0) >= REFRESH_MS)
+            .slice(0, 20);
+          const updated = new Map();
+          for (let i = 0; i < checks.length; i += 4) {
+            const batch = await Promise.all(
+              checks.slice(i, i + 4).map((r) => checkPublicStyle(r)),
+            );
+            for (const r of batch) updated.set(r.fullName, r);
+          }
+          data.repositories = data.repositories.map(
+            (r) => updated.get(r.fullName) || r,
+          );
         }
+      } catch (error) {
+        data.warning =
+          error instanceof Error
+            ? error.message
+            : 'Repository discovery unavailable; retaining the last list.';
       }
-      const changed = next.some(
-        (repo, i) => repo.fetchedAt !== repositories[i].fetchedAt,
-      );
-      repositories = next;
-      if (changed) refreshedAt = now;
       await db
         .prepare(
           'UPDATE repository_world_cache SET payload=?,refreshed_at=? WHERE id=?',
         )
-        .bind(JSON.stringify(repositories), refreshedAt, 'github-v1')
+        .bind(JSON.stringify(data), now, id)
         .run();
     }
+    const { pool: _pool, discoveryCursor: _cursor, ...publicData } = data;
     return Response.json(
       {
-        repositories,
-        refreshedAt,
-        nextRefreshAt: lease.meta.changes ? now + REFRESH_MS : row.refreshAfter,
-        source: refreshedAt ? 'github-cache' : 'verified-snapshot',
+        ...publicData,
+        repositories:
+          category === 'community'
+            ? sharedSample(
+                (data.pool || data.repositories).filter(
+                  (r) => now - (r.configCheckedAt || 0) < 86400000,
+                ),
+                now,
+              )
+            : data.repositories,
+        category,
+        source: 'github-cache',
+        nextRefreshAt: lease.meta.changes ? now + CHECK_MS : row.refreshAfter,
       },
       { headers },
     );
   } catch {
     return Response.json(
       {
-        repositories: REPOSITORY_SEED,
-        refreshedAt: 0,
+        ...seed,
+        category,
         source: 'verified-snapshot',
         warning:
-          'Live repository sync is unavailable. Showing the verified 5 September 2026 snapshot.',
+          'Live discovery is unavailable. Showing the saved GitHub snapshot where available.',
       },
       { headers },
     );

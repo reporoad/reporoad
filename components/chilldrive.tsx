@@ -3,7 +3,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Code2,
   ExternalLink,
-  GitFork,
+  Compass,
+  History,
+  MessageCircle,
+  Plus,
+  Volume2,
   Maximize,
   Music2,
   Pause,
@@ -22,6 +26,8 @@ import {
 } from '@/components/ui/native-select';
 import RoadScene from './road-scene';
 import LiveChat from './live-chat';
+import { usePresence } from './use-presence';
+import { useChickens } from './use-chickens';
 import { PLAYLIST, PlaylistPlayer } from '@/lib/playlist';
 import { worldAt, SEASONS, type WorldPreview } from '@/lib/live-world';
 import {
@@ -30,17 +36,26 @@ import {
   repositoryFloors,
   type Repository,
 } from '@/lib/repositories';
-import { REPOSITORY_SEED } from '@/lib/repository-seed';
+import { CATEGORY_SEED } from '@/lib/category-seed';
+import { CATEGORIES, type Category } from '@/lib/repository-categories';
 
-export default function Chilldrive() {
-  const [repositories, setRepositories] =
-    useState<Repository[]>(REPOSITORY_SEED);
+export default function RepoRoad() {
+  const [category, setCategory] = useState<Category>('top');
+  const [repositories, setRepositories] = useState<Repository[]>(
+    CATEGORY_SEED.top.repositories,
+  );
   const [dataStatus, setDataStatus] = useState(
     'Verified GitHub snapshot · 5 Sep 2026 · checking for updates…',
   );
-  const [selected, setSelected] = useState(REPOSITORY_SEED[0].fullName);
+  const [selected, setSelected] = useState(
+    CATEGORY_SEED.top.repositories[0].fullName,
+  );
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState('repositories');
+  const [tab, setTab] = useState('chat');
+  const [passing, setPassing] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [recentOnly, setRecentOnly] = useState(false);
+  const online = usePresence();
   const [mode, setMode] = useState<'live' | 'studio'>('live');
   const [playing, setPlaying] = useState(
     () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -51,6 +66,7 @@ export default function Chilldrive() {
     weather: 'Sunny',
   });
   const [now, setNow] = useState(Date.now);
+  const chickens = useChickens(now);
   const [synced, setSynced] = useState(false);
   const clock = useRef({ now: () => Date.now() });
   const modeRef = useRef(mode);
@@ -65,17 +81,20 @@ export default function Chilldrive() {
   const [notice, setNotice] = useState('');
   const radio = useRef<PlaylistPlayer | null>(null);
   const directory = useRef<HTMLElement | null>(null);
-  const repo =
-    repositories.find((r) => r.fullName === selected) || repositories[0];
+  const styleRepos = repositories.length
+    ? repositories
+    : CATEGORY_SEED.top.repositories;
+  const repo = styleRepos.find((r) => r.fullName === selected) || styleRepos[0];
   const environment = worldAt(now, mode === 'studio' ? preview : undefined);
   const filtered = useMemo(
     () =>
       repositories.filter((r) =>
+        (!recentOnly || recent.includes(r.fullName)) &&
         `${r.fullName} ${r.description} ${r.language}`
           .toLowerCase()
           .includes(query.toLowerCase()),
       ),
-    [repositories, query],
+    [repositories, query, recentOnly, recent],
   );
   const reposRef = useRef(repositories);
   reposRef.current = repositories;
@@ -83,41 +102,42 @@ export default function Chilldrive() {
     let stopped = false;
     async function refresh() {
       try {
-        const response = await fetch('/api/repositories');
+        const response = await fetch(`/api/repositories?category=${category}`);
         if (!response.ok) throw Error();
         const data = (await response.json()) as {
           repositories: Repository[];
           source: string;
           warning?: string;
         };
-        if (
-          !Array.isArray(data.repositories) ||
-          data.repositories.length !== 24
-        )
+        if (!Array.isArray(data.repositories) || data.repositories.length > 100)
           throw Error();
         if (stopped) return;
         setRepositories(data.repositories);
-        const oldest = Math.min(
-          ...data.repositories.map((r: Repository) => r.fetchedAt),
-        );
+        const oldest = data.repositories.length
+          ? Math.min(...data.repositories.map((r: Repository) => r.fetchedAt))
+          : 0;
         setDataStatus(
           data.warning ||
-            `${data.source === 'github-cache' ? 'GitHub data' : 'Verified snapshot'} · oldest check ${new Date(oldest).toLocaleString()} · refreshes up to every 6 hours`,
+            (oldest
+              ? `${data.source === 'github-cache' ? 'GitHub data' : 'Verified snapshot'} · checked ${new Date(oldest).toLocaleString()}`
+              : category === 'sponsored'
+                ? 'No paid placements are active.'
+                : 'No verified building files discovered yet.'),
         );
       } catch {
         if (!stopped)
           setDataStatus(
-            'GitHub sync unavailable · showing the verified 5 Sep 2026 snapshot',
+            'Discovery unavailable · keeping this neighbourhood’s last loaded list.',
           );
       }
     }
     void refresh();
-    const timer = setInterval(refresh, 15 * 60 * 1000);
+    const timer = setInterval(refresh, 5 * 60 * 1000);
     return () => {
       stopped = true;
       clearInterval(timer);
     };
-  }, []);
+  }, [category]);
   useEffect(() => {
     radio.current = new PlaylistPlayer(setTrack, setAudioOn, () =>
       setNotice('Music could not load. Press play to retry.'),
@@ -226,6 +246,7 @@ export default function Chilldrive() {
   const scene = (
     <div className="drive">
       <RoadScene
+        key={category}
         plots={[]}
         repositories={repositories}
         playing={playing}
@@ -234,21 +255,27 @@ export default function Chilldrive() {
         live={mode === 'live'}
         preview={preview}
         focus={focus}
+        chickenCount={chickens.crossingCount}
+        onPassing={(names) => {
+          setPassing(names);
+          setRecent((old) => [...names, ...old.filter((name) => !names.includes(name))].slice(0, 20));
+        }}
       />
       {!broadcast && (
         <>
           <div className="drive-top">
-            <span className="drive-tag">
-              {environment.season.toUpperCase()} ·{' '}
-              {environment.weather.toUpperCase()}
+            <span className="drive-tag" title={synced ? 'Shared live world' : 'Connecting to shared clock'}>
+              <span /> {mode === 'live' ? 'LIVE' : 'PREVIEW'}
             </span>
+            {mode === 'live' && chickens.crossing && <span className="crossing-banner">🚦 Chicken crossing · {chickens.crossingCount === null ? 'Counting…' : `${chickens.crossingCount.toLocaleString()} chickens`}{(chickens.crossingCount || 0) > 64 ? ' · representative flock' : ''}</span>}
           </div>
           <div className="drive-bottom">
-            <span className="repo-scene-caption">
-              {mode === 'live'
-                ? 'A shared drive through open source'
-                : `Visiting ${repo.fullName}`}
-            </span>
+            <div className="passing-card">
+              <div><span className="passing-label">PASSING NOW</span>
+                <div className="passing-names">{passing.length ? passing.map((name) => <a key={name} href={`https://github.com/${name}`} target="_blank" rel="noopener noreferrer">{name.split('/').pop()} <ExternalLink size={13} /></a>) : CATEGORIES[category].label}</div>
+              </div>
+              <button className="btn recent-button" onClick={() => { setRecentOnly(true); setQuery(''); setTab('repositories'); }}><History size={18} /> Recently passed</button>
+            </div>
             <div className="actions">
               <button
                 className="btn icon"
@@ -288,22 +315,14 @@ export default function Chilldrive() {
       <header className="topbar">
         <div className="brand">
           <Route size={29} />
-          chilldrive<span style={{ color: 'var(--primary)' }}>.</span>
-          <span className="repo-brand-label">Repository world</span>
+          <h1>RepoRoad</h1>
+          <span className="repo-brand-label">A live lo-fi drive through GitHub.</span>
         </div>
-        <button
-          className="btn primary"
-          onClick={() => {
-            setTab('repositories');
-            directory.current?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        >
-          Explore repositories <GitFork size={16} />
-        </button>
+        <span className="header-note">Every roadside place is a repo.</span>
       </header>
       <div className="workspace">
         <section aria-label="Repository world live view">
-          <div className="live-toolbar">
+          <details className="drive-settings"><summary>Drive settings</summary><div className="live-toolbar">
             <div className="actions">
               <button
                 className={`btn ${mode === 'live' ? 'primary' : ''}`}
@@ -321,7 +340,7 @@ export default function Chilldrive() {
             <span className="fine">
               {mode === 'live'
                 ? synced
-                  ? '● Shared world'
+                  ? '● Shared clock · selected neighbourhood'
                   : 'Syncing world…'
                 : 'Local preview · only you'}
             </span>
@@ -381,19 +400,17 @@ export default function Chilldrive() {
               </label>
             </div>
           )}
+          </details>
           {scene}
           <div className="radio">
-            <Music2 size={20} />
+            <button className="btn radio-play" aria-label={audioOn ? 'Pause music' : 'Play music'} onClick={toggleAudio}>{audioOn ? <Pause size={19} /> : <Play size={19} />}</button>
+            <div className="radio-art"><Music2 size={22} /></div>
             <div className="radio-text">
-              <span className="eyebrow">Chilldrive radio</span>
               <strong>{PLAYLIST[track].name}</strong>
-              <small>
-                {audioOn
-                  ? 'Continuous lofi · a shared soundtrack'
-                  : 'Press play · settle into the soundtrack'}
-              </small>
+              <small>RepoRoad radio</small>
             </div>
             <div className="volume">
+              <Volume2 size={19} />
               <Slider
                 aria-label="Music volume"
                 min={0}
@@ -406,32 +423,7 @@ export default function Chilldrive() {
                 }}
               />
             </div>
-            <button
-              className="btn icon"
-              aria-label={audioOn ? 'Pause music' : 'Play music'}
-              onClick={toggleAudio}
-            >
-              {audioOn ? <Pause size={19} /> : <Play size={19} />}
-            </button>
           </div>
-          <div className="intro">
-            <div>
-              <h1>A town built from open source.</h1>
-              <p>
-                Every repository has a building. Every 10,000 stars adds a
-                floor’s worth of height. Take a slow drive past the software
-                people build together.
-              </p>
-            </div>
-          </div>
-          <p className="repo-rule">
-            Height = complete groups of 10,000 stars, with a minimum of one
-            floor. 9,999 → 1 · 10,000 → 1 · 20,000 → 2.
-          </p>
-          <p className="fine">
-            The shared view is a synchronised 3D scene, not a YouTube video
-            stream yet.
-          </p>
         </section>
         <aside
           ref={directory}
@@ -440,10 +432,16 @@ export default function Chilldrive() {
         >
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList>
-              <TabsTrigger value="repositories">Repositories</TabsTrigger>
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="style">Building style</TabsTrigger>
+              <TabsTrigger value="chat"><MessageCircle /> Chat</TabsTrigger>
+              <TabsTrigger value="repositories"><Compass /> Explore</TabsTrigger>
+              <TabsTrigger value="style"><Plus /> Add</TabsTrigger>
             </TabsList>
+            <div className="chicken-control">
+              <button className="btn" onClick={chickens.add}>🐔 Add chicken <Plus size={16} /></button>
+              <span>{chickens.queued === null ? 'Connecting…' : `${chickens.queued.toLocaleString()} queued`}{chickens.pending ? ` · +${chickens.pending} sending` : ''}</span>
+              <small>Next crossing in {Math.floor(chickens.nextIn / 60)}:{String(chickens.nextIn % 60).padStart(2, '0')} · shared live road</small>
+              {chickens.error && <small role="status">{chickens.error}</small>}
+            </div>
             <div className="tab-body">
               {notice && (
                 <output className="notice">
@@ -459,9 +457,38 @@ export default function Chilldrive() {
               )}
               <TabsContent value="repositories">
                 <div className="repo-directory-head">
-                  <h2>The neighbourhood</h2>
+                  <h2>{recentOnly ? 'Recently passed' : 'The neighbourhood'}</h2>
                   <span>{repositories.length} repositories</span>
                 </div>
+                {recentOnly && <button className="btn" onClick={() => setRecentOnly(false)}>Show all repositories</button>}
+                <label className="repo-category-label">
+                  Neighbourhood
+                  <NativeSelect
+                    aria-label="Repository category"
+                    value={category}
+                    onChange={(e) => {
+                      const next = e.target.value as Category;
+                      setCategory(next);
+                      setRepositories(CATEGORY_SEED[next].repositories);
+                      setDataStatus('Checking this neighbourhood…');
+                      setQuery('');
+                      setRecentOnly(false);
+                      setRecent([]);
+                      setPassing([]);
+                      setFocus(null);
+                      setMode('live');
+                    }}
+                  >
+                    {Object.entries(CATEGORIES).map(([key, value]) => (
+                      <NativeSelectOption key={key} value={key}>
+                        {value.label}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </label>
+                <p className="repo-category-description">
+                  {CATEGORIES[category].description}
+                </p>
                 <label className="repo-search">
                   <Search size={16} />
                   <Input
@@ -481,7 +508,7 @@ export default function Chilldrive() {
                       className={`repo-card ${selected === r.fullName ? 'is-selected' : ''}`}
                     >
                       <div className="repo-card-title">
-                        <strong>{r.fullName}</strong>
+                        <strong title={r.fullName}>{r.name}</strong>
                         <span className="repo-floor-count">
                           {repositoryFloors(r.stars)} floors
                         </span>
@@ -494,6 +521,15 @@ export default function Chilldrive() {
                         </span>
                         <span>{r.language || 'Open source'}</span>
                         <span>{r.building.style}</span>
+                        {category === 'trending' &&
+                          r.weeklyStars !== undefined && (
+                            <span className="repo-weekly">
+                              +{r.weeklyStars.toLocaleString()} this week
+                            </span>
+                          )}
+                        {r.configStatus === 'custom' && (
+                          <span>Owner-designed</span>
+                        )}
                       </div>
                       <div className="actions">
                         <button
@@ -526,37 +562,43 @@ export default function Chilldrive() {
                   ))}
                   {!filtered.length && (
                     <p className="repo-empty">
-                      No matches in this starter neighbourhood. Try another name
-                      or language.
+                      {query
+                        ? 'No matches in this neighbourhood. Try another name or language.'
+                        : category === 'sponsored'
+                          ? 'No sponsored buildings yet. Paid placements will be labelled here and will not affect organic rankings.'
+                          : category === 'community'
+                            ? 'This street is waiting for its first discovered buildings. Add .github/chilldrive.json to your public repository; discovery must be connected before files can be found automatically.'
+                            : 'This neighbourhood is unavailable right now. Try another category.'}
                     </p>
                   )}
                 </div>
               </TabsContent>
               <TabsContent value="chat">
-                <LiveChat />
+                <LiveChat online={online} />
               </TabsContent>
               <TabsContent value="style">
                 <div className="repo-style-guide">
                   <Code2 size={24} />
                   <h2>Your repository, your building.</h2>
+                  <p>Every 10,000 stars adds a floor, with a minimum of one. Add a style file to make the building yours.</p>
                   <label>
                     Repository
                     <NativeSelect
                       aria-label="Repository to customise"
-                      value={selected}
+                      value={repo.fullName}
                       onChange={(e) => setSelected(e.target.value)}
                     >
-                      {repositories.map((r) => (
+                      {styleRepos.map((r) => (
                         <NativeSelectOption key={r.fullName} value={r.fullName}>
-                          {r.fullName}
+                          {r.name}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>
                   </label>
                   <p>
                     Add <code>{CONFIG_PATH}</code> to{' '}
-                    <strong>{repo.fullName}</strong> on its default branch,{' '}
-                    <strong>{repo.defaultBranch}</strong>.
+                    <strong title={repo.fullName}>{repo.name}</strong> on its
+                    default branch, <strong>{repo.defaultBranch}</strong>.
                   </p>
                   <pre>
                     <code>{EXAMPLE_CONFIG}</code>
@@ -583,16 +625,18 @@ export default function Chilldrive() {
                     Open repository <ExternalLink size={13} />
                   </a>
                   <ul>
-                    <li>Styles: woodland, brick or stone.</li>
+                    <li>
+                      Styles: woodland, brick, stone, greenhouse or townhouse.
+                    </li>
                     <li>Colour: a six-digit hex colour.</li>
                     <li>Roof: gable or flat.</li>
                     <li>Stars and names always come from GitHub.</li>
                   </ul>
                   <p>
                     Merge the file into the default branch. Changes are checked
-                    on a site visit when the shared six-hour cache expires. Only
-                    people able to merge into that repository can change its
-                    building.
+                    in batches on site visits, usually within six hours plus the
+                    next batch. Only people able to merge into that repository
+                    can change its building.
                   </p>
                   <p className="repo-config-state">
                     Style status:{' '}
@@ -607,10 +651,13 @@ export default function Chilldrive() {
                     }
                   </p>
                   <p className="fine">
-                    This first street includes 24 selected public GitHub
-                    repositories. No payment, sponsorship or repository write
-                    access is required. No code or remote assets from the file
-                    are executed.
+                    No file is needed for the top-star or trending streets:
+                    every repository gets a stable random style. A valid file
+                    overrides it. Community discovery uses GitHub’s code index
+                    and can take time; committing a file does not guarantee
+                    immediate inclusion in the daily sample. No payment is
+                    needed for organic categories, and no code or external
+                    assets from the file are executed.
                   </p>
                 </div>
               </TabsContent>
@@ -619,7 +666,7 @@ export default function Chilldrive() {
         </aside>
       </div>
       <footer className="footer">
-        <span>Chilldrive · a cosy world of repositories</span>
+        <span>RepoRoad · a cosy world of repositories</span>
         <span>
           Public GitHub data · independent project, not affiliated with GitHub
           or featured repositories

@@ -12,11 +12,14 @@ export function groundTextureOffset(
 // Plots are centred 30 m ahead of each section, with a 7 m footprint.
 // Recycle only when the entire section (including its plot) is behind the car.
 export const RECYCLE_BEHIND_Z = 76;
-export function roadSectionZ(index: number, distance: number): number {
+export function roadSectionZ(
+  index: number,
+  distance: number,
+  length = ROAD_LENGTH,
+): number {
   const raw = -index * SECTION_SPACING + distance;
   return (
-    RECYCLE_BEHIND_Z -
-    ((((RECYCLE_BEHIND_Z - raw) % ROAD_LENGTH) + ROAD_LENGTH) % ROAD_LENGTH)
+    RECYCLE_BEHIND_Z - ((((RECYCLE_BEHIND_Z - raw) % length) + length) % length)
   );
 }
 export function roadMarkerZ(index: number, distance: number): number {

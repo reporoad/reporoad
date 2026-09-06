@@ -139,7 +139,7 @@ export const REPOSITORY_SEED: Repository[] = snapshot.map(
     defaultBranch,
     description,
     fetchedAt: 1788605130508,
-    building: defaultBuilding(fullName.length),
+    building: defaultBuilding(fullName),
     configStatus: 'unavailable',
   }),
 );

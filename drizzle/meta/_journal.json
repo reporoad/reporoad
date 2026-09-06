@@ -15,6 +15,20 @@
       "when": 1788605184667,
       "tag": "0001_furry_marvel_zombies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788693179912,
+      "tag": "0002_organic_jack_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788724371022,
+      "tag": "0003_silky_impossible_man",
+      "breakpoints": true
     }
   ]
 }

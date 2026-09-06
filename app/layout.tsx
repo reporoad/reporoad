@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Chilldrive — a world of repositories',
+  title: 'RepoRoad — a live lo-fi drive through GitHub',
   description:
     'Take a cosy voxel drive through open source. Explore GitHub repository buildings whose floors reflect their stars, with community chat and a shared lofi soundtrack.',
 };

@@ -1,7 +1,11 @@
 'use client';
 import { memo, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { repositoryFloors, type Repository } from '@/lib/repositories';
+import {
+  repositoryFloors,
+  repositorySignLines,
+  type Repository,
+} from '@/lib/repositories';
 import type { VoxelPart } from '@/lib/voxel-models';
 import VoxelModel from './voxel-model';
 
@@ -19,6 +23,8 @@ export function repositoryBuildingModel(
     floorHeight = 2.4;
   const timber = repo.building.style === 'woodland';
   const stone = repo.building.style === 'stone';
+  const glass = repo.building.style === 'greenhouse';
+  const townhouse = repo.building.style === 'townhouse';
   const frame = timber ? '#57462f' : stone ? '#697267' : '#684b3d';
   const trim = timber ? '#af9462' : stone ? '#b5b8a2' : '#c29f79';
   add(
@@ -33,6 +39,28 @@ export function repositoryBuildingModel(
     const width = 5.8 - (floor >= 12 ? 0.7 : floor >= 6 ? 0.35 : 0);
     add([0, y + 1.2, -0.3], [width, 2.4, 4.6], repo.building.color);
     add([0, y + 2.28, -0.3], [width + 0.2, 0.18, 4.8], frame);
+    if (glass) {
+      add([0, y + 1.2, 2.04], [width - 0.3, 1.9, 0.08], '#779e98');
+      for (const side of [-1, 1])
+        add(
+          [side * (width / 2 + 0.03), y + 1.2, -0.3],
+          [0.06, 1.9, 4.1],
+          '#779e98',
+        );
+    }
+    if (townhouse || repo.building.style === 'brick')
+      for (let row = 0; row < (townhouse ? 3 : 6); row++)
+        add(
+          [0, y + 0.2 + row * (townhouse ? 0.8 : 0.4), 2.025],
+          [width, 0.045, 0.08],
+          trim,
+        );
+    if (townhouse && floor > 0) {
+      add([0, y + 0.1, 2.5], [4.4, 0.16, 1], trim);
+      add([0, y + 0.75, 2.9], [4.4, 0.1, 0.1], frame);
+      for (let i = -2; i <= 2; i++)
+        add([i, y + 0.4, 2.9], [0.07, 0.7, 0.07], frame);
+    }
     for (const x of [-width / 2 + 0.09, 0, width / 2 - 0.09])
       add([x, y + 1.15, 2.055], [0.16, 2.25, 0.13], frame);
     if (timber)
@@ -116,15 +144,21 @@ export default memo(function RepositoryBuilding({
     ctx.strokeRect(8, 8, 1008, 304);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f0ddb0';
-    ctx.font = 'bold 90px monospace';
-    ctx.fillText(repo.name, 512, 120, 940);
-    ctx.font = '36px monospace';
-    ctx.fillText(repo.fullName, 512, 194, 940);
+    const lines = repositorySignLines(repo.name);
+    const nominal = lines.length > 1 ? 72 : 96;
+    ctx.font = `bold ${nominal}px monospace`;
+    const longest = Math.max(
+      ...lines.map((line) => ctx.measureText(line).width),
+    );
+    ctx.font = `bold ${Math.min(nominal, (nominal * 940) / longest)}px monospace`;
+    lines.forEach((line, i) =>
+      ctx.fillText(line, 512, lines.length > 1 ? 115 + i * 82 : 156),
+    );
     ctx.font = '32px monospace';
     ctx.fillText(
       `${repo.stars.toLocaleString('en-US')} stars  /  ${repositoryFloors(repo.stars)} floors`,
       512,
-      266,
+      250,
       940,
     );
     const t = new THREE.CanvasTexture(canvas);

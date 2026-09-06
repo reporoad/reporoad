@@ -1,15 +1,20 @@
 import { database } from '@/lib/db';
 import { messageBody } from '@/lib/live-world';
+import { PRUNE_CHAT_SQL } from '@/lib/chat-retention';
 export const dynamic = 'force-dynamic';
 const headers = { 'Cache-Control': 'no-store' };
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const result = await database()
       .prepare(
         'SELECT id, name, body, created_at AS createdAt FROM chat_messages ORDER BY id DESC LIMIT 50',
       )
       .all();
-    return Response.json({ messages: result.results.reverse() }, { headers });
+    return Response.json({
+      messages: result.results.reverse(),
+      signedIn: Boolean(request.headers.get('oai-authenticated-user-id')),
+      signInUrl: '/signin-with-chatgpt?return_to=%2F',
+    }, { headers });
   } catch {
     return Response.json(
       { error: 'Chat is reconnecting. Please try again.' },
@@ -69,12 +74,15 @@ export async function POST(request: Request) {
     `Traveler ${userId.slice(-4)}`;
   try {
     const now = Date.now();
-    const result = await database()
+    const db = database();
+    const [result] = await db.batch([
+      db
       .prepare(
         'INSERT INTO chat_messages (user_id,name,body,created_at) SELECT ?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM chat_messages WHERE user_id=? AND created_at>?)',
       )
-      .bind(userId, name, body, now, userId, now - 3000)
-      .run();
+      .bind(userId, name, body, now, userId, now - 3000),
+      db.prepare(PRUNE_CHAT_SQL),
+    ]);
     if (!result.meta.changes)
       return Response.json(
         { error: 'Please wait a few seconds between messages.' },

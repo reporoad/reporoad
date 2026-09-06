@@ -1,5 +1,11 @@
 export const CONFIG_PATH = '.github/chilldrive.json';
-export const BUILDING_STYLES = ['woodland', 'brick', 'stone'] as const;
+export const BUILDING_STYLES = [
+  'woodland',
+  'brick',
+  'stone',
+  'greenhouse',
+  'townhouse',
+] as const;
 export type BuildingStyle = {
   version: 1;
   style: (typeof BUILDING_STYLES)[number];
@@ -16,19 +22,42 @@ export type Repository = {
   fetchedAt: number;
   building: BuildingStyle;
   configStatus: 'default' | 'custom' | 'invalid' | 'unavailable';
+  configCheckedAt?: number;
+  weeklyStars?: number;
 };
 export const STARS_PER_FLOOR = 10_000;
+/** Short labels never expose the owner prefix; long names wrap without distortion. */
+export function repositorySignLines(name: string): string[] {
+  if (name.length <= 20) return [name];
+  const middle = name.length / 2;
+  const breaks = [...name.matchAll(/[-_. ]/g)]
+    .map((m) => m.index + 1)
+    .filter((i) => i >= name.length * 0.3 && i <= name.length * 0.7);
+  const split =
+    breaks.sort((a, b) => Math.abs(a - middle) - Math.abs(b - middle))[0] ??
+    Math.ceil(middle);
+  return [name.slice(0, split), name.slice(split)];
+}
 export function repositoryFloors(stars: number): number {
   return Number.isFinite(stars) && stars >= 0
     ? Math.max(1, Math.floor(stars / STARS_PER_FLOOR))
     : 1;
 }
-export function defaultBuilding(index: number): BuildingStyle {
+export function repositoryHash(name: string): number {
+  let hash = 2166136261;
+  for (const char of name.toLowerCase())
+    hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  return hash >>> 0;
+}
+export function defaultBuilding(identity: string | number): BuildingStyle {
+  const index = repositoryHash(String(identity));
   return {
     version: 1,
-    style: BUILDING_STYLES[index % 3],
-    color: ['#8c704a', '#96624c', '#899080', '#778565'][index % 4],
-    roof: index % 3 === 1 ? 'flat' : 'gable',
+    style: BUILDING_STYLES[index % BUILDING_STYLES.length],
+    color: ['#8c704a', '#96624c', '#899080', '#778565', '#b29165', '#7d9193'][
+      Math.floor(index / 5) % 6
+    ],
+    roof: Math.floor(index / 30) % 2 ? 'flat' : 'gable',
   };
 }
 export function parseBuildingConfig(raw: string): BuildingStyle | null {
@@ -112,7 +141,7 @@ export async function fetchRepository(
     );
     if (configResponse.status === 404) {
       // Removing a previously customised file restores the default style.
-      building = defaultBuilding(previous.fullName.length);
+      building = defaultBuilding(previous.fullName);
       configStatus = 'default';
     } else if (configResponse.ok) {
       const file = (await configResponse.json()) as {

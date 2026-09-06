@@ -38,6 +38,8 @@ import { worldAt, type WorldPreview } from '@/lib/live-world';
 import SceneFinish from './scene-finish';
 import RepositoryBuilding from './repository-building';
 import type { Repository } from '@/lib/repositories';
+import { chickenCycle } from '@/lib/chickens';
+import ChickenCrossing from './chicken-crossing';
 
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -602,6 +604,8 @@ function World({
   live,
   preview,
   focus,
+  onPassing,
+  chickenCount,
 }: {
   plots: Plot[];
   repositories?: Repository[];
@@ -611,8 +615,16 @@ function World({
   live: boolean;
   preview?: WorldPreview;
   focus: { id: number; key: number } | null;
+  onPassing?: (names: string[]) => void;
+  chickenCount?: number | null;
 }) {
+  const lastPassing = useRef('');
   const stages = useRef<(THREE.Group | null)[]>([]);
+  const repositoryStages = useRef<(THREE.Group | null)[]>([]);
+  const repositoryLoop = Math.max(
+    ROAD_LENGTH,
+    Math.ceil((repositories?.length || 0) / 2) * SECTION_SPACING,
+  );
   const markers = useRef<(THREE.Mesh | null)[]>([]);
   const distance = useRef(0);
   const { camera } = useThree();
@@ -624,16 +636,30 @@ function World({
       distance.current = Math.floor((focus.id - 1) / 2) * SECTION_SPACING + 22;
   }, [focus, live]);
   useFrame((_, delta) => {
-    if (live) distance.current = worldAt(clock.current.now()).distance;
+    if (live) distance.current = chickenCycle(clock.current.now()).distance;
     else if (playing)
-      distance.current =
-        (distance.current + Math.min(delta, 0.05) * 6.5) % ROAD_LENGTH;
+      distance.current = distance.current + Math.min(delta, 0.05) * 6.5;
     stages.current.forEach((g, i) => {
       if (g) g.position.z = roadSectionZ(i, distance.current);
     });
     markers.current.forEach((m, i) => {
       if (m) m.position.z = roadMarkerZ(i, distance.current);
     });
+    repositoryStages.current.forEach((g, i) => {
+      if (!g) return;
+      g.position.z =
+        roadSectionZ(Math.floor(i / 2), distance.current, repositoryLoop) - 30;
+      g.visible = g.position.z > -310 && g.position.z < 50;
+    });
+    const nearby = (repositories || []).filter((_, i) => {
+      const z = roadSectionZ(Math.floor(i / 2), distance.current, repositoryLoop) - 30;
+      return z > -25 && z <= 7;
+    }).map((r) => r.fullName);
+    const key = nearby.join('|');
+    if (key !== lastPassing.current) {
+      lastPassing.current = key;
+      onPassing?.(nearby);
+    }
   });
   return (
     <>
@@ -644,6 +670,7 @@ function World({
         season={environment.season}
       />
       <Wildlife environment={environment} clock={clock} />
+      <ChickenCrossing clock={clock} count={chickenCount ?? null} live={live} />
       <Precipitation environment={environment} clock={clock} />
       {Array.from({ length: 48 }, (_, i) => (
         <mesh
@@ -667,26 +694,12 @@ function World({
         >
           <RoadsideVerge season={environment.season} seed={i} />
           <group position={[-10, 0, -30]} scale={[1, 1.25, 1]}>
-            {repositories ? (
-              repositories[i * 2] && (
-                <RepositoryBuilding
-                  repo={repositories[i * 2]}
-                  season={environment.season}
-                />
-              )
-            ) : (
+            {!repositories && (
               <PlotBuilding plot={plots[i * 2]} season={environment.season} />
             )}
           </group>
           <group position={[10, 0, -30]} scale={[1, 1.25, 1]}>
-            {repositories ? (
-              repositories[i * 2 + 1] && (
-                <RepositoryBuilding
-                  repo={repositories[i * 2 + 1]}
-                  season={environment.season}
-                />
-              )
-            ) : (
+            {!repositories && (
               <PlotBuilding
                 plot={plots[i * 2 + 1]}
                 season={environment.season}
@@ -717,6 +730,23 @@ function World({
           ))}
         </group>
       ))}
+      {repositories?.map((repo, i) => (
+        <group
+          key={repo.fullName}
+          ref={(g) => {
+            repositoryStages.current[i] = g;
+          }}
+          position={[
+            i % 2 ? 10 : -10,
+            0,
+            roadSectionZ(Math.floor(i / 2), distance.current, repositoryLoop) -
+              30,
+          ]}
+          scale={[1, 1.25, 1]}
+        >
+          <RepositoryBuilding repo={repo} season={environment.season} />
+        </group>
+      ))}
       <VoxelCabin environment={environment} clock={clock} />
     </>
   );
@@ -730,6 +760,8 @@ export default function RoadScene(props: {
   live: boolean;
   preview?: WorldPreview;
   focus: { id: number; key: number } | null;
+  onPassing?: (names: string[]) => void;
+  chickenCount?: number | null;
 }) {
   return (
     <figure

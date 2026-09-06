@@ -5,7 +5,16 @@ import {
   parseBuildingConfig,
   fetchRepository,
   defaultBuilding,
+  repositorySignLines,
 } from '../lib/repositories.ts';
+test('sign names stay intact and wrap long labels instead of squeezing the letters', () => {
+  assert.deepEqual(repositorySignLines('three.js'), ['three.js']);
+  const name = 'system-prompts-and-models-of-ai-tools';
+  const lines = repositorySignLines(name);
+  assert.equal(lines.length, 2);
+  assert.equal(lines.join(''), name);
+  assert.ok(lines.every((line) => line.length <= 24));
+});
 test('floor thresholds use complete 10,000-star groups, with a minimum of one', () => {
   for (const [stars, floors] of [
     [0, 1],

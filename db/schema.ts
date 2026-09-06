@@ -1,4 +1,14 @@
-import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, index, primaryKey } from 'drizzle-orm/sqlite-core';
+export const chickenClicks = sqliteTable('chicken_clicks', {
+  id: text('id').notNull(), round: integer('round').notNull(), total: integer('total').notNull(),
+}, t => [primaryKey({ columns: [t.id, t.round] }), index('idx_chicken_round').on(t.round)]);
+export const chickenLimits = sqliteTable('chicken_limits', {
+  id: text('id').primaryKey(), updatedAt: integer('updated_at').notNull(), nonce: text('nonce').notNull(),
+}, t => [index('idx_chicken_limits_time').on(t.updatedAt)]);
+export const visitorPresence = sqliteTable('visitor_presence', {
+  id: text('id').primaryKey(),
+  lastSeen: integer('last_seen').notNull(),
+}, table => [index('idx_presence_last_seen').on(table.lastSeen)]);
 export const repositoryWorldCache = sqliteTable('repository_world_cache', {
   id: text('id').primaryKey(),
   payload: text('payload').notNull(),
