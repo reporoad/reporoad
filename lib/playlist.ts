@@ -28,7 +28,7 @@ export const PLAYLIST = [
 
 export const CROSSFADE_SECONDS = 5;
 export const TRACK_DURATIONS = [199.992, 158.28, 139.032, 187.704, 122.928];
-const EPOCH = Date.UTC(2026, 0, 1);
+export const PLAYLIST_EPOCH = Date.UTC(2026, 0, 1);
 
 // Each track begins five seconds before its predecessor finishes.
 export function playlistMix(seconds: number) {
@@ -62,6 +62,10 @@ export class PlaylistPlayer {
   private anchor = performance.now();
   private timer: ReturnType<typeof setInterval> | undefined;
   private index = 0;
+  private context?: AudioContext;
+  private analyser?: AnalyserNode;
+  private spectrum = new Uint8Array(1024);
+  private sources: MediaElementAudioSourceNode[] = [];
   private onTrack: (index: number) => void;
   private onState: (playing: boolean) => void;
   private onError: () => void;
@@ -97,7 +101,7 @@ export class PlaylistPlayer {
 
   sync(now: number) {
     if (this.disposed) return;
-    this.seconds = (now - EPOCH) / 1000;
+    this.seconds = (now - PLAYLIST_EPOCH) / 1000;
     this.anchor = performance.now();
     if (this.playing) void this.update().catch(() => this.fail());
   }
@@ -156,6 +160,32 @@ export class PlaylistPlayer {
 
   async play() {
     if (this.disposed || this.playing) return;
+    // One analyser mixes both decks, including their existing crossfade gains.
+    // Construct once: a media element may only have one source node.
+    if (typeof AudioContext !== 'undefined') {
+      if (!this.context) {
+        this.context = new AudioContext();
+        this.analyser = this.context.createAnalyser();
+        this.analyser.fftSize = 2048;
+        this.analyser.smoothingTimeConstant = .78;
+        this.sources = this.decks.map(audio => {
+          const source = this.context!.createMediaElementSource(audio);
+          source.connect(this.analyser!);
+          return source;
+        });
+        this.analyser.connect(this.context.destination);
+      }
+      const isRunning = () => this.context?.state === 'running';
+      if (!isRunning()) {
+        // Do not await a potentially never-resolving autoplay-blocked resume.
+        void this.context.resume().catch(() => {});
+        if (!isRunning()) {
+          await Promise.race([this.context.resume(), new Promise<void>(resolve => setTimeout(resolve, 250))]);
+          if (!isRunning()) throw new Error('Tap to enable the shared soundtrack.');
+        }
+      }
+    }
+    if (this.disposed || this.playing) return;
     this.anchor = performance.now();
     this.playing = true;
     try {
@@ -186,6 +216,20 @@ export class PlaylistPlayer {
     });
   }
 
+  readSpectrum(bands: Float32Array) {
+    bands.fill(0);
+    if (!this.playing || !this.analyser || this.context?.state !== 'running') return;
+    this.analyser.getByteFrequencyData(this.spectrum);
+    const hzPerBin = this.context.sampleRate / this.analyser.fftSize;
+    for (let i = 0; i < bands.length; i++) {
+      const start = Math.max(1, Math.floor(45 * (16000 / 45) ** (i / bands.length) / hzPerBin));
+      const end = Math.min(this.spectrum.length, Math.max(start + 1, Math.ceil(45 * (16000 / 45) ** ((i + 1) / bands.length) / hzPerBin)));
+      let sum = 0;
+      for (let bin = start; bin < end; bin++) sum += this.spectrum[bin] / 255;
+      bands[i] = end > start ? sum / (end - start) : 0;
+    }
+  }
+
   dispose() {
     this.disposed = true;
     this.pause();
@@ -194,5 +238,8 @@ export class PlaylistPlayer {
       a.removeAttribute('src');
       a.load();
     });
+    this.sources.forEach(source => source.disconnect());
+    this.analyser?.disconnect();
+    void this.context?.close().catch(() => {});
   }
 }

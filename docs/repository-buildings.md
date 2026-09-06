@@ -98,3 +98,8 @@ Source documentation:
 - https://docs.github.com/en/rest/repos/contents#get-repository-content
 - https://docs.github.com/en/rest/search/search
 - https://github.com/trending?since=weekly
+# Help wanted and sponsorship markers
+
+Owners can add `"support": { "helpWanted": true, "sponsor": true }` to the existing building configuration. Both flags are optional and default off. Set either to false or remove it to opt out on the next successful refresh. Removing the whole configuration restores the default building with no support markers. The existing last-known-style policy still applies during temporary fetch failures or invalid configuration.
+
+Help wanted displays a two-post timber noticeboard (design A), linking to the repository's open issues labelled `help wanted`. The separate pink voxel heart links to `https://github.com/sponsors/OWNER`; owners should enable it only if they have an active GitHub Sponsors page. This indicates a project seeking support, not a paid RepoRoad placement. These links are also available in Explore for keyboard and touch access. No arbitrary URLs, HTML, or executable code are accepted in the file.

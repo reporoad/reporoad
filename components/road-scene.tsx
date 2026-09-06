@@ -38,8 +38,9 @@ import { worldAt, type WorldPreview } from '@/lib/live-world';
 import SceneFinish from './scene-finish';
 import RepositoryBuilding from './repository-building';
 import type { Repository } from '@/lib/repositories';
-import { chickenCycle } from '@/lib/chickens';
+import { chickenCycle, type CrossingSchedule } from '@/lib/chickens';
 import ChickenCrossing from './chicken-crossing';
+import { dashboardState } from '@/lib/dashboard';
 
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -605,7 +606,8 @@ function World({
   preview,
   focus,
   onPassing,
-  chickenCount,
+  chickenSchedule,
+  supportPreview,
 }: {
   plots: Plot[];
   repositories?: Repository[];
@@ -616,7 +618,8 @@ function World({
   preview?: WorldPreview;
   focus: { id: number; key: number } | null;
   onPassing?: (names: string[]) => void;
-  chickenCount?: number | null;
+  chickenSchedule?: CrossingSchedule | null;
+  supportPreview?: boolean;
 }) {
   const lastPassing = useRef('');
   const stages = useRef<(THREE.Group | null)[]>([]);
@@ -626,7 +629,7 @@ function World({
     Math.ceil((repositories?.length || 0) / 2) * SECTION_SPACING,
   );
   const markers = useRef<(THREE.Mesh | null)[]>([]);
-  const distance = useRef(0);
+  const distance = useRef(supportPreview ? 10 : 0);
   const { camera } = useThree();
   useEffect(() => {
     camera.lookAt(1.7, -7.75, -100);
@@ -636,7 +639,7 @@ function World({
       distance.current = Math.floor((focus.id - 1) / 2) * SECTION_SPACING + 22;
   }, [focus, live]);
   useFrame((_, delta) => {
-    if (live) distance.current = chickenCycle(clock.current.now()).distance;
+    if (live) distance.current = chickenCycle(clock.current.now(), chickenSchedule).distance;
     else if (playing)
       distance.current = distance.current + Math.min(delta, 0.05) * 6.5;
     stages.current.forEach((g, i) => {
@@ -670,7 +673,7 @@ function World({
         season={environment.season}
       />
       <Wildlife environment={environment} clock={clock} />
-      <ChickenCrossing clock={clock} count={chickenCount ?? null} live={live} />
+      <ChickenCrossing clock={clock} schedule={chickenSchedule} live={live} />
       <Precipitation environment={environment} clock={clock} />
       {Array.from({ length: 48 }, (_, i) => (
         <mesh
@@ -744,14 +747,15 @@ function World({
           ]}
           scale={[1, 1.25, 1]}
         >
-          <RepositoryBuilding repo={repo} season={environment.season} />
+          <RepositoryBuilding repo={repo} season={environment.season} side={i % 2 ? 'right' : 'left'} supportPreview={supportPreview} />
         </group>
       ))}
-      <VoxelCabin environment={environment} clock={clock} />
+      <VoxelCabin environment={environment} clock={clock} readDashboard={() => dashboardState(clock.current.now(), chickenSchedule, live, playing)} />
     </>
   );
 }
 export default function RoadScene(props: {
+  supportPreview?: boolean;
   plots: Plot[];
   repositories?: Repository[];
   playing: boolean;
@@ -761,7 +765,7 @@ export default function RoadScene(props: {
   preview?: WorldPreview;
   focus: { id: number; key: number } | null;
   onPassing?: (names: string[]) => void;
-  chickenCount?: number | null;
+  chickenSchedule?: CrossingSchedule | null;
 }) {
   return (
     <figure

@@ -11,6 +11,7 @@ export type BuildingStyle = {
   style: (typeof BUILDING_STYLES)[number];
   color: string;
   roof: 'gable' | 'flat';
+  support?: { sponsor?: boolean; helpWanted?: boolean };
 };
 export type Repository = {
   fullName: string;
@@ -68,7 +69,7 @@ export function parseBuildingConfig(raw: string): BuildingStyle | null {
       return null;
     if (
       Object.keys(value).some(
-        (k) => !['version', 'style', 'color', 'roof'].includes(k),
+        (k) => !['version', 'style', 'color', 'roof', 'support'].includes(k),
       )
     )
       return null;
@@ -80,21 +81,33 @@ export function parseBuildingConfig(raw: string): BuildingStyle | null {
       !['gable', 'flat'].includes(value.roof)
     )
       return null;
+    if (value.support !== undefined && (
+      !value.support || typeof value.support !== 'object' || Array.isArray(value.support) ||
+      Object.entries(value.support).some(([key, flag]) => !['sponsor', 'helpWanted'].includes(key) || typeof flag !== 'boolean')
+    )) return null;
     return {
       version: 1,
       style: value.style,
       color: value.color,
       roof: value.roof,
+      ...(value.support === undefined ? {} : { support: { sponsor: value.support.sponsor === true, helpWanted: value.support.helpWanted === true } }),
     };
   } catch {
     return null;
   }
 }
 export const EXAMPLE_CONFIG = JSON.stringify(
-  { version: 1, style: 'woodland', color: '#8c704a', roof: 'gable' },
+  { version: 1, style: 'woodland', color: '#8c704a', roof: 'gable', support: { sponsor: false, helpWanted: false } },
   null,
   2,
 );
+
+export function supportLinks(fullName: string) {
+  if (!/^[\w.-]+\/[\w.-]+$/.test(fullName)) return null;
+  const [owner, repo] = fullName.split('/').map(encodeURIComponent);
+  return { sponsor: `https://github.com/sponsors/${owner}`,
+    helpWanted: `https://github.com/${owner}/${repo}/issues?q=${encodeURIComponent('is:issue is:open label:"help wanted"')}` };
+}
 
 /** Only fixed GitHub API URLs are fetched; configuration never supplies URLs. */
 export async function fetchRepository(

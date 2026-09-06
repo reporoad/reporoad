@@ -1,5 +1,9 @@
 'use client';
-import { useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef } from 'react';
+import { RadioContext } from './radio-context';
+import { PLAYLIST } from '@/lib/playlist';
+import { drawRadio } from '@/lib/radio-display';
+import { dashboardState, drawDashboard, type DashboardState } from '@/lib/dashboard';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -187,105 +191,17 @@ export function SkyCycle({
 
 // Cockpit coordinates are relative to the fixed driver's eye position.
 // Keep the horizon clear and all trim joined to the windshield surround.
-function DashboardPanel({ radio = false }: { radio?: boolean }) {
+function DashboardPanel({ radio = false, readDashboard }: { radio?: boolean; readDashboard?: () => DashboardState }) {
+  const soundtrack = useContext(RadioContext);
+  const bands = useRef(new Float32Array(9));
+  const lastDraw = useRef(-Infinity);
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 768;
     canvas.height = 240;
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#161b15';
-    ctx.fillRect(0, 0, 768, 240);
-    const amber = radio ? '#c67e32' : '#de8246';
-    ctx.fillStyle = amber;
-    ctx.font = '30px monospace';
-    if (radio) {
-      ctx.font = '51px monospace';
-      ctx.fillText('REPOROAD', 80, 80);
-      ctx.font = '57px monospace';
-      ctx.fillText('04:35 PM', 80, 132);
-      ctx.font = '22px monospace';
-      ctx.fillText('FM', 80, 194);
-      const levels = [1, 1, 2, 3, 4, 7, 5, 8, 1];
-      for (let i = 0; i < levels.length; i++)
-        for (let j = 0; j < levels[i]; j++)
-          ctx.fillRect(270 + i * 43, 194 - j * 15, 32, 8);
-    } else {
-      for (let gauge = 0; gauge < 3; gauge++) {
-        const x = 125 + gauge * 255;
-        if (gauge > 0) {
-          ctx.font = '16px monospace';
-          if (gauge === 1) {
-            ctx.fillText('FUEL', x - 45, 34);
-            for (let row = 0; row < 12; row++) {
-              ctx.fillStyle = row < 3 ? '#52391f' : amber;
-              ctx.fillRect(x - 60, 48 + row * 12, row % 3 ? 50 : 34, 9);
-              ctx.fillRect(x + 3, 48 + row * 12, 12, 8);
-            }
-            ctx.fillStyle = amber;
-            ctx.font = '13px monospace';
-            ctx.fillText('F', x + 26, 57);
-            ctx.fillText('½', x + 26, 119);
-            ctx.fillText('E', x + 26, 184);
-            ctx.fillText('12.8 V', x - 45, 220);
-          } else {
-            for (let row = 0; row < 2; row++) {
-              const y = 58 + row * 78;
-              ctx.font = '15px monospace';
-              ctx.fillText(row ? 'OIL PRESS' : 'COOLANT', x - 87, y - 17);
-              for (let col = 0; col < 12; col++) {
-                ctx.fillStyle = col > (row ? 8 : 6) ? '#52391f' : amber;
-                ctx.fillRect(x - 87 + col * 13, y, 9, 12);
-              }
-              ctx.fillStyle = amber;
-              ctx.font = '12px monospace';
-              ctx.fillText(
-                row ? '0     40     80' : 'C     85      H',
-                x - 87,
-                y + 27,
-              );
-            }
-            for (let col = 0; col < 8; col++)
-              ctx.fillRect(x - 85 + col * 20, 211, 9, 5);
-          }
-          continue;
-        }
-        for (let i = 0; i < 25; i++) {
-          const angle = Math.PI * 0.85 + (i * Math.PI * 1.3) / 24;
-          ctx.fillRect(
-            x + Math.cos(angle) * 106,
-            123 + Math.sin(angle) * 83,
-            i % 4 ? 6 : 10,
-            i % 4 ? 6 : 11,
-          );
-          if (i % 4 === 0) {
-            ctx.font = '16px monospace';
-            ctx.fillText(
-              String(i * (gauge === 0 ? 7.5 : 3.75)),
-              x + Math.cos(angle) * 82 - 9,
-              123 + Math.sin(angle) * 64 + 4,
-            );
-          }
-        }
-        ctx.font = '17px monospace';
-        ctx.fillText(['km/h', 'FUEL', 'TEMP'][gauge], x - 25, 174);
-        ctx.fillText(['24', '3/4', '85'][gauge], x - 16, 141);
-        ctx.save();
-        ctx.translate(x, 123);
-        ctx.scale(1.28, 1);
-        ctx.rotate([-0.7, 0.4, 0.2][gauge]);
-        ctx.fillRect(-2, -64, 4, 64);
-        ctx.restore();
-        for (let i = 0; i < 5; i++) ctx.fillRect(x - 42 + i * 20, 211, 11, 6);
-        ctx.font = '13px monospace';
-        ctx.fillText(['012486', '12.8 V', 'OIL  OK'][gauge], x - 30, 196);
-        for (let row = 0; row < 5; row++)
-          for (let col = 0; col < 3; col++) {
-            ctx.fillStyle = (row + col) % 4 ? '#ab642c' : '#5b4325';
-            ctx.fillRect(x + 97 + col * 8, 77 + row * 12, 5, 7);
-          }
-        ctx.fillStyle = amber;
-      }
-    }
+    if (radio) drawRadio(ctx, 'Joining the shared soundtrack', new Float32Array(9));
+    else drawDashboard(ctx, dashboardState(0, null, true, false));
     const t = new THREE.CanvasTexture(canvas);
     t.colorSpace = THREE.SRGBColorSpace;
     t.magFilter = THREE.LinearFilter;
@@ -293,6 +209,19 @@ function DashboardPanel({ radio = false }: { radio?: boolean }) {
     t.anisotropy = 8;
     return t;
   }, [radio]);
+  useFrame(({ clock }) => {
+    if (clock.elapsedTime - lastDraw.current < 1 / 15) return;
+    lastDraw.current = clock.elapsedTime;
+    const ctx = (texture.image as HTMLCanvasElement).getContext('2d')!;
+    if (radio) {
+      bands.current.fill(0);
+      soundtrack?.player.current?.readSpectrum(bands.current);
+      drawRadio(ctx, PLAYLIST[soundtrack?.track ?? 0].name, bands.current);
+    } else {
+      drawDashboard(ctx, readDashboard?.() ?? dashboardState(0, null, true, false));
+    }
+    texture.needsUpdate = true;
+  });
   useEffect(() => () => texture.dispose(), [texture]);
   return (
     <group position={radio ? [0, -0.535, -1.359] : [0.83, -0.53, -1.488]}>
@@ -319,9 +248,11 @@ function DashboardPanel({ radio = false }: { radio?: boolean }) {
 export function VoxelCabin({
   environment,
   clock,
+  readDashboard,
 }: {
   environment: Environment;
   clock: SharedClock;
+  readDashboard?: () => DashboardState;
 }) {
   const wheel = useMemo(() => steeringWheelModel(), []);
   const dashboard = useMemo(() => cabinDashboardModel(), []);
@@ -425,7 +356,7 @@ export function VoxelCabin({
   });
   return (
     <group ref={cabin} position={[1.7, 1.9, 7]} rotation={[-0.09, 0, 0]}>
-      <DashboardPanel />
+      <DashboardPanel readDashboard={readDashboard} />
       <DashboardPanel radio />
       <VoxelModel parts={dashboard} cabin />
       <mesh

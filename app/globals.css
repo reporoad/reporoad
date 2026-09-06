@@ -997,6 +997,8 @@ button svg {
 .repo-weekly {
   color: var(--primary);
 }
+.app .support-help { color: #e4cf91; border-color: #887747; }
+.app .support-sponsor { color: #efabbc; border-color: #865566; }
 
 /* RepoRoad: a cinema-sized drive with a quiet, warm community rail. */
 .chicken-control { display: grid; gap: 6px; border-bottom: 1px solid var(--border); padding-bottom: 12px; flex-shrink: 0; }
@@ -1009,14 +1011,32 @@ button svg {
 .brand h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; margin: 0; }
 .repo-brand-label { font-size: 14px; font-weight: 400; letter-spacing: 0; margin-left: 20px; }
 .header-note { color: var(--muted-foreground); font-size: 13px; }
+.header-volume-popup { background: #211d19; color: var(--foreground); border: 1px solid var(--border); padding: 18px; gap: 20px; width: 240px; }
 .repository-world .workspace { grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; align-items: stretch; }
 .repository-world .workspace > section { position: relative; display: flex; flex-direction: column; gap: 14px; }
 .repository-world .drive { height: max(430px, calc(100dvh - 186px)); border: 1px solid var(--border); border-radius: 9px; }
 .repository-world .drive-top { top: 15px; left: 15px; justify-content: flex-start; }
 .repository-world .drive-tag { display: flex; align-items: center; gap: 8px; background: #1b1715e8; border: 1px solid #ed6157; color: #ff7064; border-radius: 30px; padding: 6px 12px; letter-spacing: .4px; }
 .drive-tag > span { width: 8px; height: 8px; border-radius: 50%; background: #ff6257; }
-.repository-world .drive-bottom { justify-content: space-between; align-items: end; padding: 16px 12px; }
-.passing-card { display: flex; align-items: center; gap: 18px; border: 1px solid #53473780; background: #1c1915eb; border-radius: 8px; padding: 12px 14px; max-width: calc(100% - 100px); }
+.repository-world .drive-bottom { justify-content: flex-end; align-items: end; padding: 16px 12px; }
+.passing-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; width: 100%; min-height: 70px; flex-shrink: 0; border: 1px solid #53473780; background: #1c1915eb; border-radius: 9px; padding: 12px; }
+.passing-subtitles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; color: var(--muted-foreground); }
+.passing-row { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; }
+.passing-row > span:first-child { color: var(--muted-foreground); width: 35px; flex-shrink: 0; font-size: 12px; }
+.passing-row a { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+.passing-row a > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.passing-row svg { flex-shrink: 0; }
+.passing-row a > .repository-avatar { flex: 0 0 20px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; background: var(--muted); }
+.repository-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.passing-row a:hover { color: var(--primary); }
+.passing-card .recent-button { width: 100%; max-width: none; font-size: 13px !important; gap: 8px; }
+.repository-world .workspace > section > .passing-card { max-width: 100%; background: #201c18; }
+@media (max-width: 600px) {
+  .passing-card { grid-template-columns: minmax(0, 1fr) 40px; gap: 10px; }
+  .passing-subtitles { gap: 10px; }
+  .passing-row { gap: 5px; }
+  .passing-card .recent-button { font-size: 0 !important; gap: 0; padding: 9px; }
+}
 .passing-label { display: block; font: 12px var(--font-geist-mono), monospace; color: #c9beb0; margin-bottom: 3px; }
 .passing-names { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 14px; }
 .passing-names a { display: inline-flex; align-items: center; gap: 5px; }
@@ -1032,6 +1052,8 @@ button svg {
 .radio-text { min-width: 0; }
 .radio-text strong { font-size: 14px; overflow-wrap: anywhere; }
 .radio-text small { font-size: 12px; }
+.sound-enable { font-size: 13px; flex-shrink: 0; border-color: var(--primary) !important; }
+@media (max-width: 600px) { .radio:has(.sound-enable) { flex-wrap: wrap; } .radio:has(.sound-enable) .radio-text { flex-basis: 55%; } }
 .repository-world .volume { width: 135px; display: flex; align-items: center; gap: 12px; }
 .volume > svg { flex-shrink: 0; color: #c3bcb2; }
 .repository-world .repo-panel { border-radius: 9px; background: #1d1916; align-self: stretch; height: max(514px, calc(100dvh - 102px)); padding: 10px; }
@@ -1081,7 +1103,7 @@ button svg {
 .drive-settings .preview-controls { margin: 0; }
 .repository-world .footer { font-size: 12px; color: #a69b8e; margin-top: 14px; }
 @media (min-width: 1600px) { .repository-world .workspace { grid-template-columns: minmax(0, 1fr) 330px; } }
-@media (max-width: 1000px) { .repo-brand-label, .header-note { display: none; } .passing-card { gap: 8px; padding: 9px; } .recent-button { max-width: 45px; overflow: hidden; font-size: 0 !important; gap: 0; } }
+@media (max-width: 1000px) { .repo-brand-label, .header-note { display: none; } }
 @media (max-width: 780px) {
   .repository-world { padding: 0 10px 16px; }
   .repository-world .workspace { grid-template-columns: minmax(0, 1fr); }

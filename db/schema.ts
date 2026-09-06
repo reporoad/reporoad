@@ -1,4 +1,10 @@
 import { sqliteTable, integer, text, index, primaryKey } from 'drizzle-orm/sqlite-core';
+export const chickenSchedule = sqliteTable('chicken_schedule', {
+  id: integer('id').primaryKey(), round: integer('round').notNull(),
+  stopAt: integer('stop_at').notNull(), startedAt: integer('started_at').notNull(),
+  departAt: integer('depart_at').notNull(), crossingCount: integer('crossing_count').notNull(),
+  baseDistance: integer('base_distance').notNull(),
+});
 export const chickenClicks = sqliteTable('chicken_clicks', {
   id: text('id').notNull(), round: integer('round').notNull(), total: integer('total').notNull(),
 }, t => [primaryKey({ columns: [t.id, t.round] }), index('idx_chicken_round').on(t.round)]);

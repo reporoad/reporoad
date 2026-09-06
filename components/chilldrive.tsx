@@ -8,8 +8,8 @@ import {
   MessageCircle,
   Plus,
   Volume2,
+  VolumeX,
   Maximize,
-  Music2,
   Pause,
   Play,
   Route,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
+import { Popover, PopoverTrigger, PopoverContent, PopoverTitle } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import {
   NativeSelect,
@@ -28,18 +29,24 @@ import RoadScene from './road-scene';
 import LiveChat from './live-chat';
 import { usePresence } from './use-presence';
 import { useChickens } from './use-chickens';
-import { PLAYLIST, PlaylistPlayer } from '@/lib/playlist';
+import { PLAYLIST, PLAYLIST_EPOCH, playlistMix, PlaylistPlayer } from '@/lib/playlist';
+import { RadioContext } from './radio-context';
+import RepositoryAvatar from './repository-avatar';
 import { worldAt, SEASONS, type WorldPreview } from '@/lib/live-world';
 import {
   CONFIG_PATH,
   EXAMPLE_CONFIG,
   repositoryFloors,
+  supportLinks,
   type Repository,
 } from '@/lib/repositories';
 import { CATEGORY_SEED } from '@/lib/category-seed';
 import { CATEGORIES, type Category } from '@/lib/repository-categories';
 
 export default function RepoRoad() {
+  const [supportPreview, setSupportPreview] = useState(() =>
+    ['localhost', '127.0.0.1'].includes(window.location.hostname) &&
+    new URLSearchParams(window.location.search).get('supportPreview') === '1');
   const [category, setCategory] = useState<Category>('top');
   const [repositories, setRepositories] = useState<Repository[]>(
     CATEGORY_SEED.top.repositories,
@@ -56,9 +63,9 @@ export default function RepoRoad() {
   const [recent, setRecent] = useState<string[]>([]);
   const [recentOnly, setRecentOnly] = useState(false);
   const online = usePresence();
-  const [mode, setMode] = useState<'live' | 'studio'>('live');
+  const [mode, setMode] = useState<'live' | 'studio'>(supportPreview ? 'studio' : 'live');
   const [playing, setPlaying] = useState(
-    () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    () => !supportPreview && !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
   const [preview, setPreview] = useState<WorldPreview>({
     hour: 16,
@@ -76,8 +83,8 @@ export default function RepoRoad() {
     () => new URLSearchParams(window.location.search).get('broadcast') === '1',
   );
   const [audioOn, setAudioOn] = useState(false),
-    [track, setTrack] = useState(0),
     [volume, setVolume] = useState(30);
+  const track = playlistMix((now - PLAYLIST_EPOCH) / 1000).index;
   const [notice, setNotice] = useState('');
   const radio = useRef<PlaylistPlayer | null>(null);
   const directory = useRef<HTMLElement | null>(null);
@@ -139,9 +146,11 @@ export default function RepoRoad() {
     };
   }, [category]);
   useEffect(() => {
-    radio.current = new PlaylistPlayer(setTrack, setAudioOn, () =>
-      setNotice('Music could not load. Press play to retry.'),
+    radio.current = new PlaylistPlayer(() => {}, setAudioOn, () =>
+      setNotice('Sound disconnected. Enable sound to rejoin the live soundtrack.'),
     );
+    radio.current.sync(clock.current.now());
+    void radio.current.play().catch(() => {});
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setBroadcast(false);
     };
@@ -164,8 +173,7 @@ export default function RepoRoad() {
         const anchor = data.serverTime + (end - start) / 2;
         clock.current.now = () => anchor + performance.now() - end;
         setSynced(true);
-        if (modeRef.current === 'live')
-          radio.current?.sync(clock.current.now());
+        radio.current?.sync(clock.current.now());
       } catch {
         if (!stopped) setSynced(false);
       }
@@ -223,17 +231,13 @@ export default function RepoRoad() {
     }
     return () => lifecycle.abort();
   }, []);
-  async function toggleAudio() {
-    if (audioOn) {
-      radio.current?.pause();
-      setAudioOn(false);
-      return;
-    }
+  async function enableSound() {
     try {
-      if (mode === 'live') radio.current?.sync(clock.current.now());
+      radio.current?.sync(clock.current.now());
       await radio.current?.play();
+      setNotice('');
     } catch {
-      setNotice('Press play again to enable audio in this browser.');
+      setNotice('Tap Enable sound to join the shared soundtrack.');
     }
   }
   function visit(fullName: string) {
@@ -245,8 +249,9 @@ export default function RepoRoad() {
   }
   const scene = (
     <div className="drive">
-      <RoadScene
+      <RadioContext.Provider value={{ player: radio, track }}><RoadScene
         key={category}
+        supportPreview={supportPreview && mode === 'studio'}
         plots={[]}
         repositories={repositories}
         playing={playing}
@@ -255,27 +260,21 @@ export default function RepoRoad() {
         live={mode === 'live'}
         preview={preview}
         focus={focus}
-        chickenCount={chickens.crossingCount}
+        chickenSchedule={chickens.schedule}
         onPassing={(names) => {
           setPassing(names);
           setRecent((old) => [...names, ...old.filter((name) => !names.includes(name))].slice(0, 20));
         }}
-      />
+      /></RadioContext.Provider>
       {!broadcast && (
         <>
           <div className="drive-top">
             <span className="drive-tag" title={synced ? 'Shared live world' : 'Connecting to shared clock'}>
               <span /> {mode === 'live' ? 'LIVE' : 'PREVIEW'}
             </span>
-            {mode === 'live' && chickens.crossing && <span className="crossing-banner">🚦 Chicken crossing · {chickens.crossingCount === null ? 'Counting…' : `${chickens.crossingCount.toLocaleString()} chickens`}{(chickens.crossingCount || 0) > 64 ? ' · representative flock' : ''}</span>}
+            {mode === 'live' && chickens.crossing && <span className="crossing-banner">🚦 {chickens.remaining.toLocaleString()} chickens still to cross</span>}
           </div>
           <div className="drive-bottom">
-            <div className="passing-card">
-              <div><span className="passing-label">PASSING NOW</span>
-                <div className="passing-names">{passing.length ? passing.map((name) => <a key={name} href={`https://github.com/${name}`} target="_blank" rel="noopener noreferrer">{name.split('/').pop()} <ExternalLink size={13} /></a>) : CATEGORIES[category].label}</div>
-              </div>
-              <button className="btn recent-button" onClick={() => { setRecentOnly(true); setQuery(''); setTab('repositories'); }}><History size={18} /> Recently passed</button>
-            </div>
             <div className="actions">
               <button
                 className="btn icon"
@@ -318,10 +317,37 @@ export default function RepoRoad() {
           <h1>RepoRoad</h1>
           <span className="repo-brand-label">A live lo-fi drive through GitHub.</span>
         </div>
-        <span className="header-note">Every roadside place is a repo.</span>
+        <div className="topbar-right">
+          <span className="header-note">Every roadside place is a repo.</span>
+          <Popover>
+            <PopoverTrigger className="btn icon" aria-label="Music volume" title={audioOn ? 'Music volume' : 'Enable sound and adjust volume'} onClick={() => { if (!audioOn) void enableSound(); }}>
+              {audioOn && volume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            </PopoverTrigger>
+            <PopoverContent align="end" className="header-volume-popup">
+              <PopoverTitle>Music volume · {volume}%</PopoverTitle>
+              <Slider aria-label="Music volume" min={0} max={100} value={[volume]} onValueChange={(value) => {
+                const v = Array.isArray(value) ? value[0] : value;
+                setVolume(v);
+                radio.current?.setVolume(v / 100);
+              }} />
+              {!audioOn && <button className="btn sound-enable" onClick={enableSound}>Enable sound</button>}
+            </PopoverContent>
+          </Popover>
+        </div>
       </header>
       <div className="workspace">
         <section aria-label="Repository world live view">
+          {supportPreview && <div className="live-toolbar" role="status" style={{ paddingRight: 150, flexWrap: 'wrap' }}>
+            <span className="fine">Support marker preview · sample signs, not owner requests</span>
+            <button className="btn" onClick={() => {
+              setSupportPreview(false);
+              const url = new URL(window.location.href);
+              url.searchParams.delete('supportPreview');
+              window.history.replaceState(null, '', url);
+              setMode('live');
+              setPlaying(true);
+            }}>Exit preview</button>
+          </div>}
           <details className="drive-settings"><summary>Drive settings</summary><div className="live-toolbar">
             <div className="actions">
               <button
@@ -402,27 +428,17 @@ export default function RepoRoad() {
           )}
           </details>
           {scene}
-          <div className="radio">
-            <button className="btn radio-play" aria-label={audioOn ? 'Pause music' : 'Play music'} onClick={toggleAudio}>{audioOn ? <Pause size={19} /> : <Play size={19} />}</button>
-            <div className="radio-art"><Music2 size={22} /></div>
-            <div className="radio-text">
-              <strong>{PLAYLIST[track].name}</strong>
-              <small>RepoRoad radio</small>
+          <div className="passing-card">
+            <div className="passing-text radio-text">
+            <strong>Passing now</strong>
+            <div className="passing-subtitles">
+            {['Left', 'Right'].map((side, index) => {
+              const name = passing.find(name => repositories.findIndex(r => r.fullName === name) % 2 === index);
+              return <div className="passing-row" key={side}><span>{side}</span>{name ? <a href={`https://github.com/${name}`} target="_blank" rel="noopener noreferrer" title={name}><RepositoryAvatar fullName={name} /><span>{name.split('/').pop()}</span><ExternalLink size={13} /></a> : <span className="passing-empty">—</span>}</div>;
+            })}
             </div>
-            <div className="volume">
-              <Volume2 size={19} />
-              <Slider
-                aria-label="Music volume"
-                min={0}
-                max={100}
-                value={[volume]}
-                onValueChange={(value) => {
-                  const v = Array.isArray(value) ? value[0] : value;
-                  setVolume(v);
-                  radio.current?.setVolume(v / 100);
-                }}
-              />
             </div>
+            <button className="btn recent-button" onClick={() => { setRecentOnly(true); setQuery(''); setTab('repositories'); }}><History size={18} /> Recently passed</button>
           </div>
         </section>
         <aside
@@ -437,9 +453,9 @@ export default function RepoRoad() {
               <TabsTrigger value="style"><Plus /> Add</TabsTrigger>
             </TabsList>
             <div className="chicken-control">
-              <button className="btn" onClick={chickens.add}>🐔 Add chicken <Plus size={16} /></button>
+              <button className="btn" disabled={!chickens.schedule} onClick={chickens.add}>🐔 Add chicken <Plus size={16} /></button>
               <span>{chickens.queued === null ? 'Connecting…' : `${chickens.queued.toLocaleString()} queued`}{chickens.pending ? ` · +${chickens.pending} sending` : ''}</span>
-              <small>Next crossing in {Math.floor(chickens.nextIn / 60)}:{String(chickens.nextIn % 60).padStart(2, '0')} · shared live road</small>
+              <small>{chickens.crossing ? `${chickens.remaining.toLocaleString()} still to cross · timer starts on green` : chickens.waiting ? 'At the light · syncing crossing…' : `Next light in ${Math.floor(chickens.nextIn / 60)}:${String(chickens.nextIn % 60).padStart(2, '0')}`}</small>
               {chickens.error && <small role="status">{chickens.error}</small>}
             </div>
             <div className="tab-body">
@@ -509,9 +525,6 @@ export default function RepoRoad() {
                     >
                       <div className="repo-card-title">
                         <strong title={r.fullName}>{r.name}</strong>
-                        <span className="repo-floor-count">
-                          {repositoryFloors(r.stars)} floors
-                        </span>
                       </div>
                       <p>{r.description}</p>
                       <div className="repo-card-meta">
@@ -532,6 +545,8 @@ export default function RepoRoad() {
                         )}
                       </div>
                       <div className="actions">
+                        {r.building.support?.helpWanted && <a className="btn support-help" href={supportLinks(r.fullName)?.helpWanted} target="_blank" rel="noopener noreferrer">Help wanted <ExternalLink size={13} /></a>}
+                        {r.building.support?.sponsor && <a className="btn support-sponsor" href={supportLinks(r.fullName)?.sponsor} target="_blank" rel="noopener noreferrer">♥ Sponsor <ExternalLink size={13} /></a>}
                         <button
                           className="btn"
                           onClick={() => visit(r.fullName)}
@@ -581,6 +596,7 @@ export default function RepoRoad() {
                   <Code2 size={24} />
                   <h2>Your repository, your building.</h2>
                   <p>Every 10,000 stars adds a floor, with a minimum of one. Add a style file to make the building yours.</p>
+                  <p>Set <code>support.helpWanted</code> to <code>true</code> for a wooden noticeboard linking to your open “help wanted” issues. Set <code>support.sponsor</code> to <code>true</code> for a pink heart linking to your owner or organisation’s GitHub Sponsors page. Enable sponsorship only if that page is available.</p>
                   <label>
                     Repository
                     <NativeSelect

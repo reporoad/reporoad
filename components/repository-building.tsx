@@ -8,6 +8,8 @@ import {
 } from '@/lib/repositories';
 import type { VoxelPart } from '@/lib/voxel-models';
 import VoxelModel from './voxel-model';
+import { loadOwnerAvatar } from '@/lib/owner-avatar';
+import RepositorySupport from './repository-support';
 
 export function repositoryBuildingModel(
   repo: Repository,
@@ -124,9 +126,13 @@ export function repositoryBuildingModel(
 export default memo(function RepositoryBuilding({
   repo,
   season,
+  side = 'left',
+  supportPreview = false,
 }: {
   repo: Repository;
   season: string;
+  side?: 'left' | 'right';
+  supportPreview?: boolean;
 }) {
   const parts = useMemo(
     () => repositoryBuildingModel(repo, season),
@@ -142,24 +148,29 @@ export default memo(function RepositoryBuilding({
     ctx.strokeStyle = '#aa8955';
     ctx.lineWidth = 12;
     ctx.strokeRect(8, 8, 1008, 304);
+    // Keep a fixed avatar area so the title never shifts when the image loads.
+    ctx.fillStyle = '#43533e';
+    ctx.fillRect(48, 76, 164, 164);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f0ddb0';
+    ctx.font = 'bold 88px monospace';
+    ctx.fillText(repo.fullName[0].toUpperCase(), 130, 188);
     const lines = repositorySignLines(repo.name);
     const nominal = lines.length > 1 ? 72 : 96;
     ctx.font = `bold ${nominal}px monospace`;
     const longest = Math.max(
       ...lines.map((line) => ctx.measureText(line).width),
     );
-    ctx.font = `bold ${Math.min(nominal, (nominal * 940) / longest)}px monospace`;
+    ctx.font = `bold ${Math.min(nominal, (nominal * 730) / longest)}px monospace`;
     lines.forEach((line, i) =>
-      ctx.fillText(line, 512, lines.length > 1 ? 115 + i * 82 : 156),
+      ctx.fillText(line, 620, lines.length > 1 ? 115 + i * 82 : 156),
     );
     ctx.font = '32px monospace';
     ctx.fillText(
-      `${repo.stars.toLocaleString('en-US')} stars  /  ${repositoryFloors(repo.stars)} floors`,
-      512,
+      `${repo.stars.toLocaleString('en-US')} stars`,
+      620,
       250,
-      940,
+      730,
     );
     const t = new THREE.CanvasTexture(canvas);
     t.colorSpace = THREE.SRGBColorSpace;
@@ -168,8 +179,21 @@ export default memo(function RepositoryBuilding({
     return t;
   }, [repo.name, repo.fullName, repo.stars]);
   useEffect(() => () => sign.dispose(), [sign]);
+  useEffect(() => {
+    let active = true;
+    void loadOwnerAvatar(repo.fullName).then(image => {
+      if (!active || !image) return;
+      const ctx = (sign.image as HTMLCanvasElement).getContext('2d')!;
+      ctx.fillStyle = '#e9e3d8';
+      ctx.fillRect(48, 76, 164, 164);
+      ctx.drawImage(image, 48, 76, 164, 164);
+      sign.needsUpdate = true;
+    });
+    return () => { active = false; };
+  }, [repo.fullName, sign]);
   return (
     <group>
+      <RepositorySupport repo={repo} side={side} preview={supportPreview} />
       <VoxelModel parts={parts} />
       <mesh position={[0, 3.1, 3.25]} castShadow>
         <boxGeometry args={[5.8, 1.5, 0.2]} />

@@ -1,12 +1,14 @@
 # Shared chicken crossing
 
-The shared clock stops the car at a traffic light every five minutes for 20 seconds. Four-second smooth braking and acceleration preserve continuous forward travel. Studio preview remains independent. Clicks during a crossing join the next crossing.
+The shared persisted schedule stops the car after five minutes of driving. The next five-minute timer starts only when the light turns green after the last chicken exits. Four-second smooth braking and acceleration preserve continuous forward travel. Studio preview remains independent. Clicks during a crossing join the next crossing. If the server is temporarily unavailable at a light, clients wait safely rather than replaying an old flock.
 
 Clicks are buffered in the tab, sent as cumulative totals at most once every 10–11 seconds, and retried without double counting. Unsent clicks are explicitly shown; closing the tab or missing the cutoff can lose pending clicks. The database is authoritative. Anonymous users may participate.
 
-Storage is one indexed aggregate row per session per round, not one row per click. Each accepted batch adds at most 200 and a session contributes at most 6,000 per round. A hashed, round-scoped Cloudflare client IP limits accepted batches to one per ten seconds; people sharing a network share this limit. The route fails closed if the edge address is unavailable in production. Old rounds and rate records are pruned in bounded chunks on writes, retaining the current and previous crossing. Raw IP addresses are not stored.
+Storage is one indexed aggregate row per session per round, not one row per click. Each accepted batch adds at most 200; there is no longer a per-session flock cap. A hashed, round-scoped Cloudflare client IP limits accepted batches to one per ten seconds; people sharing a network share this limit. The route fails closed if the edge address is unavailable in production. Old rounds and rate records are pruned in bounded chunks on writes, retaining the current and previous crossing. Raw IP addresses are not stored.
 
-Read snapshots use Cloudflare's per-location Cache API for five seconds. Count updates are eventually consistent; final crossing totals are reloaded at the boundary. Only 64 chickens (512 instanced boxes in one draw call) are ever rendered. Larger totals are labelled as a representative flock; this is deliberately not a promise to animate millions of animals individually.
+Read snapshots use Cloudflare's per-location Cache API for five seconds, bypassed at a stop boundary. One atomic SQL update freezes the count and advances the event. Each event owns its count and timestamps, eliminating the previous stale-count flash on a new clock cycle. A small lead-in gives clients time to receive the event.
+
+Every accepted chicken crosses left to right at eight chickens per second, with a ten-second off-screen-to-off-screen transit. There is no representative-flock cap. Index arithmetic selects only the active time window, and frustum checks skip off-screen animals. The reusable instance pool is sized from transit time and spacing (81 slots), independent of whether the queue contains 1 or 1,000,000 chickens. Finished chickens are never looped or clamped at the exit. The remaining count decrements as chickens exit. At this steady rate a million chickens takes about 34.7 hours; the car waits for the whole flock.
 
 ## Capacity caveat
 
