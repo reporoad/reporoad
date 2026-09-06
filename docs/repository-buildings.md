@@ -84,8 +84,8 @@ webhooks and aren't immediate; no scheduler or background monitoring is implied.
   activation are not implemented; adding a building file cannot grant a paid slot.
 
 All categories reuse the existing `repository_world_cache` table with separate
-`category-v1:*` rows. No new schema migration was added. The previous hosted
-migration conflict is still unresolved; migrations have not been rewritten.
+`category-v1:*` rows. No new schema migration was added for categories. The replacement
+site applied migrations 0000–0004 successfully; see `migration-safety.md` for upgrade checks.
 
 To enable discovery, configure a public-data GitHub read token as the hosted
 `GITHUB_READ_TOKEN` secret (never in frontend code or version control). For local

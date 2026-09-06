@@ -16,4 +16,4 @@ This is a bounded D1 implementation, not a load-tested internet-scale service. F
 
 Before committing to thousands of sustained concurrent clickers, load-test the actual hosted plan, including p95 latency, database overload, cache hit rate, retry storms, and costs. At larger scale move ingestion to partitioned Durable Objects or a queue/Redis aggregator, broadcast sampled totals, and persist periodic rollups to D1. That infrastructure is not currently provisioned by this Sites project. Existing chat and presence polling also need to be included in the load test.
 
-Publishing remains blocked by the earlier uncertain migration ledger boundary (`repository_world_cache` already exists). Migration history has not been rewritten or bypassed. Platform repair is needed before applying the new append-only migrations.
+The replacement site applied migrations 0000–0004 successfully. Migration history was not rewritten or bypassed. See `migration-safety.md` for the append-only upgrade checks and recovery procedure.

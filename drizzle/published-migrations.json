@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "entry": {
+        "idx": 0,
+        "version": "6",
+        "when": 1788571672002,
+        "tag": "0000_famous_shinobi_shaw",
+        "breakpoints": true
+      },
+      "sqlSha256": "e0961144d90018b5d10bf4eb4fb8fdbf18927f3b8f34f36c1c82f908ec5ad9fc",
+      "snapshotSha256": "6a9936e4dd06ec29c408e23b5b1057b7d25606e29622473b26e5861575e9c88b"
+    },
+    {
+      "entry": {
+        "idx": 1,
+        "version": "6",
+        "when": 1788605184667,
+        "tag": "0001_furry_marvel_zombies",
+        "breakpoints": true
+      },
+      "sqlSha256": "19138d0825a5d5772cfdcbcaffa17d1cd4a8f5d3c1072d4ad5743c9cb7404c35",
+      "snapshotSha256": "9fd296de355b3f345f34609ee686584ff3410c7b0b0ff768a7a369eec0d68631"
+    },
+    {
+      "entry": {
+        "idx": 2,
+        "version": "6",
+        "when": 1788693179912,
+        "tag": "0002_organic_jack_murdock",
+        "breakpoints": true
+      },
+      "sqlSha256": "b1ceca46f589b6f004fdd6fc67b0a5d23cec0333376ddf73aee9b9f9a3d4033e",
+      "snapshotSha256": "de3498bcf4310880fc89cf4ae312be455a03e3ed092efd7033ab57aab5c324e0"
+    },
+    {
+      "entry": {
+        "idx": 3,
+        "version": "6",
+        "when": 1788724371022,
+        "tag": "0003_silky_impossible_man",
+        "breakpoints": true
+      },
+      "sqlSha256": "c9bb99c7c9c499d0cb32544b68c62c32316c68de105552d773129f805f807c81",
+      "snapshotSha256": "1d352ff1ce05266947905344da07bb3c3bc4ed82feb858f30831068c59ea497f"
+    },
+    {
+      "entry": {
+        "idx": 4,
+        "version": "6",
+        "when": 1788726887495,
+        "tag": "0004_bored_centennial",
+        "breakpoints": true
+      },
+      "sqlSha256": "a6e36bd50b178451b47b22ce50d8f8cbfacc1b84d8761f55663782290121fd84",
+      "snapshotSha256": "a64e66902d370a21e1a9c23ee7df7eceb8211d084e401744ae73af5ff0c43b4c"
+    }
+  ]
+}
