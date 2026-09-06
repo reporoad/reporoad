@@ -8,7 +8,8 @@ export async function GET(request: Request) {
     const cache = (caches as unknown as { default?: Cache }).default;
     const key = new Request(new URL(`/api/chickens?bucket=${Math.floor(now / 5000)}`, request.url));
     const cached = await cache?.match(key);
-    if (cached) return cached;
+    // Vinext adds response headers; Cache API responses have immutable headers.
+    if (cached) return new Response(cached.body, cached);
     const rows = await database().prepare('SELECT round, SUM(total) AS total FROM chicken_clicks WHERE round >= ? AND round <= ? GROUP BY round').bind(round - 1, round).all<{round: number; total: number}>();
     const response = Response.json({ round, queued: rows.results.find(r => r.round === round)?.total || 0,
       crossingCount: rows.results.find(r => r.round === round - 1)?.total || 0 },
