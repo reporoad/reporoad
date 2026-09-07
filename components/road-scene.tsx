@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -754,8 +755,31 @@ function World({
     </>
   );
 }
+function RenderDiagnostics({ report }: { report: (value: string) => void }) {
+  const { gl } = useThree();
+  const counter = useRef({ start: performance.now(), frames: 0 });
+  useEffect(() => {
+    const lost = () => report('WebGL context LOST — reload the widget');
+    gl.domElement.addEventListener('webglcontextlost', lost);
+    return () => gl.domElement.removeEventListener('webglcontextlost', lost);
+  }, [gl, report]);
+  // Negative priority observes frames without taking over R3F rendering.
+  useFrame(() => {
+    const now = performance.now();
+    counter.current.frames++;
+    const elapsed = now - counter.current.start;
+    if (elapsed >= 1000) {
+      report(`${Math.round(counter.current.frames * 1000 / elapsed)} FPS · ${gl.domElement.width}×${gl.domElement.height} · ${gl.info.render.calls} draw calls (previous pass)`);
+      counter.current = { start: now, frames: 0 };
+    }
+  }, -100);
+  return null;
+}
+
 export default function RoadScene(props: {
   broadcast?: boolean;
+  lightweight?: boolean;
+  onRenderReport?: (value: string) => void;
   supportPreview?: boolean;
   plots: Plot[];
   repositories?: Repository[];
@@ -768,6 +792,14 @@ export default function RoadScene(props: {
   onPassing?: (names: string[]) => void;
   chickenSchedule?: CrossingSchedule | null;
 }) {
+  const [broadcastDpr, setBroadcastDpr] = useState(1);
+  useEffect(() => {
+    if (!props.lightweight) return;
+    const resize = () => setBroadcastDpr(Math.min(1, 1280 / Math.max(1, window.innerWidth), 720 / Math.max(1, window.innerHeight)));
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [props.lightweight]);
   return (
     <figure
       className="scene"
@@ -775,22 +807,23 @@ export default function RoadScene(props: {
     >
       <SceneBoundary>
         <Canvas
-          key={props.broadcast ? 'broadcast-capture' : 'interactive'}
+          key={props.lightweight ? 'broadcast-lite' : props.broadcast ? 'broadcast-capture' : 'interactive'}
           fallback={<div className="scene-fallback"><strong>RepoRoad needs WebGL to render the drive.</strong><p>This browser source does not provide a compatible 3D renderer.</p></div>}
-          shadows="percentage"
-          dpr={[1, 2]}
+          shadows={props.lightweight ? false : 'percentage'}
+          dpr={props.lightweight ? broadcastDpr : [1, 2]}
           camera={{ position: [1.7, 1.9, 7], fov: 68, near: 0.1, far: 500 }}
           gl={{
             // Retain completed frames for browser-widget capture. Remount when
             // changing mode: WebGL context attributes cannot change in place.
             preserveDrawingBuffer: props.broadcast === true,
-            antialias: true,
+            antialias: !props.lightweight,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.22,
           }}
         >
           <World {...props} />
-          <SceneFinish />
+          {!props.lightweight && <SceneFinish />}
+          {props.lightweight && props.onRenderReport && <RenderDiagnostics report={props.onRenderReport} />}
         </Canvas>
       </SceneBoundary>
     </figure>

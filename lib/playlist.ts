@@ -62,6 +62,7 @@ export class PlaylistPlayer {
   private anchor = performance.now();
   private timer: ReturnType<typeof setInterval> | undefined;
   private index = 0;
+  private corrections = 0;
   private context?: AudioContext;
   private analyser?: AnalyserNode;
   private spectrum = new Uint8Array(1024);
@@ -99,6 +100,25 @@ export class PlaylistPlayer {
     return this.seconds + (this.playing ? (performance.now() - this.anchor) / 1000 : 0);
   }
 
+  /** Read-only diagnostics; never changes playback or exposes stream credentials. */
+  diagnostics() {
+    const active = this.decks.filter((_, slot) =>
+      playlistMix(this.position()).tracks.some(t => t.index === this.indices[slot]));
+    return {
+      context: this.context?.state ?? 'not created',
+      corrections: this.corrections,
+      decks: active.map(audio => {
+        let ahead = 0;
+        for (let i = 0; i < (audio.buffered?.length ?? 0); i++) {
+          if (audio.buffered.start(i) <= audio.currentTime && audio.buffered.end(i) >= audio.currentTime)
+            ahead = audio.buffered.end(i) - audio.currentTime;
+        }
+        return { paused: audio.paused, seeking: audio.seeking, ready: audio.readyState,
+          ahead: Math.round(ahead), error: audio.error?.code ?? null };
+      }),
+    };
+  }
+
   sync(now: number) {
     if (this.disposed) return;
     this.seconds = (now - PLAYLIST_EPOCH) / 1000;
@@ -132,7 +152,7 @@ export class PlaylistPlayer {
       audio.preload = 'auto';
       audio.volume = this.volume * track.gain;
       if (!Number.isFinite(audio.currentTime) || Math.abs(audio.currentTime - track.offset) > 2) {
-        try { audio.currentTime = track.offset; } catch { /* Retry on the next tick after metadata. */ }
+        try { audio.currentTime = track.offset; this.corrections++; } catch { /* Retry on the next tick after metadata. */ }
       }
       if (this.playing && audio.paused && !this.pending.has(audio)) {
         if (audio.error) audio.load();
