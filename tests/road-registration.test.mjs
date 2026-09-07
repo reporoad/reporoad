@@ -48,6 +48,17 @@ test('directory capacity cannot silently hide a submitted repository',async()=>{
   const merged=mergeRoad(discovered,[repo]);
   assert.equal(merged.length,1000);assert.ok(merged.some(r=>r.fullName==='z/project'));
 });
+test('only Impresspress uses the reviewed PR revision and stays first',async()=>{
+  const urls=[]; const base=github();
+  const request=async(url,options)=>{urls.push(String(url));return base(url,options);};
+  const impress=await verifyRepository('impresspress/impresspress',undefined,request);
+  assert.equal(impress.placement,'featured');assert.equal(impress.configSource,'curated-pr');
+  assert.ok(urls.includes('https://raw.githubusercontent.com/impresspress/impresspress/023042768f723023262247f592470a4ffc08d323/.reporoad.yml'));
+  const regular=await verifyRepository('a/b',undefined,request);
+  assert.equal(regular.placement,undefined);
+  assert.ok(urls.includes('https://raw.githubusercontent.com/a/b/HEAD/.reporoad.yml'));
+  assert.equal(mergeRoad([regular],[impress])[0].fullName,impress.fullName);
+});
 test('registration capacity is bounded and duplicate updates still succeed',async()=>{
   const {db,sql}=database();try {
     const insert=sql.prepare('INSERT INTO road_registrations VALUES (?,NULL,0,0)');

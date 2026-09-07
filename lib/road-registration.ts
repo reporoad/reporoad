@@ -5,6 +5,9 @@ import type { Repository } from './repositories.ts';
 // as submissions; an unmerged/missing config never creates a building.
 export const INITIAL_REGISTRATIONS = ['reporoad/reporoad', 'impresspress/impresspress',
   'wafer-run/wafer-run', 'gizza-ai/gizza-ai', 'wagmiphotos/wagmiphotos'];
+// Owner-approved exception: read only the reviewed PR commit, never an arbitrary
+// branch/revision supplied through the public submission endpoint.
+const IMPRESSPRESS_REVISION = '023042768f723023262247f592470a4ffc08d323';
 export function repositoryName(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > 250) return null;
   const name = value.trim().replace(/^https:\/\/github\.com\//i, '').replace(/^github\.com\//i, '').replace(/\/$/, '');
@@ -26,10 +29,11 @@ export async function verifyRepository(name: string, token?: string, request: ty
   if (!response.ok) throw new RegistrationError('GitHub is unavailable or rate-limited. Try again shortly.', 503);
   const repo = publicRepository(await response.json(), Date.now());
   if (!repo || repositoryName(repo.fullName) !== safe) throw new RegistrationError('Only public repositories can join the road.');
-  const checked = await checkPublicStyle(repo, request);
+  const curated = safe === 'impresspress/impresspress';
+  const checked = await checkPublicStyle(repo, request, curated ? IMPRESSPRESS_REVISION : 'HEAD');
   if (checked.configStatus === 'unavailable') throw new RegistrationError('Unable to read the repository file. Try again shortly.', 503);
   if (checked.configStatus !== 'custom') throw new RegistrationError('Commit a valid .reporoad.yml at the root of the default branch first.');
-  return checked;
+  return curated ? {...checked, placement: 'featured', configSource: 'curated-pr'} : checked;
 }
 export const SAVE_REGISTRATION = `INSERT INTO road_registrations(name,payload,checked_at,refresh_after)
   SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM road_registrations)<1000 OR EXISTS(SELECT 1 FROM road_registrations WHERE name=?)
@@ -61,5 +65,5 @@ export function mergeRoad(discovered: Repository[], registered: Repository[]) {
   const direct = new Map(registered.map(r => [r.fullName.toLowerCase(), r]));
   // Reserve directory capacity for explicit registrations before optional search.
   const combined = [...direct.values(), ...new Map(discovered.filter(r => !direct.has(r.fullName.toLowerCase())).map(r => [r.fullName.toLowerCase(), r])).values()];
-  return combined.slice(0,1000).sort((a,b) => a.fullName.localeCompare(b.fullName));
+  return combined.slice(0,1000).sort((a,b) => Number(b.placement === 'featured') - Number(a.placement === 'featured') || a.fullName.localeCompare(b.fullName));
 }

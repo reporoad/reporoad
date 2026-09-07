@@ -29,6 +29,8 @@ export type Repository = {
   configStatus: 'default' | 'custom' | 'invalid' | 'unavailable';
   configCheckedAt?: number;
   weeklyStars?: number;
+  placement?: 'featured';
+  configSource?: 'curated-pr';
 };
 export const STARS_PER_FLOOR = 10_000;
 /** Short labels never expose the owner prefix; long names wrap without distortion. */

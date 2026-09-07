@@ -20,6 +20,8 @@ The explicitly requested initial identities are RepoRoad, Impresspress, Wafer, G
 
 ## Additional discovery
 
+Owner-approved exception: Impresspress is pinned first in the road and Explore, using the exact configuration commit `023042768f723023262247f592470a4ffc08d323` from its unmerged PR #98. The UI labels it “Pinned · PR preview”. Only this server-side allowlisted repository gets the exception; public callers cannot supply arbitrary revisions or placement. Remove the override in `lib/road-registration.ts` after its default-branch configuration is ready.
+
 The server-side `GITHUB_READ_TOKEN` is recommended for metadata rate limits and required for optional code search. The existing search cache remains an additional discovery source, not the registration authority. It scans the first 1,000 indexed results with bounded refresh work; direct registrations are merged afterward and cannot be erased by an empty search result. The UI explains discovery failures without blocking direct submissions.
 
 Old `.github/chilldrive.json` files no longer enroll a repository. Open their contents as YAML-compatible JSON if needed, then export and commit `.reporoad.yml`. The editor never commits or uploads to GitHub on the user's behalf.

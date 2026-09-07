@@ -165,10 +165,12 @@ async function boundedText(response: Response, max: number) {
 export async function checkPublicStyle(
   repo: Repository,
   request: typeof fetch = fetch,
+  revision = 'HEAD',
 ): Promise<Repository> {
   try {
+    if (revision !== 'HEAD' && !/^[a-f0-9]{40}$/.test(revision)) throw Error('Invalid config revision');
     // No token or external URL from config is ever sent to this public content host.
-    const url = `https://raw.githubusercontent.com/${repo.fullName}/HEAD/${CONFIG_PATH}`;
+    const url = `https://raw.githubusercontent.com/${repo.fullName}/${revision}/${CONFIG_PATH}`;
     const response = await request(url, {
       redirect: 'manual',
       signal: AbortSignal.timeout(8000),
