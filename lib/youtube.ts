@@ -1,7 +1,18 @@
-// Public watch ID, not an ingest URL or stream key. Update when a new broadcast
-// is created, until owner-authorized active-broadcast discovery is connected.
+// Fallback only. The active ID is read from the server's runtime configuration.
 export const YOUTUBE_VIDEO_ID = 'WuLbv_j9CGE';
 export const YOUTUBE_WATCH_URL = `https://www.youtube.com/watch?v=${YOUTUBE_VIDEO_ID}`;
+
+export function youtubeRuntimeConfig(value?: string) {
+  const videoId = value?.trim() || YOUTUBE_VIDEO_ID;
+  if (!/^[\w-]{11}$/.test(videoId)) throw Error('YOUTUBE_VIDEO_ID must be an 11-character public YouTube video ID');
+  return { videoId };
+}
+
+export function youtubeConfigResponse(value?: string) {
+  const headers = { 'Cache-Control': 'no-store' };
+  try { return Response.json(youtubeRuntimeConfig(value), { headers }); }
+  catch { return Response.json({ error: 'Broadcast configuration unavailable' }, { status: 503, headers }); }
+}
 
 export function youtubeEmbedUrls(hostname: string, videoId = YOUTUBE_VIDEO_ID) {
   if (!/^[\w-]{11}$/.test(videoId)) throw Error('Invalid YouTube video ID');

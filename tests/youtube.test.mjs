@@ -1,7 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { youtubeEmbedUrls, usesRenderedWorld, YOUTUBE_VIDEO_ID } from '../lib/youtube.ts';
+import { youtubeEmbedUrls, usesRenderedWorld, YOUTUBE_VIDEO_ID, youtubeRuntimeConfig, youtubeConfigResponse } from '../lib/youtube.ts';
+test('runtime configuration changes both destinations without rebuilding', async () => {
+  assert.equal(youtubeRuntimeConfig().videoId, YOUTUBE_VIDEO_ID);
+  const response = youtubeConfigResponse(' abcdefghijk ');
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  const { videoId } = await response.json();
+  const urls = youtubeEmbedUrls('reporoad.suppers.chatgpt.site', videoId);
+  assert.equal(new URL(urls.player).pathname, '/embed/abcdefghijk');
+  assert.equal(new URL(urls.chat).searchParams.get('v'), 'abcdefghijk');
+  assert.equal((await youtubeConfigResponse('ABCDEFGHIJK').json()).videoId, 'ABCDEFGHIJK');
+  for (const invalid of ['https://youtube.com/live/abcdefghijk', 'rtmps://secret/key', '<script>']) {
+    const bad = youtubeConfigResponse(invalid);
+    assert.equal(bad.status, 503);
+    assert.equal(bad.headers.get('cache-control'), 'no-store');
+    assert.doesNotMatch(await bad.text(), /secret|<script>|rtmps:/);
+  }
+});
 test('player and chat use the supplied unlisted video; chat domain follows the website', () => {
   assert.equal(YOUTUBE_VIDEO_ID, 'WuLbv_j9CGE');
   for (const host of ['localhost', '127.0.0.1', 'reporoad.suppers.chatgpt.site']) {

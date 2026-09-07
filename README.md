@@ -32,7 +32,7 @@ Open the URL printed by the server (normally http://localhost:3000).
 | `/?preview=1` | Local 3D world with drive-preview controls |
 | `/?supportPreview=1` | Local support-marker demo |
 
-Development uses 20 labelled sample GitHub repositories, not a claim that their owners have joined. The current YouTube ID is configured in `lib/youtube.ts`; it may be an ended test broadcast. A new YouTube event may need a new ID. Automatic active-broadcast discovery is not connected.
+Development uses 20 labelled sample GitHub repositories, not a claim that their owners have joined. Set the server runtime variable `YOUTUBE_VIDEO_ID` to change the player and chat without editing code or pushing Git. Locally, copy `.dev.vars.example` to `.dev.vars`, edit the ID, and restart the web service. On Sites, edit its environment setting and redeploy the existing saved version to apply it (no rebuild or Git push). Viewers check the setting every 30 seconds. The fallback may be an ended test broadcast; automatic active-broadcast discovery is not connected. See [broadcast configuration](docs/youtube-viewing.md).
 
 D1-backed interactions need local migrations. Apply them using the local-only configuration:
 

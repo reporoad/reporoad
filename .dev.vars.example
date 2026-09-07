@@ -1,0 +1,4 @@
+# Public viewer video ID, NOT the RTMP stream key or YouTube Studio URL.
+# Copy to .dev.vars for local development; configure the same runtime variable
+# in Sites environment settings for the published website.
+YOUTUBE_VIDEO_ID=WuLbv_j9CGE
