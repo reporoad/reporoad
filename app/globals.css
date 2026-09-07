@@ -1207,3 +1207,6 @@ button svg {
   .youtube-mobile-chat { display: block; font-size: 14px; line-height: 1.6; padding: 16px 0; }
   .youtube-chat { min-height: 0; }
 }
+.repo-submit { display: grid; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #514535; }
+.repo-submit label { font-size: 14px; font-weight: 600; }
+.repo-submit p { margin: 0; }

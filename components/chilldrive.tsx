@@ -111,9 +111,11 @@ export default function RepoRoad() {
     }
     void refresh();
     const timer = setInterval(refresh, 5 * 60 * 1000);
+    window.addEventListener('reporoad:directory-updated', refresh);
     return () => {
       stopped = true;
       clearInterval(timer);
+      window.removeEventListener('reporoad:directory-updated', refresh);
     };
   }, []);
   useEffect(() => {

@@ -12,7 +12,7 @@ test('published edits, removed files and reordered journal entries fail closed',
     m => { m[0].sql += '\n-- changed'; },
     m => { m[0].snapshot += ' '; },
     m => { m[0].entry.when++; },
-    m => { m.pop(); },
+    m => { m.splice(published.entries.length - 1); },
     m => { [m[0], m[1]] = [m[1], m[0]]; },
   ]) {
     const modified = structuredClone(migrations); change(modified);

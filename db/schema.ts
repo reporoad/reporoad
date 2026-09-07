@@ -1,4 +1,14 @@
 import { sqliteTable, integer, text, index, primaryKey } from 'drizzle-orm/sqlite-core';
+export const roadRegistrations = sqliteTable('road_registrations', {
+  name: text('name').primaryKey(),
+  payload: text('payload'),
+  checkedAt: integer('checked_at').notNull(),
+  refreshAfter: integer('refresh_after').notNull(),
+}, t => [index('idx_road_refresh').on(t.refreshAfter)]);
+export const roadSubmissionLimits = sqliteTable('road_submission_limits', {
+  id: text('id').primaryKey(),
+  updatedAt: integer('updated_at').notNull(),
+}, t => [index('idx_road_limits_time').on(t.updatedAt)]);
 export const chickenSchedule = sqliteTable('chicken_schedule', {
   id: integer('id').primaryKey(), round: integer('round').notNull(),
   stopAt: integer('stop_at').notNull(), startedAt: integer('started_at').notNull(),

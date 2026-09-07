@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, Star } from 'lucide-react';
 import { Input } from './ui/input';
 import RepositoryAvatar from './repository-avatar';
+import RepoSubmit from './repo-submit';
 import { supportLinks, type Repository } from '@/lib/repositories';
 export default function RepoDirectory({ repositories, status }: { repositories: Repository[]; status: string }) {
   const [query, setQuery] = useState(''), [page, setPage] = useState(1), [descending, setDescending] = useState(true);
@@ -16,8 +17,9 @@ export default function RepoDirectory({ repositories, status }: { repositories: 
       <a className="road-repo-row" href={`https://github.com/${r.fullName}`} target="_blank" rel="noopener noreferrer" title={`Open ${r.fullName} on GitHub`}><span className="road-rank">{start + i + 1}</span><RepositoryAvatar fullName={r.fullName}/><span className="road-repo-name"><small>{r.fullName.split('/')[0]}</small><strong>{r.name}</strong></span><span className="road-stars" title={`${r.stars.toLocaleString()} stars`}><Star size={13}/>{Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 0 }).format(r.stars)}</span><ChevronRight size={15}/></a>
       {(r.building.support?.helpWanted || r.building.support?.sponsor) && <div className="road-support">{r.building.support.helpWanted && <a href={supportLinks(r.fullName)?.helpWanted} target="_blank" rel="noopener noreferrer">Help wanted ↗</a>}{r.building.support.sponsor && <a href={supportLinks(r.fullName)?.sponsor} target="_blank" rel="noopener noreferrer">♥ Sponsor ↗</a>}</div>}
     </li>)}</ol>
-    {!filtered.length && <p className="repo-empty">{query ? 'No matching repositories.' : 'The road is waiting for its first discovered places. Create a .reporoad.yml in the Add tab.'}</p>}
+    {!filtered.length && <p className="repo-empty">{query ? 'No matching repositories.' : 'Commit a .reporoad.yml using the Add tab, then submit your repository below.'}</p>}
     <nav className="road-pagination" aria-label="Repository pages"><small>{filtered.length ? start + 1 : 0}–{Math.min(start + 5, filtered.length)} of {filtered.length}</small><button aria-label="Previous page" disabled={current === 1} onClick={() => setPage(current - 1)}><ChevronLeft size={15}/></button>{numbers.map((n,i) => <span key={n}>{i > 0 && n > numbers[i-1] + 1 && <span className="page-gap">…</span>}<button aria-label={`Page ${n}`} aria-current={n === current ? 'page' : undefined} onClick={() => setPage(n)}>{n}</button></span>)}<button aria-label="Next page" disabled={current === pages} onClick={() => setPage(current + 1)}><ChevronRight size={15}/></button></nav>
     <p className="repo-data-status" role="status">{status}</p>
+    <RepoSubmit/>
   </section>;
 }

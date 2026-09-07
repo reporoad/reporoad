@@ -61,7 +61,9 @@ support:
 
 Styles: `woodland` (Cabin), `stone` (Workshop), `cafe`, `brick`, `greenhouse`, and `townhouse`. Blank sign text uses the repository name. Height comes from GitHub stars, not the file.
 
-Production discovery requires a server-side `GITHUB_READ_TOKEN` with access to public code search. Indexing is delayed and discovery is bounded, not immediate or exhaustive. Only valid root `.reporoad.yml` files enroll a repository. See [repository discovery and limits](docs/repository-road.md).
+After committing, use **Submit repository** in Explore or Add. RepoRoad verifies the public default-branch file directly and saves the registration in D1, without waiting for GitHub search indexing. Re-submit to refresh a changed file immediately (30-second submission cooldown). Registered files are also rechecked hourly as the directory is visited; missing or invalid files remove the building. Transient failures retain the last verified building for up to a day.
+
+`GITHUB_READ_TOKEN` is recommended for API rate limits and required only for the additional code-search discovery. The branch includes five requested initial repository identities; each must pass live validation before appearing. Local development merges verified registrations with the labelled sample buildings. Apply the new additive migration before testing. See [repository discovery and limits](docs/repository-road.md).
 
 ## Music
 

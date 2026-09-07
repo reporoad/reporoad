@@ -6,6 +6,7 @@ import { Download, Code2 as Github, Check, Upload } from 'lucide-react';
 import { Input } from './ui/input';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
 import RepositoryBuilding from './repository-building';
+import RepoSubmit from './repo-submit';
 import { BUILDING_STYLES, CONFIG_PATH, parseBuildingConfig, serializeBuildingConfig, type BuildingStyle, type Repository } from '@/lib/repositories';
 
 const LABELS = { woodland: 'Cabin', stone: 'Workshop', cafe: 'Café', brick: 'Brick house', greenhouse: 'Greenhouse', townhouse: 'Townhouse' };
@@ -93,6 +94,7 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     <p className="fine">The heart links to the owner’s GitHub Sponsors page. Enable it only if that page is active.</p>
     <div className="place-export"><p>Commit <code>{CONFIG_PATH}</code> at your repo’s root to join the road.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
     {message && <p className="notice" role="status">{message}</p>}
-    <p className="fine">Public repositories only. Discovery uses GitHub’s code index and is not immediate. Indexing and a configured server-side GitHub read token are required. Edits here do not change the shared road.</p>
+    <p className="fine">Public repositories only. Commit your file on the default branch, then submit below. Local preview edits are not published until committed.</p>
+    <RepoSubmit/>
   </section>;
 }

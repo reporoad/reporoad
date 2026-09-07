@@ -1,19 +1,21 @@
 import { env } from 'cloudflare:workers';
 import { database } from '@/lib/db';
 import { SAMPLE_ROAD } from '@/lib/road-seed';
+import { registeredRoad, mergeRoad } from '@/lib/road-registration';
 import { discoverCategory, type CategoryData } from '@/lib/repository-categories';
 export const dynamic = 'force-dynamic';
 const CHECK_MS = 5 * 60 * 1000;
 const headers = { 'Cache-Control': 'no-store' };
 export async function GET() {
-  if (import.meta.env.DEV) return Response.json({
-    repositories: SAMPLE_ROAD, source: 'local-samples',
-    warning: 'Local sample repositories · these owners have not necessarily joined RepoRoad.',
-  }, { headers });
   const token = (env as unknown as { GITHUB_READ_TOKEN?: string }).GITHUB_READ_TOKEN;
   const empty: CategoryData = { repositories: [], refreshedAt: 0 };
   try {
     const db = database(), now = Date.now(), id = 'road-yaml-v1';
+    const registered = await registeredRoad(db, token);
+    if (import.meta.env.DEV) return Response.json({
+      repositories: mergeRoad(SAMPLE_ROAD, registered), source: 'local-samples',
+      warning: `${registered.length} verified registrations · local sample buildings also shown.`,
+    }, { headers });
     await db.prepare('INSERT OR IGNORE INTO repository_world_cache (id,payload,refreshed_at,refresh_after) VALUES (?,?,?,?)')
       .bind(id, JSON.stringify(empty), 0, 0).run();
     const row = await db.prepare('SELECT payload FROM repository_world_cache WHERE id=?')
@@ -28,8 +30,8 @@ export async function GET() {
         .bind(JSON.stringify(data), now, id).run();
     }
     return Response.json({
-      repositories: data.repositories.filter(r => r.configStatus === 'custom' && now - (r.configCheckedAt || 0) < 86400000),
-      source: 'github-cache', warning: data.warning, refreshedAt: data.refreshedAt,
+      repositories: mergeRoad(data.repositories.filter(r => r.configStatus === 'custom' && now - (r.configCheckedAt || 0) < 86400000), registered),
+      source: 'github-cache', warning: data.warning ? 'Automatic GitHub discovery is unavailable. Direct repository submissions still work.' : undefined, refreshedAt: data.refreshedAt,
     }, { headers });
   } catch {
     return Response.json({ ...empty, source: 'unavailable',
