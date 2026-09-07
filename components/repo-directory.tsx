@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Search, Star } from 'lucide-react';
 import { Input } from './ui/input';
 import RepositoryAvatar from './repository-avatar';
 import RepoSubmit from './repo-submit';
@@ -15,8 +15,14 @@ export default function RepoDirectory({ repositories, status }: { repositories: 
     <div className="road-table-head"><span>Repository</span><button onClick={() => { setDescending(!descending); setPage(1); }} aria-label={`Sort stars ${descending ? 'ascending' : 'descending'}`}><Star size={14}/> Stars {descending ? '↓' : '↑'}</button></div>
     <ol className="road-repos" start={start + 1}>{filtered.slice(start, start + 5).map((r, i) => <li key={r.fullName}>
       {r.placement === 'featured' && <small className="fine">Pinned{r.configSource === 'curated-pr' ? ' · PR preview' : ''}</small>}
-      <a className="road-repo-row" href={`https://github.com/${r.fullName}`} target="_blank" rel="noopener noreferrer" title={`Open ${r.fullName} on GitHub`}><span className="road-rank">{start + i + 1}</span><RepositoryAvatar fullName={r.fullName}/><span className="road-repo-name"><small>{r.fullName.split('/')[0]}</small><strong>{r.name}</strong></span><span className="road-stars" title={`${r.stars.toLocaleString()} stars`}><Star size={13}/>{Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 0 }).format(r.stars)}</span><ChevronRight size={15}/></a>
-      {(r.building.support?.helpWanted || r.building.support?.sponsor) && <div className="road-support">{r.building.support.helpWanted && <a href={supportLinks(r.fullName)?.helpWanted} target="_blank" rel="noopener noreferrer">Help wanted ↗</a>}{r.building.support.sponsor && <a href={supportLinks(r.fullName)?.sponsor} target="_blank" rel="noopener noreferrer">♥ Sponsor ↗</a>}</div>}
+      <a className="road-repo-row" href={`https://github.com/${r.fullName}`} target="_blank" rel="noopener noreferrer" title={`Open ${r.fullName} on GitHub`}>
+        <span className="road-rank">{start + i + 1}</span><RepositoryAvatar fullName={r.fullName}/>
+        <span className="road-repo-name"><small>{r.fullName.split('/')[0]}</small><strong>{r.name}</strong>
+          {r.building.support?.sponsor && <span className="road-sponsor-indicator"><Heart size={12} aria-hidden="true"/>Seeking sponsors</span>}
+        </span>
+        <span className="road-stars" title={`${r.stars.toLocaleString()} stars`}><Star size={13}/>{Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 0 }).format(r.stars)}</span><ChevronRight size={15}/>
+      </a>
+      {r.building.support?.helpWanted && <div className="road-support"><a href={supportLinks(r.fullName)?.helpWanted} target="_blank" rel="noopener noreferrer">Help wanted ↗</a></div>}
     </li>)}</ol>
     {!filtered.length && <p className="repo-empty">{query ? 'No matching repositories.' : 'Commit a .reporoad.yml using the Add tab, then submit your repository below.'}</p>}
     <nav className="road-pagination" aria-label="Repository pages"><small>{filtered.length ? start + 1 : 0}–{Math.min(start + 5, filtered.length)} of {filtered.length}</small><button aria-label="Previous page" disabled={current === 1} onClick={() => setPage(current - 1)}><ChevronLeft size={15}/></button>{numbers.map((n,i) => <span key={n}>{i > 0 && n > numbers[i-1] + 1 && <span className="page-gap">…</span>}<button aria-label={`Page ${n}`} aria-current={n === current ? 'page' : undefined} onClick={() => setPage(n)}>{n}</button></span>)}<button aria-label="Next page" disabled={current === pages} onClick={() => setPage(current + 1)}><ChevronRight size={15}/></button></nav>

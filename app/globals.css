@@ -1183,6 +1183,8 @@ button svg {
 .road-repo-name small, .road-repo-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .road-repo-name small { font-size: 10px; color: #9fa499; margin-bottom: 2px; }
 .road-repo-name strong { font-size: 12px; font-weight: 500; }
+.road-sponsor-indicator { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; line-height: 1.35; color: #e7acbd; }
+.road-sponsor-indicator svg { flex-shrink: 0; }
 .road-stars { display: flex; gap: 4px; align-items: center; font-size: 10px; }
 .road-support { display: flex; gap: 12px; padding: 0 0 9px 62px; font-size: 10px; color: #d2b574; }
 .road-pagination { display: flex; gap: 3px; align-items: center; justify-content: flex-end; padding: 12px 0; }
