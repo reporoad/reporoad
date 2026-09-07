@@ -249,12 +249,10 @@ export function VoxelCabin({
   environment,
   clock,
   readDashboard,
-  disableMirror = false,
 }: {
   environment: Environment;
   clock: SharedClock;
   readDashboard?: () => DashboardState;
-  disableMirror?: boolean;
 }) {
   const wheel = useMemo(() => steeringWheelModel(), []);
   const dashboard = useMemo(() => cabinDashboardModel(), []);
@@ -305,7 +303,6 @@ export function VoxelCabin({
   }, []);
   useEffect(() => () => canopyLight.dispose(), [canopyLight]);
   const rear = useMemo(() => {
-    if (disableMirror) return null;
     const target = new THREE.WebGLRenderTarget(
       cabinMirror.targetWidth,
       cabinMirror.targetHeight,
@@ -319,9 +316,9 @@ export function VoxelCabin({
     camera.position.set(1.7, 2, 7);
     camera.lookAt(1.7, 2, 100);
     return { target, camera };
-  }, [disableMirror]);
+  }, []);
   const lastMirrorFrame = useRef(0);
-  useEffect(() => () => rear?.target.dispose(), [rear]);
+  useEffect(() => () => rear.target.dispose(), [rear]);
   const { size } = useThree();
   const frameX = Math.max(1.2, (size.width / size.height) * 1.19);
   const surround = useMemo(() => cabinSurroundModel(frameX), [frameX]);
@@ -334,7 +331,7 @@ export function VoxelCabin({
   useFrame(({ gl, scene, clock: renderClock }) => {
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
-    if (rear && cabin.current && now - lastMirrorFrame.current > 100) {
+    if (cabin.current && now - lastMirrorFrame.current > 100) {
       lastMirrorFrame.current = now;
       const target = gl.getRenderTarget();
       const shadows = gl.shadowMap.autoUpdate;
@@ -439,8 +436,7 @@ export function VoxelCabin({
       <mesh position={[0.045, 0.79, -1.791]} scale={[-1, 1, 1]}>
         <planeGeometry args={[cabinMirror.width, cabinMirror.height]} />
         <meshBasicMaterial
-          map={rear?.target.texture ?? null}
-          color={rear ? '#ffffff' : '#303932'}
+          map={rear.target.texture}
           side={THREE.DoubleSide}
           toneMapped={false}
         />
