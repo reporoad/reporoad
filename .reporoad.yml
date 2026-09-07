@@ -1,0 +1,10 @@
+# Customize this repository's building on https://reporoad.suppers.chatgpt.site
+version: 1
+style: woodland
+color: "#778565"
+roof: gable
+signText: reporoad
+garden: true
+support:
+  sponsor: true
+  helpWanted: false
