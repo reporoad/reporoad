@@ -278,7 +278,7 @@ export default function RepoRoad() {
         {scene}
         {musicError && <div className="notice" data-broadcast-error role="alert" style={{ position: 'absolute', bottom: 20, left: 20 }}>{musicError}</div>}
         <aside className="broadcast-crossing" aria-label="Chicken crossing status">
-          <span className="broadcast-crossing-icon" aria-hidden="true">🐔</span>
+          <img className="broadcast-crossing-icon" src="/icons/chicken.png" width={36} height={36} alt="" aria-hidden="true"/>
           <div>
             <strong>{crossingStatus.headline}</strong>
             <span>{crossingStatus.detail}</span>
@@ -426,7 +426,7 @@ export default function RepoRoad() {
               <TabsTrigger value="style"><Plus /> Add</TabsTrigger>
             </TabsList>
             <div className="chicken-control">
-              <button className="btn" disabled={!chickens.schedule} onClick={chickens.add}>🐔 Add chicken <Plus size={16} /></button>
+              <button className="btn" disabled={!chickens.schedule} onClick={chickens.add}><img className="chicken-button-icon" src="/icons/chicken.png" width={24} height={24} alt="" aria-hidden="true"/> Add chicken <Plus size={16} /></button>
               <span>{chickens.queued === null ? 'Connecting…' : `${chickens.queued.toLocaleString()} queued`}{chickens.pending ? ` · +${chickens.pending} sending` : ''}</span>
               <small>{chickens.crossing ? `${chickens.remaining.toLocaleString()} still to cross · timer starts on green` : chickens.waiting ? 'At the light · syncing crossing…' : `Next light in ${Math.floor(chickens.nextIn / 60)}:${String(chickens.nextIn % 60).padStart(2, '0')}`}</small>
               {chickens.error && <small role="status">{chickens.error}</small>}

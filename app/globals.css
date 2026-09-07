@@ -703,7 +703,8 @@ button svg {
   box-shadow: 0 4px 20px #0004;
   pointer-events: none;
 }
-.broadcast-crossing-icon { font-size: 30px; }
+.broadcast-crossing-icon { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+.chicken-button-icon { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
 .broadcast-crossing strong { display: block; font-size: clamp(16px, 1.5vw, 24px); font-variant-numeric: tabular-nums; }
 .broadcast-crossing div > span { display: block; margin-top: 3px; font-size: clamp(14px, 1.1vw, 18px); color: #e1c48c; font-variant-numeric: tabular-nums; }
 .broadcast-crossing small { display: block; margin-top: 6px; font-size: 12px; color: #c8c0b0; overflow-wrap: anywhere; }
