@@ -78,6 +78,7 @@ async function main() {
     '--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding',
     '--disable-backgrounding-occluded-windows','--force-device-scale-factor=1',`--window-size=${c.width},${c.height}`,
     '--window-position=0,0','--kiosk',`--use-angle=${c.angle}`,
+    ...(c.allowSoftware && c.angle==='swiftshader' ? ['--enable-unsafe-swiftshader'] : []),
     ...(c.angle==='vulkan' ? ['--enable-features=Vulkan','--disable-vulkan-surface'] : []),'about:blank']);
   const portFile=join(profile,'DevToolsActivePort');await until(()=>existsSync(portFile));
   const [port, browserPath]=readFileSync(portFile,'utf8').trim().split('\n');
@@ -151,7 +152,7 @@ async function main() {
       const unhealthy = health.check(current, last, Date.now());
       if(unhealthy)throw Error(unhealthy);
       last=current;
-    } catch(e) {console.error(e.message);void stop(1);} finally{checking=false;}
+    } catch(e) {if(!stopping){console.error(e.message);void stop(1);}} finally{checking=false;}
   },5000);
   console.log(c.mode==='record' ? `Recording ${c.seconds}s to ${c.output}` : 'Streaming to configured destination');
   if(process.connected)process.send({type:'capturing'});

@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 try {
+  if(Number(process.versions.node.split('.')[0])<22)throw Error('Node.js 22+ required; this runner uses the built-in WebSocket client.');
   const c = config(process.argv.slice(2));
   if (c.mode === 'record') await import('./worker.mjs');
   else {
