@@ -5,3 +5,4 @@ export async function PUT(request:Request) {
   return uploadMusic(request,bindings.MUSIC,bindings.MUSIC_UPLOAD_TOKEN);
 }
 export const HEAD=PUT;
+export const DELETE=PUT;

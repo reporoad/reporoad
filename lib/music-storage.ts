@@ -46,6 +46,21 @@ export async function uploadMusic(request: Request, bucket: R2Bucket | undefined
   const key=new URL(request.url).searchParams.get('key') || '';
   if(!musicKey(key))return response('Invalid music key',400);
   const old=await bucket.head(key);
+  if(request.method==='DELETE') {
+    if(key==='catalog.json')return response('Catalog deletion is not allowed',400);
+    if(!old)return response('Not found',404);
+    if(request.headers.get('if-match')!==old.httpEtag)return response('Matching object ETag required',412);
+    const catalog=await bucket.get('catalog.json');
+    if(!catalog || catalog.size>2_000_000)return response('Catalog unavailable',409);
+    try {
+      const data=JSON.parse(await catalog.text());
+      if(!Array.isArray(data.tracks))throw Error();
+      if(data.tracks.some((t:{src?:string})=>typeof t.src!=='string'||decodeURIComponent(t.src.slice(7))===key))
+        return response('Remove the track from the catalog first',409);
+    }catch{return response('Catalog unavailable',409)}
+    await bucket.delete(key);
+    return response('Deleted',200);
+  }
   if(request.method==='HEAD')return new Response(null,{status:old?200:404,headers:{'Cache-Control':'no-store',
     ...(old?{'X-Content-SHA256':old.customMetadata?.sha256 || '', 'Content-Length':String(old.size)}:{})}});
   if(request.method!=='PUT')return response('Method not allowed',405);

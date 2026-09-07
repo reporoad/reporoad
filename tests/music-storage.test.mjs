@@ -3,6 +3,17 @@ import assert from 'node:assert/strict';
 import {musicKey,byteRange,readMusic,uploadMusic} from '../lib/music-storage.ts';
 const token='test-only-not-a-secret-'.repeat(3);
 const meta={size:10,httpEtag:'"etag"',customMetadata:{sha256:'a'.repeat(64)}};
+test('deletion requires auth, exact ETag and removal from a valid catalog',async()=>{
+  let deleted=[];let tracks=[];
+  const bucket={head:async()=>meta,get:async()=>({size:100,text:async()=>JSON.stringify({tracks})}),delete:async key=>deleted.push(key)};
+  const req=(key='library/a.mp3',headers={})=>new Request(`https://test/api/music-upload?key=${key}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`,'If-Match':'"etag"',...headers}});
+  assert.equal((await uploadMusic(req('library/a.mp3',{Authorization:'bad'}),bucket,token)).status,401);
+  assert.equal((await uploadMusic(req('catalog.json'),bucket,token)).status,400);
+  assert.equal((await uploadMusic(req('library/a.mp3',{'If-Match':'"old"'}),bucket,token)).status,412);
+  tracks=[{src:'/music/library/a.mp3'}];
+  assert.equal((await uploadMusic(req(),bucket,token)).status,409);assert.deepEqual(deleted,[]);
+  tracks=[];assert.equal((await uploadMusic(req(),bucket,token)).status,200);assert.deepEqual(deleted,['library/a.mp3']);
+});
 test('only catalog and safe music paths are accepted',()=>{
   assert.equal(musicKey('catalog.json'),true);assert.equal(musicKey('library/one/Song name.mp3'),true);
   for(const p of ['../secret','library/../secret.mp3','library//x.mp3','library/x\\y.mp3','library/x.html'])assert.equal(musicKey(p),false);
