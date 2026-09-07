@@ -9,6 +9,8 @@ if(!process.env.MUSIC_UPLOAD_TOKEN_FILE)throw Error('Set MUSIC_UPLOAD_TOKEN_FILE
 const token=readFileSync(process.env.MUSIC_UPLOAD_TOKEN_FILE,'utf8').trim();
 const root=realpathSync(process.env.REPOROAD_MUSIC_ROOT || 'media/music');
 const catalog=JSON.parse(readFileSync(resolve(root,'catalog.json'),'utf8'));
+const concurrency=Number(process.env.MUSIC_UPLOAD_CONCURRENCY || 2);
+if(!Number.isInteger(concurrency)||concurrency<1||concurrency>8)throw Error('MUSIC_UPLOAD_CONCURRENCY must be 1–8');
 const keys=[...new Set(catalog.tracks.map(t=>decodeURIComponent(t.src.slice('/music/'.length))))];
 async function send(key){
   const file=realpathSync(resolve(root,key));
@@ -35,8 +37,8 @@ async function upload(key){
     catch(e){if(attempt===3)throw e;await delay(2000*2**attempt)}
   }
 }
-// Two concurrent streamed uploads; publish the catalog only after every song succeeds.
+// Bounded streamed uploads; publish the catalog only after every song succeeds.
 let cursor=0;
-await Promise.all([0,1].map(async()=>{while(cursor<keys.length)await upload(keys[cursor++])}));
+await Promise.all(Array.from({length:concurrency},async()=>{while(cursor<keys.length)await upload(keys[cursor++])}));
 await upload('catalog.json');
 console.log('Music library uploaded and catalog published.');

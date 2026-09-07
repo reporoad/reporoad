@@ -21,7 +21,8 @@ loopback. Redirects are rejected so credentials are not forwarded elsewhere.
 
 The uploader reads ignored `media/music/` (override `REPOROAD_MUSIC_ROOT`), sends
 two files at a time, checks SHA-256 and length to skip identical uploads, and
-retries transient failures. Existing MP3s with different checksums are not
+retries transient failures. `MUSIC_UPLOAD_CONCURRENCY` can set 1–8 simultaneous
+uploads when the uploader's connection permits. Existing MP3s with different checksums are not
 overwritten. Rename/reimport a changed song. The catalog is uploaded last, so a
 failed initial upload does not advertise an incomplete library. Rerun to resume.
 The endpoint accepts MP3s up to 50 MB and catalogs up to 2 MB. R2 verifies upload
