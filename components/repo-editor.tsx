@@ -1,6 +1,7 @@
 'use client';
-import { useMemo, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { useEffect, useMemo, useState } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Slider } from './ui/slider';
 import { Download, Code2 as Github, Check, Upload } from 'lucide-react';
 import { Input } from './ui/input';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
@@ -11,13 +12,27 @@ const LABELS = { woodland: 'Cabin', stone: 'Workshop', cafe: 'Café', brick: 'Br
 const COLORS = ['#778565', '#b7d879', '#ad5542', '#ebd9bd', '#718bad'];
 const defaults = (): BuildingStyle => ({ version: 1, style: 'woodland', color: '#778565', roof: 'gable', garden: true, signText: '', support: { sponsor: false, helpWanted: false } });
 
+function PreviewCamera({floors}:{floors:number}) {
+  const {camera,size,invalidate}=useThree();
+  useEffect(()=>{
+    const height=floors*2.4+2;
+    const halfAngle=Math.min(21*Math.PI/180,Math.atan(Math.tan(21*Math.PI/180)*size.width/size.height));
+    const distance=Math.hypot(6,6,height/2)/Math.sin(halfAngle)*1.1;
+    const length=Math.hypot(11,6,16);
+    camera.position.set(11/length*distance,height/2+6/length*distance,16/length*distance);
+    camera.lookAt(0,height/2,0);camera.updateProjectionMatrix();invalidate();
+  },[camera,size.width,size.height,floors,invalidate]);
+  return null;
+}
+
 export default function RepoEditor({ active = true }: { active?: boolean }) {
   const [building, setBuilding] = useState<BuildingStyle>(defaults);
   const [address, setAddress] = useState('');
   const [identity, setIdentity] = useState('reporoad/your-repo');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const preview = useMemo<Repository>(() => ({ fullName: identity, name: identity.split('/')[1], stars: 0, description: '', language: null, defaultBranch: 'main', fetchedAt: 0, configStatus: 'custom', building }), [identity, building]);
+  const [floors,setFloors] = useState(1);
+  const preview = useMemo<Repository>(() => ({ fullName: identity, name: identity.split('/')[1], stars: floors*10000, description: '', language: null, defaultBranch: 'main', fetchedAt: 0, configStatus: 'custom', building }), [identity, building, floors]);
   const update = (patch: Partial<BuildingStyle>) => setBuilding(old => ({ ...old, ...patch }));
   function apply(raw: string) {
     const parsed = parseBuildingConfig(raw);
@@ -57,11 +72,15 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     <div className="place-load"><Github size={18}/><Input id="load-repo" placeholder="github.com/owner/repo" value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void load(); }}/><button className="btn" disabled={busy} onClick={load}>{busy ? 'Loading…' : 'Load'}</button></div>
     <label className="file-load"><Upload size={13}/> Or open a .reporoad.yml file<input type="file" accept=".yml,.yaml" disabled={busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; try { if (file.size > 8192) throw Error('File exceeds 8 KB.'); apply(await file.text()); setMessage('File loaded. Adjust the settings below.'); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); } }}/></label>
     <div className="place-preview" aria-label="Live building preview">
-      {active && <Canvas frameloop="demand" dpr={[1, 1.5]} camera={{ position: [11, 8, 16], fov: 42, near: 0.1, far: 100 }} onCreated={({ camera }) => camera.lookAt(0, 1.8, 0)}>
+      {active && <Canvas frameloop="demand" dpr={[1, 1.5]} camera={{ position: [11, 8, 16], fov: 42, near: 0.1, far: 2000 }}>
+        <PreviewCamera floors={floors}/>
         <color attach="background" args={['#18221c']}/><ambientLight intensity={1.4}/><directionalLight position={[3, 10, 6]} intensity={3}/>
         <RepositoryBuilding repo={preview} season="Summer"/>
-      </Canvas>}<small>Live preview · one floor shown; stars determine height</small>
+      </Canvas>}<small>Live preview · {floors} {floors===1?'floor':'floors'}</small>
     </div>
+    <label id="preview-floors-label">Preview height · {floors} {floors===1?'floor':'floors'}</label>
+    <Slider aria-labelledby="preview-floors-label" min={1} max={50} step={1} value={[floors]} onValueChange={value=>setFloors(Array.isArray(value)?value[0]:value)}/>
+    <p className="fine">Preview only. Actual height comes from GitHub stars: one floor per 10,000 stars, with a minimum of one. Not saved in your repo file.</p>
     <label>Building</label><div className="building-choices">{(['woodland', 'stone', 'cafe', 'brick', 'greenhouse', 'townhouse'] as typeof BUILDING_STYLES[number][]).map(style => <button key={style} className={`building-choice ${building.style === style ? 'selected' : ''}`} aria-pressed={building.style === style} onClick={() => update({ style })}>
       <svg viewBox="0 0 80 60" aria-hidden="true"><rect x="15" y="25" width="50" height="30" fill={style === 'stone' ? '#81877d' : style === 'greenhouse' ? '#6f9e91' : building.color}/><path d={style === 'townhouse' ? 'M10 24H70V18H10Z' : 'M7 26L40 5L73 26Z'} fill="#55432f"/><rect x="34" y="35" width="13" height="20" fill="#443623"/><path d="M21 33h8v10h-8zm32 0h8v10h-8z" fill="#efc774"/>{style === 'cafe' && <path d="M12 28h56v8H12z" fill="#f1d3a1"/>}</svg>
       {building.style === style && <Check size={15}/>}<span>{LABELS[style]}</span></button>)}</div>
@@ -72,7 +91,7 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     <label className="place-toggle">Help wanted sign<input type="checkbox" role="switch" checked={!!building.support?.helpWanted} onChange={e => update({ support: { ...building.support, helpWanted: e.target.checked } })}/></label>
     <label className="place-toggle">Sponsor heart<input type="checkbox" role="switch" checked={!!building.support?.sponsor} onChange={e => update({ support: { ...building.support, sponsor: e.target.checked } })}/></label>
     <p className="fine">The heart links to the owner’s GitHub Sponsors page. Enable it only if that page is active.</p>
-    <div className="place-export"><p>Commit <code>{CONFIG_PATH}</code> at your repo’s root to join the road.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
+    <div className="place-export"><p>Commit <code>{CONFIG_PATH}</code> at your repo’s root to join the road.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
     {message && <p className="notice" role="status">{message}</p>}
     <p className="fine">Public repositories only. Discovery uses GitHub’s code index and is not immediate. Indexing and a configured server-side GitHub read token are required. Edits here do not change the shared road.</p>
   </section>;
