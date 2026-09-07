@@ -130,7 +130,7 @@ Build runs migration checks covering fresh installs, upgrades, retries and data 
 ## Hosting and operational boundaries
 
 - The current `.openai/hosting.json` belongs to the existing RepoRoad Sites deployment. Forks must provision their own site and bindings; do not deploy into this project ID.
-- D1 stores shared interaction state. R2 is not currently bound. The GitHub push itself does not publish the website.
+- D1 stores shared interaction state. R2 stores separately uploaded music through the `MUSIC` binding; see [music storage and protected uploads](docs/music-storage.md). The GitHub push itself does not publish the website.
 - No streaming secrets or GitHub discovery tokens belong in browser code.
 - The legacy D1 chat API is retained but not used by the current chat tab.
 - Video introduces latency: chicken state on the page can lead what viewers see in the stream.
