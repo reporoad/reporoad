@@ -253,6 +253,7 @@ export default function RepoRoad() {
     <div className="drive">
       <RadioContext.Provider value={{ player: radio, track }}><RoadScene
         key={category}
+        broadcast={broadcast}
         supportPreview={supportPreview && mode === 'studio'}
         plots={[]}
         repositories={repositories}

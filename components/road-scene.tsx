@@ -755,6 +755,7 @@ function World({
   );
 }
 export default function RoadScene(props: {
+  broadcast?: boolean;
   supportPreview?: boolean;
   plots: Plot[];
   repositories?: Repository[];
@@ -774,11 +775,15 @@ export default function RoadScene(props: {
     >
       <SceneBoundary>
         <Canvas
+          key={props.broadcast ? 'broadcast-capture' : 'interactive'}
           fallback={<div className="scene-fallback"><strong>RepoRoad needs WebGL to render the drive.</strong><p>This browser source does not provide a compatible 3D renderer.</p></div>}
           shadows="percentage"
           dpr={[1, 2]}
           camera={{ position: [1.7, 1.9, 7], fov: 68, near: 0.1, far: 500 }}
           gl={{
+            // Retain completed frames for browser-widget capture. Remount when
+            // changing mode: WebGL context attributes cannot change in place.
+            preserveDrawingBuffer: props.broadcast === true,
             antialias: true,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.22,
