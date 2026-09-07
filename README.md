@@ -1,59 +1,139 @@
-# Chilldrive
+# RepoRoad
 
-An interactive prototype of a shared scenic drive with roadside shops. Built with React, Three.js / React Three Fiber, and the Sites Vinext starter.
+A cosy, shared drive through a voxel world of GitHub repositories. Each repository is a roadside building; every complete 10,000 stars adds a floor, with a minimum of one.
 
-## Run
+RepoRoad is a pre-release prototype built with React, Three.js / React Three Fiber, Vinext, and Cloudflare D1 through Sites. There are no payments or plot purchases.
 
-Requires Node 22.13+ and npm.
+## What it does
+
+- One shared road, daylight/night cycles, seasons, weather, wildlife and an in-car dashboard.
+- A compact repository directory with owner avatars, stars, search and pagination.
+- A building editor with a real 3D preview, optional YAML import, and downloadable `.reporoad.yml` settings.
+- Shared chicken queues: visitors add chickens, and the car stops for their crossing.
+- YouTube video and chat on the normal website; a separate full-quality rendering source for the broadcaster.
+- Shared clock-based music shuffle and five-second crossfades. Reloads do not restart the unchanged playlist.
+- A Linux broadcaster using isolated Chrome, Xvfb, private audio and FFmpeg, with local recording or RTMP(S) output.
+
+## Local development
+
+Requires Node.js 22.13+ and npm.
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
-Open the local URL printed by the server. For a clean driving scene, use `/?broadcast=1` or the expand button. Escape exits the clean view. Start music with the play button before switching into clean view; browser autoplay rules apply.
+Open the URL printed by the server (normally http://localhost:3000).
 
-## Included
+| URL | Purpose |
+| --- | --- |
+| `/` | YouTube player, YouTube chat, Explore and Add |
+| `/?broadcast=1` | Raw Three.js world and music for capture; never embeds YouTube |
+| `/?preview=1` | Local 3D world with drive-preview controls |
+| `/?supportPreview=1` | Local support-marker demo |
 
-- A continuous 3D road loop with pixel-textured roads, stepped grass-and-dirt hills, block-built roofs, cubic tree canopies, a square sun/moon and block clouds. The full plot footprint passes behind the car before recycling beyond the fog. Includes 24 plots, Studio pause/resume and changing daylight.
-- Six clearly marked example businesses and 18 plots available for local demo claims.
-- Five plot templates, sign text, safe shop links, five colours, greenery and local PNG/JPEG/WebP logo import (5 MB limit, resized to 256px).
-- Live draft preview, explicit save-to-Studio, restoration of the last saved design and switching between claimed plots.
-- Browser-local saved plots with validation of restored records. Storage failures are reported; claims are not real purchases or secure ownership.
-- Five complete songs copied/converted from the supplied lofi collection, played in sequence on repeat. Play/pause and volume only; no song voting, skipping or selection. Playback advances when a track ends; Live mode also corrects position against the shared clock. Audio never autoplays. See `public/music/SOURCES.md` for provenance.
-- Optional imperative WebMCP tool for reading local plots. Registration is feature-detected. No supported browser/WebMCP validation context was available during implementation, so these tools have not been browser-verified.
-- A cosy first-person voxel cabin, slowly moving sun/moon, a 40-minute day/night cycle, birds, grazing animals, rain with moving wipers, snow and seasonal terrain/foliage. Each season lasts four in-world days (160 minutes).
-- Fine instanced tree foliage and mixed flower beds, timber-framed shopfronts, stepped roof tiles, layered clouds and a stepped round steering wheel with visible amber instruments. The mirror refresh cadence is independent of server-clock corrections.
-- Live mode uses a server-calibrated clock for the road, environment and playlist. Studio controls are local-only; editing or focusing a plot never moves the shared drive.
-- Durable D1 chat, refreshed every three seconds, with the latest 50 messages, platform-authenticated authors, server-side validation and one message per user per three seconds. The site remains private until sharing is configured. This chat is separate from YouTube chat.
-- Reduced-motion preference pauses the initial Studio drive; Live follows the shared clock. WebGL failures show an explanation while leaving the rest of the interface usable.
+Development uses 20 labelled sample GitHub repositories, not a claim that their owners have joined. The current YouTube ID is configured in `lib/youtube.ts`; it may be an ended test broadcast. A new YouTube event may need a new ID. Automatic active-broadcast discovery is not connected.
+
+D1-backed interactions need local migrations. Apply them using the local-only configuration:
+
+```sh
+npx wrangler d1 migrations apply DB --local --persist-to .wrangler/state --config wrangler.local.jsonc
+```
+
+Never expose the development server as a production service. Production authentication headers are supplied by Sites and must not be trusted from arbitrary clients.
+
+## Design a repository building
+
+Use the Add tab without a URL to start from defaults. Optionally load a public repository's existing settings or a local file. Download the generated file and commit it at the **root of the public repository's default branch**:
+
+```yaml
+# .reporoad.yml
+version: 1
+style: woodland
+color: "#778565"
+roof: gable
+signText: My repository
+garden: true
+support:
+  sponsor: false
+  helpWanted: true
+```
+
+Styles: `woodland` (Cabin), `stone` (Workshop), `cafe`, `brick`, `greenhouse`, and `townhouse`. Blank sign text uses the repository name. Height comes from GitHub stars, not the file.
+
+Production discovery requires a server-side `GITHUB_READ_TOKEN` with access to public code search. Indexing is delayed and discovery is bounded, not immediate or exhaustive. Only valid root `.reporoad.yml` files enroll a repository. See [repository discovery and limits](docs/repository-road.md).
+
+## Music
+
+No music files are included in the current source tree. Supply music you have permission to broadcast on the broadcaster machine. Audio files and the generated catalog are ignored by Git. Earlier Git history retains the original five prototype tracks; see [music provenance](public/music/SOURCES.md).
+
+Import your own MP3 files:
+
+```sh
+node scripts/music/import.mjs /absolute/path/to/your/music
+```
+
+This copies MP3s without transcoding into ignored `media/music/` and generates the catalog. The development server serves it directly. The original local import had 792 tracks; a fresh clone contains none. You can alternatively copy an existing `media/music/` directory, including its catalog, to the broadcaster machine. Missing music produces an explicit setup error; it never silently falls back to the old tracks.
+
+## Run a broadcaster
+
+Use a non-root Linux account, Chrome, FFmpeg, Xvfb, xauth, PulseAudio and a supported GPU. On the tested Ubuntu desktop, NVIDIA hardware encoding and ANGLE Vulkan worked. An ordinary CPU-only VPS is not equivalent.
+
+With the local website running:
+
+```sh
+node scripts/broadcast/run.mjs record
+```
+
+This records 60 seconds at 1280×720/30 fps to ignored `outputs/broadcast/`. For an RTMP(S) stream, store the complete destination URL and key on one line in a private file **outside the checkout**, then:
+
+```sh
+chmod 600 /absolute/path/to/private/rtmps-url
+BROADCAST_STREAM_URL_FILE=/absolute/path/to/private/rtmps-url node scripts/broadcast/run.mjs stream
+```
+
+Do not paste real keys into Git, chat, examples or shell history. Stream mode supervises its isolated capture worker and automatically retries failures with a 5–60 second backoff. It monitors encoder output, browser heartbeats and advancing audio playback. Ctrl+C stops the worker and retries. Record mode remains a one-shot capture. The supplied systemd service adds boot/startup supervision; no service is installed automatically.
+
+See [Ubuntu setup, audio isolation and systemd](docs/broadcaster.md). Local recording and loopback RTMP were tested, but 24/7 uptime and recovery on the target server still need a soak test.
+
+## YouTube and chat
+
+The website's Chat tab is YouTube's native chat for the configured broadcast, not the old D1 room. Visitors use their YouTube account to post; mobile web has a link fallback. Restream relay can connect supported destination chats, but it is not enabled by this repository. The website never starts a second music player while showing YouTube.
+
+See [YouTube integration and limitations](docs/youtube-viewing.md).
+
+## Secret scanning
+
+BetterLeaks scans Git history in GitHub Actions. Its Linux x86_64 installer pins both the version and binary SHA-256. Scans redact findings and do not validate credentials against external services.
+
+```sh
+bash scripts/security/install-betterleaks.sh
+npm run secrets:scan
+git add <specific-files>
+npm run secrets:staged
+```
+
+On other platforms, install BetterLeaks v1.8.1 from its [official releases](https://github.com/betterleaks/betterleaks/releases) and put it on PATH.
+
+The ignore rules exclude environment files, stream-key files, private keys, local databases, dependency/build folders, large music libraries, recordings, logs and new review artifacts. Already tracked assets remain tracked. Secret scans reduce risk; they do not guarantee that no secret exists. If a real key is ever committed, revoke it before considering history cleanup.
 
 ## Validation
 
 ```sh
 npx tsc --noEmit
-npm run lint
-node --experimental-strip-types --test tests/*.test.mjs
+node --experimental-strip-types --test tests/*.test.mjs scripts/broadcast/*.test.mjs scripts/music/server.test.mjs
 npm run build
 ```
 
-The domain tests cover claim restrictions, persistence recovery, publication validation, unsafe shop URLs, automatic playlist progression, audio error recovery, synchronized world time and two-lap road-recycling regression checks. The cosy scene has been iteratively compared against the selected concept using actual browser renders, including daytime, rain, snowy night and mobile framing. Static shop geometry is batched and the rear-view mirror updates twice per second. Software-rendered browser motion checks are not a hardware performance guarantee; an extended OBS/GPU soak test remains to be run on the target streaming machine. The real-time scene follows the concept's composition and palette, but is not a pixel-identical reproduction of the generated artwork.
+Build runs migration checks covering fresh installs, upgrades, retries and data preservation. Applied migrations in `drizzle/` are immutable; append new ones rather than deleting/recreating the site.
 
-The application lint check excludes the untouched generated `components/ui` catalogue and its `use-mobile` hook, which contain starter lint findings. New application code is checked. Compatible React, Vinext and Vite security updates were applied. npm still reports advisories in transitive development/build tooling (`undici` under Miniflare/dotenvx and `esbuild` under Vite/Wrangler); no application feature uses these packages at runtime. Review the toolchain advisories before broader deployment.
+## Hosting and operational boundaries
 
-## Before real sales or a live audience
+- The current `.openai/hosting.json` belongs to the existing RepoRoad Sites deployment. Forks must provision their own site and bindings; do not deploy into this project ID.
+- D1 stores shared interaction state. R2 is not currently bound. The GitHub push itself does not publish the website.
+- No streaming secrets or GitHub discovery tokens belong in browser code.
+- The legacy D1 chat API is retained but not used by the current chat tab.
+- Video introduces latency: chicken state on the page can lead what viewers see in the stream.
+- Review dependency advisories, moderation, rate limits, retention, stream health and music rights before opening to a large audience.
 
-This is not a production commerce or streaming backend. Chat is shared and persistent, and the live timeline is synchronized across viewers (with small network/render timing differences). The live road currently uses the same fixed example plots for everyone. Land designs remain browser-local in Studio, not published to the shared road; clearing browser data loses them. Draft edits are held in memory until Save; switching plots discards unsaved edits. The live view is a synchronized 3D simulation, not an embedded YouTube video.
-
-Chat needs moderation/reporting, retention policy and operational limits before a public audience. Production identity headers are supplied by Sites; never expose a deployment that allows clients to forge them. Migration files in `drizzle/` are packaged and applied by Sites. For local chat testing, build first and apply the migration with `npx wrangler d1 execute DB --local --persist-to .wrangler/state --config dist/server/wrangler.json --file drizzle/0000_famous_shinobi_shaw.sql`; use the built worker via `npm start`. Local development does not automatically provide signed-in identity.
-
-Next implementation stages:
-
-1. Managed accounts, durable plot records and image storage (recommended: Supabase). Server-enforced ownership and draft/approved versions.
-2. Stripe Checkout, transactional plot reservations, verified idempotent webhooks, expiry, refunds and a clear price/occupancy model. Never grant ownership from a checkout redirect alone.
-3. Admin review for logos, messages and destinations; publication queue and emergency hide/rollback controls. Only approved records enter the broadcast.
-4. A persistent YouTube chat worker for future non-music interactions. Music follows an operator-curated playlist; viewers cannot select songs. The dashboard already uses a shared epoch and server-calibrated clock.
-5. A dedicated OBS/rendering machine, restart supervisor, cached approved world, audio fallback and stream monitoring. Static website hosting does not operate the continuous broadcast.
-6. Confirm music rights for the actual format, YouTube paid-promotion disclosures, and acceptable advertiser rules. The local-file playlist does not verify the original songs’ streaming rights.
-
-For OBS, a separately opened browser source has separate local storage. The current prototype does not synchronise editor state across those contexts; shared backend state is required before that workflow is ready.
+Additional details: [local verification](docs/local-verification.md).

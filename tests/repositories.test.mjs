@@ -80,7 +80,7 @@ test('reads configuration from the repository default branch and keeps identity 
   assert.deepEqual(result.building, style);
   assert.equal(
     calls[1],
-    'https://api.github.com/repos/example/repo/contents/.github/chilldrive.json',
+    'https://api.github.com/repos/example/repo/contents/.reporoad.yml',
   );
 });
 test('missing file restores default; invalid file preserves last known style', async () => {

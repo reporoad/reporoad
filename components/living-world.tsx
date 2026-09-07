@@ -216,7 +216,7 @@ function DashboardPanel({ radio = false, readDashboard }: { radio?: boolean; rea
     if (radio) {
       bands.current.fill(0);
       soundtrack?.player.current?.readSpectrum(bands.current);
-      drawRadio(ctx, PLAYLIST[soundtrack?.track ?? 0].name, bands.current);
+      drawRadio(ctx, PLAYLIST[soundtrack?.track ?? 0]?.name || 'Music library not loaded', bands.current);
     } else {
       drawDashboard(ctx, readDashboard?.() ?? dashboardState(0, null, true, false));
     }

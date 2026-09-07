@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { worldAt, DAY_MS, EPOCH, messageBody } from '../lib/live-world.ts';
-import { PlaylistPlayer, PLAYLIST } from '../lib/playlist.ts';
+import { PlaylistPlayer, PLAYLIST, loadMusicLibrary, playlistMix } from '../lib/playlist.ts';
 
 test('all viewers derive the same world from server time', () => {
   for (let t = 0; t < DAY_MS * 16; t += 17000) {
@@ -42,6 +42,10 @@ test('chat validates text without interpreting markup', () => {
 });
 
 test('late joiners hear the same crossfaded track position without autoplay', async () => {
+  await loadMusicLibrary(async () => new Response(JSON.stringify({version:'test', tracks:[
+    {name:'First',collection:'Test',src:'/music/library/first.mp3',duration:199.992},
+    {name:'Second',collection:'Test',src:'/music/library/second.mp3',duration:158.28},
+  ]})));
   const audio = {
     src: '',
     paused: true,
@@ -67,8 +71,9 @@ test('late joiners hear the same crossfaded track position without autoplay', as
   player.sync(EPOCH + 210000);
   assert.equal(audio.plays, 0);
   await player.play();
-  assert.equal(selected, 1);
-  assert.equal(audio.src, PLAYLIST[1].src);
-  assert.ok(Math.abs(audio.currentTime - 15.008) < 0.1);
+  const expected = playlistMix(210);
+  assert.equal(selected, expected.index);
+  assert.equal(audio.src, PLAYLIST[expected.index].src);
+  assert.ok(Math.abs(audio.currentTime - expected.tracks[0].offset) < 0.1);
   player.dispose();
 });

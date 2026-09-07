@@ -1,56 +1,32 @@
-export const PLAYLIST = [
-  {
-    name: 'Morning Light in Fiordland',
-    collection: 'New Zealand',
-    src: '/music/morning-light-in-fiordland.mp3',
-  },
-  {
-    name: 'Bamboo and Rain',
-    collection: 'Japan',
-    src: '/music/bamboo-and-rain.mp3',
-  },
-  {
-    name: 'Golden Shore Lullaby',
-    collection: 'Japan',
-    src: '/music/golden-shore-lullaby.mp3',
-  },
-  {
-    name: 'Stargazing by Lake Tekapo',
-    collection: 'New Zealand',
-    src: '/music/stargazing-by-lake-tekapo.mp3',
-  },
-  {
-    name: 'Midnight Train Loop',
-    collection: 'Japan',
-    src: '/music/midnight-train-loop.mp3',
-  },
-];
+import { createMusicSchedule, FADE_SECONDS } from './music-schedule.ts';
 
-export const CROSSFADE_SECONDS = 5;
-export const TRACK_DURATIONS = [199.992, 158.28, 139.032, 187.704, 122.928];
+type MusicTrack = { name: string; collection: string; src: string };
+export let PLAYLIST: MusicTrack[] = [];
+export const CROSSFADE_SECONDS = FADE_SECONDS;
+export let TRACK_DURATIONS: number[] = [];
 export const PLAYLIST_EPOCH = Date.UTC(2026, 0, 1);
+let schedule: ReturnType<typeof createMusicSchedule> | undefined;
 
-// Each track begins five seconds before its predecessor finishes.
-export function playlistMix(seconds: number) {
-  const spans = TRACK_DURATIONS.map(d => d - CROSSFADE_SECONDS);
-  const total = spans.reduce((a, b) => a + b, 0);
-  let offset = ((seconds % total) + total) % total;
-  let index = 0;
-  while (index < spans.length - 1 && offset >= spans[index]) offset -= spans[index++];
-  const previous = (index + PLAYLIST.length - 1) % PLAYLIST.length;
-  const t = Math.min(1, offset / CROSSFADE_SECONDS);
-  const gain = t * t * (3 - 2 * t);
-  return {
-    index,
-    tracks: [
-      { index, offset, gain },
-      ...(offset < CROSSFADE_SECONDS
-        ? [{ index: previous, offset: spans[previous] + offset, gain: 1 - gain }]
-        : []),
-    ],
-  };
+// Loaded from the broadcaster machine, never bundled or committed with source.
+export async function loadMusicLibrary(request: typeof fetch = fetch) {
+  const response = await request('/music/catalog.json', { signal: AbortSignal.timeout(10000) });
+  if (!response.ok) throw Error('Music library missing. Import your MP3s on the broadcaster machine.');
+  const raw: unknown = await response.json();
+  if (!raw || typeof raw !== 'object') throw Error('Invalid music catalogue');
+  const data = raw as { tracks?: unknown };
+  if (!Array.isArray(data.tracks) || !data.tracks.length || data.tracks.length > 10000) throw Error('Invalid music catalogue');
+  const tracks = data.tracks as (MusicTrack & {duration: number})[];
+  if (tracks.some(t => !t || typeof t.name !== 'string' || typeof t.collection !== 'string' || typeof t.src !== 'string' || !t.src.startsWith('/music/library/') || !Number.isFinite(t.duration) || t.duration <= 10)) throw Error('Invalid music track');
+  const durations = tracks.map(t => t.duration);
+  const nextSchedule = createMusicSchedule(durations);
+  PLAYLIST = tracks.map(({name,collection,src}) => ({name,collection,src}));
+  TRACK_DURATIONS = durations;
+  schedule = nextSchedule;
 }
 
+export function playlistMix(seconds: number) {
+  return schedule ? schedule(seconds) : { index: -1, next: -1, tracks: [] };
+}
 export class PlaylistPlayer {
   private decks: HTMLAudioElement[];
   private indices = [0, -1];
@@ -61,7 +37,7 @@ export class PlaylistPlayer {
   private seconds = CROSSFADE_SECONDS;
   private anchor = performance.now();
   private timer: ReturnType<typeof setInterval> | undefined;
-  private index = 0;
+  private index = -1;
   private context?: AudioContext;
   private analyser?: AnalyserNode;
   private spectrum = new Uint8Array(1024);
@@ -77,6 +53,7 @@ export class PlaylistPlayer {
     audio?: HTMLAudioElement,
     secondAudio?: HTMLAudioElement,
   ) {
+    if (!PLAYLIST.length) throw Error('Load a music library before starting playback.');
     this.onTrack = onTrack;
     this.onState = onState;
     this.onError = onError;
@@ -147,7 +124,7 @@ export class PlaylistPlayer {
       audio.pause();
       audio.volume = 0;
       // Preload the upcoming song while the other deck plays.
-      const next = (mix.index + 1) % PLAYLIST.length;
+      const next = mix.next;
       if (this.indices[slot] !== next) {
         this.indices[slot] = next;
         audio.src = PLAYLIST[next].src;

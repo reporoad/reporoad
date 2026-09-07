@@ -257,7 +257,7 @@ export async function discoverCategory(
     // Rotate through the first 1,000 indexed matches over ten days, accumulating
     // a bounded pool. No claim of uniform sampling across all of GitHub.
     const url =
-      'https://api.github.com/search/code?q=version+filename:chilldrive.json+path:.github&per_page=100&page=1';
+      'https://api.github.com/search/code?q=filename:.reporoad.yml&per_page=100&page=1';
     const res = await request(url, githubOptions(token));
     if (!res.ok) throw Error(`Community search unavailable (${res.status})`);
     let data = (await res.json()) as {
@@ -328,7 +328,7 @@ export async function discoverCategory(
       .filter((r) => now - (r.configCheckedAt || 0) < 86400000)
       .slice(-1000);
     return {
-      repositories: sharedSample(valid, now),
+      repositories: valid.sort((a, b) => a.fullName.localeCompare(b.fullName)),
       pool: valid,
       refreshedAt: now,
       discoveryCursor: cursor + candidates.length,

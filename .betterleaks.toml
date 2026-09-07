@@ -1,0 +1,7 @@
+title = "RepoRoad secret scanning"
+
+[extend]
+useDefault = true
+
+# No project-wide allowlists: application code, migrations and documentation
+# are all scanned. Live credential validation is intentionally not enabled.

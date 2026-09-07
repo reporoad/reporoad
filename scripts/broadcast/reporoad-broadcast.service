@@ -1,0 +1,21 @@
+[Unit]
+Description=RepoRoad isolated browser broadcaster
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=%h/reporoad
+EnvironmentFile=%h/.config/reporoad/broadcast.env
+ExecStart=/usr/bin/node scripts/broadcast/run.mjs stream
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=15
+KillMode=control-group
+UMask=0077
+# Keep the Chrome sandbox enabled. Do not add --no-sandbox.
+
+[Install]
+WantedBy=default.target

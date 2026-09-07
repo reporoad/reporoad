@@ -105,7 +105,7 @@ test('public style checks follow default HEAD, never send a credential, and rest
   const valid = await checkPublicStyle(source, async (url, options) => {
     assert.equal(
       url,
-      'https://raw.githubusercontent.com/owner/repo-1/HEAD/.github/chilldrive.json',
+      'https://raw.githubusercontent.com/owner/repo-1/HEAD/.reporoad.yml',
     );
     assert.equal(options.headers, undefined);
     assert.equal(options.redirect, 'manual');
@@ -135,7 +135,7 @@ test('100-repository street reaches the last pair without resetting at the old 2
 });
 test('community checks real metadata and file; cursor advances past invalid candidates', async () => {
   const items = Array.from({ length: 24 }, (_, i) => ({
-    path: '.github/chilldrive.json',
+    path: '.reporoad.yml',
     repository: { full_name: `owner/repo${i}` },
   }));
   const metadataNames = [];

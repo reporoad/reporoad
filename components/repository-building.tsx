@@ -110,6 +110,7 @@ export function repositoryBuildingModel(
   add([0, 2.45, 3], [6.3, 0.2, 1.8], frame);
   for (const x of [-2.8, 2.8]) {
     add([x, 1.25, 3.6], [0.17, 2.5, 0.17], frame);
+    if (repo.building.garden === false) continue;
     add([x, 0.32, 4.1], [1.2, 0.5, 0.72], '#80603d');
     for (let i = 0; i < 5; i++) {
       add([x - 0.4 + i * 0.2, 0.72, 4.1], [0.09, 0.35, 0.09], '#778d44');
@@ -118,6 +119,12 @@ export function repositoryBuildingModel(
         [0.18, 0.13, 0.18],
         i % 2 ? '#b4a0b8' : '#d8c18c',
       );
+    }
+  }
+  if (repo.building.style === 'cafe') {
+    for (let i = 0; i < 12; i++) {
+      add([-2.75 + i * 0.5, 2.55, 3.2], [0.5, 0.16, 2.2], i % 2 ? '#f1ddba' : '#ad5542');
+      add([-2.75 + i * 0.5, 2.37, 4.25], [0.5, 0.3, 0.12], i % 2 ? '#f1ddba' : '#ad5542');
     }
   }
   return parts;
@@ -155,7 +162,7 @@ export default memo(function RepositoryBuilding({
     ctx.fillStyle = '#f0ddb0';
     ctx.font = 'bold 88px monospace';
     ctx.fillText(repo.fullName[0].toUpperCase(), 130, 188);
-    const lines = repositorySignLines(repo.name);
+    const lines = repositorySignLines(repo.building.signText || repo.name);
     const nominal = lines.length > 1 ? 72 : 96;
     ctx.font = `bold ${nominal}px monospace`;
     const longest = Math.max(
@@ -177,7 +184,7 @@ export default memo(function RepositoryBuilding({
     t.minFilter = THREE.LinearMipmapLinearFilter;
     t.anisotropy = 8;
     return t;
-  }, [repo.name, repo.fullName, repo.stars]);
+  }, [repo.name, repo.fullName, repo.stars, repo.building.signText]);
   useEffect(() => () => sign.dispose(), [sign]);
   useEffect(() => {
     let active = true;

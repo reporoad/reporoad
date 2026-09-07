@@ -1,16 +1,20 @@
-export const CONFIG_PATH = '.github/chilldrive.json';
+import { parseDocument, stringify } from 'yaml';
+export const CONFIG_PATH = '.reporoad.yml';
 export const BUILDING_STYLES = [
   'woodland',
   'brick',
   'stone',
   'greenhouse',
   'townhouse',
+  'cafe',
 ] as const;
 export type BuildingStyle = {
   version: 1;
   style: (typeof BUILDING_STYLES)[number];
   color: string;
   roof: 'gable' | 'flat';
+  signText?: string;
+  garden?: boolean;
   support?: { sponsor?: boolean; helpWanted?: boolean };
 };
 export type Repository = {
@@ -64,12 +68,14 @@ export function defaultBuilding(identity: string | number): BuildingStyle {
 export function parseBuildingConfig(raw: string): BuildingStyle | null {
   if (new TextEncoder().encode(raw).length > 8192) return null;
   try {
-    const value = JSON.parse(raw);
+    const doc = parseDocument(raw, { uniqueKeys: true, schema: 'core' });
+    if (doc.errors.length) return null;
+    const value = doc.toJS({ maxAliasCount: 0 });
     if (!value || Array.isArray(value) || typeof value !== 'object')
       return null;
     if (
       Object.keys(value).some(
-        (k) => !['version', 'style', 'color', 'roof', 'support'].includes(k),
+        (k) => !['version', 'style', 'color', 'roof', 'support', 'signText', 'garden'].includes(k),
       )
     )
       return null;
@@ -81,6 +87,8 @@ export function parseBuildingConfig(raw: string): BuildingStyle | null {
       !['gable', 'flat'].includes(value.roof)
     )
       return null;
+    if (value.signText !== undefined && (typeof value.signText !== 'string' || value.signText.length > 48 || /[\x00-\x1f\x7f]/.test(value.signText))) return null;
+    if (value.garden !== undefined && typeof value.garden !== 'boolean') return null;
     if (value.support !== undefined && (
       !value.support || typeof value.support !== 'object' || Array.isArray(value.support) ||
       Object.entries(value.support).some(([key, flag]) => !['sponsor', 'helpWanted'].includes(key) || typeof flag !== 'boolean')
@@ -90,17 +98,18 @@ export function parseBuildingConfig(raw: string): BuildingStyle | null {
       style: value.style,
       color: value.color,
       roof: value.roof,
+      ...(value.signText === undefined ? {} : { signText: value.signText.trim() }),
+      ...(value.garden === undefined ? {} : { garden: value.garden }),
       ...(value.support === undefined ? {} : { support: { sponsor: value.support.sponsor === true, helpWanted: value.support.helpWanted === true } }),
     };
   } catch {
     return null;
   }
 }
-export const EXAMPLE_CONFIG = JSON.stringify(
-  { version: 1, style: 'woodland', color: '#8c704a', roof: 'gable', support: { sponsor: false, helpWanted: false } },
-  null,
-  2,
-);
+export function serializeBuildingConfig(building: BuildingStyle): string {
+  return '# RepoRoad · commit this file at the root of your public repository\n' + stringify(building);
+}
+export const EXAMPLE_CONFIG = serializeBuildingConfig({ version: 1, style: 'woodland', color: '#8c704a', roof: 'gable', garden: true, support: { sponsor: false, helpWanted: false } });
 
 export function supportLinks(fullName: string) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(fullName)) return null;

@@ -1,4 +1,6 @@
-# Repository world
+# Repository world (historical)
+
+Superseded by [the single-road YAML design](repository-road.md). The category-based behavior below is retained only as historical documentation and is no longer exposed by the site.
 
 The world has four selectable neighbourhoods. Each repository appears once per
 neighbourhood circuit (up to 100 repositories / 1,600 metres). There are no purchases or sponsorship requirements for organic discovery.
