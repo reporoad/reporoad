@@ -86,8 +86,10 @@ export default function RepoRoad() {
   );
   const [audioOn, setAudioOn] = useState(false),
     [volume, setVolume] = useState(30);
-  const [lightRequested] = useState(() => new URLSearchParams(window.location.search).get('quality') === 'lite');
-  const lightBroadcast = broadcast && lightRequested;
+  const [broadcastQuality] = useState(() => new URLSearchParams(window.location.search).get('quality'));
+  const [mirrorOff] = useState(() => new URLSearchParams(window.location.search).get('mirror') === '0');
+  const minimalBroadcast = broadcast && broadcastQuality === 'minimal';
+  const lightBroadcast = broadcast && (broadcastQuality === 'lite' || minimalBroadcast);
   const [renderReport, setRenderReport] = useState('Waiting for first rendered frame…');
   const track = playlistMix((now - PLAYLIST_EPOCH) / 1000).index;
   const [notice, setNotice] = useState('');
@@ -258,6 +260,8 @@ export default function RepoRoad() {
         key={category}
         broadcast={broadcast}
         lightweight={lightBroadcast}
+        minimal={minimalBroadcast}
+        disableMirror={broadcast && (mirrorOff || minimalBroadcast)}
         onRenderReport={lightBroadcast ? setRenderReport : undefined}
         supportPreview={supportPreview && mode === 'studio'}
         plots={[]}
@@ -310,7 +314,7 @@ export default function RepoRoad() {
       <main className="app broadcast">
         {scene}
         {lightBroadcast && <aside style={{position:'fixed',bottom:16,left:16,zIndex:10,maxWidth:'calc(100% - 32px)',padding:'12px 16px',background:'#171411ee',color:'#faf1df',font:'14px/1.5 monospace',border:'1px solid #c79a50',borderRadius:8,pointerEvents:'none'}}>
-          <strong>LIGHT BROADCAST · 720p cap · effects/shadows off</strong>
+          <strong>{minimalBroadcast ? 'MINIMAL · road + car · 480p cap · mirror OFF' : `LIGHT BROADCAST · 720p cap · mirror ${mirrorOff ? 'OFF' : 'ON'}`} · effects/shadows off</strong>
           <div>{renderReport}</div>
           <div>Audio: {(() => {
             const d = radio.current?.diagnostics();

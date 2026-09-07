@@ -598,6 +598,8 @@ export const PlotBuilding = memo(function PlotBuilding({
   );
 });
 function World({
+  minimal,
+  disableMirror,
   plots,
   repositories,
   playing,
@@ -610,6 +612,8 @@ function World({
   chickenSchedule,
   supportPreview,
 }: {
+  minimal?: boolean;
+  disableMirror?: boolean;
   plots: Plot[];
   repositories?: Repository[];
   playing: boolean;
@@ -655,7 +659,7 @@ function World({
         roadSectionZ(Math.floor(i / 2), distance.current, repositoryLoop) - 30;
       g.visible = g.position.z > -310 && g.position.z < 50;
     });
-    const nearby = (repositories || []).filter((_, i) => {
+    const nearby = (minimal ? [] : repositories || []).filter((_, i) => {
       const z = roadSectionZ(Math.floor(i / 2), distance.current, repositoryLoop) - 30;
       return z > -25 && z <= 7;
     }).map((r) => r.fullName);
@@ -665,6 +669,19 @@ function World({
       onPassing?.(nearby);
     }
   });
+  if (minimal) return <>
+    <color attach="background" args={['#a7c8dc']} />
+    <fog attach="fog" args={['#a7c8dc', 80, 280]} />
+    <ambientLight intensity={1.6} />
+    <directionalLight position={[-8, 15, 5]} intensity={2} />
+    <mesh position={[0,-0.12,-100]}><boxGeometry args={[600,0.1,600]} /><meshStandardMaterial color="#6c8450" /></mesh>
+    <mesh position={[0,-0.03,-100]}><boxGeometry args={[7,0.1,600]} /><meshStandardMaterial color="#66635b" /></mesh>
+    {[-3.3,3.3].map(x => <mesh key={x} position={[x,0.035,-100]}><boxGeometry args={[0.12,0.01,600]} /><meshBasicMaterial color="#e4dfc5" /></mesh>)}
+    {Array.from({length:48},(_,i) => <mesh key={i} ref={m => { markers.current[i]=m; }} position={[0,0.035,roadMarkerZ(i,0)]}>
+      <boxGeometry args={[0.14,0.01,3.5]} /><meshBasicMaterial color="#e4dfc5" />
+    </mesh>)}
+    <VoxelCabin disableMirror environment={{...environment,rain:0}} clock={clock} readDashboard={() => dashboardState(clock.current.now(),chickenSchedule,live,playing)} />
+  </>;
   return (
     <>
       <SkyCycle clock={clock} preview={live ? undefined : preview} />
@@ -751,7 +768,7 @@ function World({
           <RepositoryBuilding repo={repo} season={environment.season} side={i % 2 ? 'right' : 'left'} supportPreview={supportPreview} />
         </group>
       ))}
-      <VoxelCabin environment={environment} clock={clock} readDashboard={() => dashboardState(clock.current.now(), chickenSchedule, live, playing)} />
+      <VoxelCabin disableMirror={disableMirror} environment={environment} clock={clock} readDashboard={() => dashboardState(clock.current.now(), chickenSchedule, live, playing)} />
     </>
   );
 }
@@ -778,6 +795,8 @@ function RenderDiagnostics({ report }: { report: (value: string) => void }) {
 
 export default function RoadScene(props: {
   broadcast?: boolean;
+  minimal?: boolean;
+  disableMirror?: boolean;
   lightweight?: boolean;
   onRenderReport?: (value: string) => void;
   supportPreview?: boolean;
@@ -795,11 +814,11 @@ export default function RoadScene(props: {
   const [broadcastDpr, setBroadcastDpr] = useState(1);
   useEffect(() => {
     if (!props.lightweight) return;
-    const resize = () => setBroadcastDpr(Math.min(1, 1280 / Math.max(1, window.innerWidth), 720 / Math.max(1, window.innerHeight)));
+    const resize = () => setBroadcastDpr(Math.min(1, (props.minimal ? 854 : 1280) / Math.max(1, window.innerWidth), (props.minimal ? 480 : 720) / Math.max(1, window.innerHeight)));
     resize();
     window.addEventListener('resize', resize);
     return () => window.removeEventListener('resize', resize);
-  }, [props.lightweight]);
+  }, [props.lightweight, props.minimal]);
   return (
     <figure
       className="scene"
