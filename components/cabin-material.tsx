@@ -167,7 +167,10 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       // Broad horizontal variations read as worn paint, not granular stone.
       float paintBands = cabinNoise(p * vec3(4.0, 42.0, 8.0));
       diffuseColor.rgb *= 1.0 + (paintBands - 0.5) * 0.10 * (1.0 - timber);
-      float paintCells = cabinHash(floor(p * vec3(16.0, 24.0, 16.0)));
+      vec3 paintGrid = floor(p * vec3(16.0, 24.0, 16.0));
+      // Neighbouring blocks share weathering, rather than every square
+      // becoming an unrelated checker. Quantization retains voxel edges.
+      float paintCells = mix(cabinHash(paintGrid), cabinNoise(paintGrid * 0.55), 0.7);
       float paintCellFilter = 1.0 - smoothstep(0.015, 0.05, length(fwidth(p)));
       diffuseColor.rgb *= 1.0 + (paintCells - 0.5) * 0.32 * paintCellFilter * (1.0 - timber);
       // Small, surface-aligned paint patches on horizontal tops retain the
@@ -245,7 +248,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v47-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v48-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
