@@ -91,3 +91,13 @@ Overall goal remains incomplete. This audit is a prioritization result, not a co
 ### Rejected broad paint-normal relief at `5e5ba7b`
 
 Tested 2 mm broad, object-fixed noise relief at 16 × 24 × 16 cells/metre, filtered with the existing paint footprint and excluded from timber/fabric. Screenshot: `/tmp/reporoad-cabin-paint-relief-20260909.png`. At 1000 × 563 this did not visibly close the reference gap; the glovebox still read as a broad flat panel. Reverted the shader and cache-key changes completely. Do not repeat small normal-amplitude adjustments as the next material pass. Inspect actual silhouette/bevel variation and panel edge geometry instead, with a before/after showing a clearly perceptible improvement.
+
+### Unobstructed whole-cabin audit at `4611eae`
+
+Captured `/tmp/reporoad-cabin-full-audit-20260909.png` at 1000 × 563, Summer/Sunny 16:00, with broadcast overlays temporarily hidden. Both temporary CSS declarations were removed immediately after capture; production controls are unchanged.
+
+- Roof opening, mirror frame, glovebox, seat framing and wheel silhouette are substantially aligned with the reference. Do not make further layout moves without measured before/after evidence; small arbitrary changes risk reversing the accumulated fit.
+- The current warmer/taller centre pad and smaller pillar sections are included. Radio and speed content remain real, and the repository exterior intentionally differs from the reference village.
+- Material richness remains weaker than the reference, particularly the warm wood/paint separation under window light. Shader micro-noise has already failed to improve this at delivered resolution.
+- Instrument composition is still sparser than the reference. Preserve meaningful speed, traffic-light and chicken data if revising its grouping; do not fill space with fake mechanical gauges or unreadable labels.
+- Completion remains unproven: almost-identical material/lighting fidelity and sustained frame-by-frame rendering stability are still open. This paused comparison is not evidence for either gate.
