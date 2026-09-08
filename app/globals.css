@@ -1129,7 +1129,7 @@ button svg {
 @media (max-width: 780px) {
   .repository-world { padding: 0 10px 16px; }
   .repository-world .workspace { grid-template-columns: minmax(0, 1fr); }
-  .repository-world .drive { height: auto; aspect-ratio: 4 / 3; }
+  .repository-world .drive { height: auto; aspect-ratio: 16 / 9; }
   .repository-world .repo-panel { height: 520px; }
   .repository-world .radio { gap: 10px; }
   .repository-world .volume { width: 100px; }
