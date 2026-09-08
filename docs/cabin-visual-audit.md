@@ -113,3 +113,9 @@ Captured `/tmp/reporoad-cabin-full-audit-20260909.png` at 1000 × 563, Summer/Su
 Temporarily displayed the existing post-composer submission counter in the local browser, sampling every five seconds. Moving Summer/Sunny 16:00, 1000 × 563, mirror at its revised 20 Hz target. Screenshot `/tmp/reporoad-cabin-measured-render-20260909.png` records consecutive samples: 8.6, 60.0, 58.6, 58.4, 60.0, 59.8 submissions/s. The first interval included the broadcast-view/resize startup transition; subsequent five intervals cover approximately 25 seconds of steady movement. The temporary readout was completely removed afterward.
 
 This proves successful CPU-side scene submissions near 60/s during this bounded local sample, not GPU completion, lack of pixel flicker, encoder throughput, or VPS performance. Startup behavior is not certified by excluding its low sample. The sustained production and almost-identical visual-fidelity gates remain open.
+
+### Region-measured cloth contrast after `3a541ab`
+
+Compared the same left-cushion rectangle (x=35–214, y=517–540) at 1000 × 563. Reference mean RGB was 124.4/98.1/52.7 with luma standard deviation 27.4. Before adjustment (`/tmp/reporoad-cabin-upper-seal-20260909.png`) it was 162.1/135.1/76.9 and 20.2: too bright and too low-contrast. Lowered the fabric shader's base from 0.74 to 0.42 and increased yarn gain from 0.85 to 1.05, leaving its geometry and mapping fixed. New capture `/tmp/reporoad-cabin-cloth-contrast-20260909.png` measures 126.2/101.0/53.0 and 27.0. Visual inspection retains the woven highlights against a darker field.
+
+These are sRGB image-region measurements, not calibrated material properties or proof of whole-cabin identity. Other diagnostic rectangles indicated the roof panel is darker than the reference and parts of the lower console brighter; inspect those independently rather than applying another global lighting increase.
