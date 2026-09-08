@@ -26,3 +26,11 @@ test('instrument labels describe the real state and omit fake mechanical reading
   assert.ok(text.includes('CROSSING'));assert.ok(text.includes('40'));
   assert.ok(!text.some(t=>/FUEL|OIL|COOLANT|012486|12.8/.test(t)));
 });
+test('amber speed dial lights only for actual motion and clamps its range',()=>{
+  for (const [speedKph, expected] of [[0,0],[15,10],[30,19],[60,19]]) {
+    let lit = 0;
+    const ctx = {fillStyle:'', fillRect(){ if(this.fillStyle === '#e8a74d') lit++; },fillText(){}};
+    drawDashboard(ctx,{...dashboardState(0,null,false,false),speedKph});
+    assert.equal(lit,expected);
+  }
+});

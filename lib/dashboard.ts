@@ -20,13 +20,23 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
   ctx.textAlign = 'center';
   ctx.fillStyle = '#51422c'; ctx.fillRect(246, 24, 2, 192); ctx.fillRect(506, 24, 2, 192);
   ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace';
-  ctx.fillText(state.live ? 'LIVE SPEED' : 'PREVIEW SPEED', 122, 36);
-  ctx.font = 'bold 84px monospace'; ctx.fillText(Math.round(state.speedKph).toString().padStart(2, '0'), 122, 132);
-  ctx.font = '24px monospace'; ctx.fillText('km/h', 122, 169);
-  for (let i=0;i<12;i++) {
-    ctx.fillStyle = i < state.speedKph / 30 * 12 ? '#e8a74d' : '#332b1e';
-    ctx.fillRect(27+i*16,194,11,11);
+  ctx.fillText(state.live ? 'LIVE SPEED' : 'PREVIEW SPEED', 122, 24);
+  // Square amber ticks form a vintage gauge, but the reading still follows
+  // the actual road velocity. Pixel-aligned marks stay crisp on the texture.
+  const speedFraction = Math.max(0, Math.min(1, state.speedKph / 30));
+  for (let i = 0; i < 19; i++) {
+    const angle = Math.PI * (0.85 + i / 18 * 1.3);
+    const x = Math.round(122 + Math.cos(angle) * 98);
+    const y = Math.round(130 + Math.sin(angle) * 85);
+    ctx.fillStyle = speedFraction > 0 && i / 18 <= speedFraction ? '#e8a74d' : '#493821';
+    const size = i % 3 === 0 ? 10 : 6;
+    ctx.fillRect(x - size / 2, y - 5, size, 10);
   }
+  ctx.fillStyle = '#f1b665';
+  ctx.font = 'bold 64px monospace'; ctx.fillText(Math.round(state.speedKph).toString().padStart(2, '0'), 122, 142);
+  ctx.font = '24px monospace'; ctx.fillText('km/h', 122, 177);
+  ctx.fillStyle = '#b27c3c'; ctx.font = '20px monospace';
+  ctx.fillText('0', 40, 218); ctx.fillText('30', 204, 218);
   ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace'; ctx.fillText('TRAFFIC', 376, 36);
   ctx.fillStyle = state.signal === 'RED' ? '#ff7555' : state.signal === 'GREEN' ? '#b5ce73' : '#dc984a';
   ctx.font = 'bold 42px monospace'; ctx.fillText(state.signal, 376, 93);
