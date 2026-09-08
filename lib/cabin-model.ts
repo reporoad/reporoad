@@ -128,7 +128,7 @@ export function cabinDashboardModel(): VoxelPart[] {
   add([0.035, -0.699, -1.395], [0.64, 0.015, 0.02], '#272b22');
   // Lower console meets the dark footwell instead of ending in a flat slab.
   add([0.035, -1.075, -1.45], [0.62, 0.18, 0.15], '#30392e');
-  add([0.035, -1.04, -1.355], [0.47, 0.075, 0.055], '#1e271f');
+  add([0.035, -0.96, -1.355], [0.47, 0.15, 0.055], '#1e271f');
   // Match the shallow, high-mounted vintage radio and compact switch bank.
   for (const part of [
     ...parts.slice(consoleStart, consoleEnd),

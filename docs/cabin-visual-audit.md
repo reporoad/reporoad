@@ -120,6 +120,10 @@ Compared the same left-cushion rectangle (x=35–214, y=517–540) at 1000 × 56
 
 These are sRGB image-region measurements, not calibrated material properties or proof of whole-cabin identity. Other diagnostic rectangles indicated the roof panel is darker than the reference and parts of the lower console brighter; inspect those independently rather than applying another global lighting increase.
 
+### Lower console recess after `2b9c46c`
+
+Raised the existing dark footwell inset from model y=-1.04 to -0.96 and increased its height from 0.075 to 0.15. At 1000 × 563 it now begins immediately below the switch panel, reducing the bright lower timber area to better match the reference's dark pocket. An intermediate y=-0.99/height=0.12 remained too low. Final screenshot: `/tmp/reporoad-cabin-console-recess-final-20260909.png`. Radio, switches, wheel and lighting are unchanged. All 31 test-file entries, TypeScript and production build passed. This paused geometry comparison does not establish motion stability or whole-scene identity.
+
 ### Region-measured roof colour after `fe32e12`
 
 Roof rectangle x=650–849, y=5–25: reference mean RGB 82.3/49.3/19.6; previous 54.5/32.6/14.3. First material adjustment overshot to 104.4/64.2/29.2 and was reduced. Final outer timber `#7b5e38` and centre `#675b3a` produce 82.0/48.2/20.6 in `/tmp/reporoad-cabin-roof-measured-final-20260909.png`. Geometry, dark retaining straps, seals and all light intensities are unchanged. The numerical match is local evidence for this roof region, not proof of every roof pixel or lighting state.
