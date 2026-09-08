@@ -129,12 +129,14 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
     #else
       vec3 face = abs(normalize(cross(dFdx(p), dFdy(p))));
       vec2 detailUv = face.y > 0.5 ? p.xz : (face.z > 0.5 ? p.xy : p.zy);
-      detailUv *= mix(2.5, 1.0, vCabinWood);
+      // Finer paint patina keeps the large glovebox face from looking like
+      // camouflage. Mip filtering preserves the finish in the moving view.
+      detailUv *= mix(4.0, 1.0, vCabinWood);
       float paintedDetail = texture2D(cabinDetail, detailUv).r;
       // Brown timber gets long, broken fibres; olive paint and grey rubber
       // retain the quieter isotropic patina. All grain is surface-attached.
       float timber = vCabinWood;
-      diffuseColor.rgb *= 1.0 + (paintedDetail - 0.64) * mix(0.8, 0.6, timber);
+      diffuseColor.rgb *= 1.0 + (paintedDetail - 0.64) * mix(0.5, 0.6, timber);
       // Broad horizontal variations read as worn paint, not granular stone.
       float paintBands = cabinNoise(p * vec3(4.0, 42.0, 8.0));
       diffuseColor.rgb *= 1.0 + (paintBands - 0.5) * 0.10 * (1.0 - timber);
@@ -213,7 +215,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v36-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v37-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
