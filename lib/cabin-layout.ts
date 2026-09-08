@@ -6,6 +6,6 @@ export const driverSeatPosition: [number, number, number] = [
   -0.995 * driverSeatScale,
   -1.1 * driverSeatScale,
 ];
-export const wheelPosition: [number, number, number] = [0.675, -0.505, -1.22];
+export const wheelPosition: [number, number, number] = [0.675, -0.525, -1.22];
 export const wheelScale: [number, number, number] = [0.85, 0.79, 0.86];
 export const wheelRotation: [number, number, number] = [-0.25, 0, -0.015];
