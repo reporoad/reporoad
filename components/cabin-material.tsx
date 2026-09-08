@@ -141,7 +141,9 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       diffuseColor.rgb *= 0.74 + fleck * 0.85 * (0.25 + face.y * 0.75) + weave;
       float clothPatch = mix(cabinNoise(vec3(clothUv * vec2(35.0, 40.0), 8.0)),
         cabinHash(vec3(floor(clothUv * vec2(35.0, 40.0)), 8.0)), 0.85 * aa);
-      diffuseColor.rgb *= 0.675 + clothPatch * 0.65;
+      // Keep dyed-cloth variation subordinate to the larger woven yarn;
+      // strong independent patches obscure that structure at driving size.
+      diffuseColor.rgb *= 0.86 + clothPatch * 0.28;
       // Broad, block-woven seams follow the cushion edges.
       float sewnChannel = (1.0 - smoothstep(0.012, 0.038, abs(abs(p.x) - 0.23))) * max(face.y, face.z);
       float threadPhase = fract(clothUv.y * 42.0);
@@ -243,7 +245,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v46-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v47-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
