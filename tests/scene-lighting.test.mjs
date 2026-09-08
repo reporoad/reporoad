@@ -81,3 +81,21 @@ test('cabin light levels remain continuous across daylight and weather transitio
     }
   }
 });
+
+test('late-day cabin fade is monotonic, bounded and clamps its endpoints', () => {
+  for (const wet of [0, 0.5, 1]) {
+    const night = cabinLighting(0, wet), noon = cabinLighting(1, wet);
+    assert.deepEqual(cabinLighting(-1, wet), night);
+    assert.deepEqual(cabinLighting(2, wet), noon);
+    let previous = night;
+    for (let i = 1; i <= 1000; i++) {
+      const current = cabinLighting(i / 1000, wet);
+      for (const key of Object.keys(noon)) {
+        assert.ok(current[key] >= previous[key], `${key} never reverses during sunrise`);
+        assert.ok(current[key] <= noon[key], `${key} does not exceed full daylight`);
+        assert.ok(current[key] - previous[key] < 0.15, `${key} fades without a threshold jump`);
+      }
+      previous = current;
+    }
+  }
+});
