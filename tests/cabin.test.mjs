@@ -23,12 +23,14 @@ test('timber corner tiers join vertically and retain their outer edge at differe
 
 test('glovebox clears the pad while preserving its lower trim joint', () => {
   const parts = cabinDashboardModel();
-  const face = parts.find(p => p.position[0] === -0.745 && p.position[1] === -0.5375 && p.size[0] === 0.95);
+  const face = parts.find(p => p.position[0] === -0.745 && p.size[2] === 0.08 && p.size[0] === 0.95);
   const band = parts.find(p => p.color === '#454734');
   const well = parts.find(p => p.color === '#34362a');
   assert.ok(face && band && well);
   assert.ok(Math.abs(face.position[1] + face.size[1] / 2 + 0.435) < 1e-9);
-  assert.ok(Math.abs(face.size[1] - 0.205) < 1e-9);
+  assert.ok(Math.abs(face.size[1] - 0.285) < 1e-9);
+  const handle = parts.find(p => p.size[0] === 0.3145);
+  assert.ok(handle && handle.position[1] === -0.515, 'handle stays at the reference height');
   assert.ok(Math.abs(face.position[1] - face.size[1] / 2 - (band.position[1] + band.size[1] / 2)) < 1e-9);
   assert.ok(Math.abs(well.position[1] - well.size[1] / 2 + 0.98) < 1e-9);
   const sides = parts.filter(p => p.size[0] === 0.016 && p.size[2] === 0.025);
