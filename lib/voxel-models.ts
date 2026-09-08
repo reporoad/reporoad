@@ -224,11 +224,11 @@ export function steeringWheelModel(): VoxelPart[] {
       });
     }
   }
-  // The pad and emblem have independent proportions. Keep the badge size
-  // while giving the pad the reference's wider rectangular face.
+  // The pad and emblem have independent proportions. The broad stepped badge
+  // stays readable at driver-eye distance without widening the padded face.
   for (const part of parts) {
     if (part.position[2] <= 0) continue;
-    const widthScale = part.position[2] >= 0.074 ? 1.3 : 1.04;
+    const widthScale = part.position[2] >= 0.074 ? 1.65 : 1.04;
     part.position[0] = 0.018 + (part.position[0] - 0.018) * widthScale;
     part.position[1] = -0.055 + (part.position[1] + 0.055) * 0.85;
     part.size[0] *= widthScale;
