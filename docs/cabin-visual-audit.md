@@ -59,3 +59,7 @@ At `1b06e88`, tested sparse surface-attached short scuffs with derivative filter
 - Local Summer/Sunny 16:00 driving preview, 1000 × 563: `/tmp/reporoad-cabin-motion-a-20260909.png` and `/tmp/reporoad-cabin-motion-b-20260909.png`, captured about 14 seconds apart.
 - Roadside buildings and mirror advance; speed reads 23 km/h; audio bars differ between captures. Paint patches remain attached to the cabin, the seal assemblies remain present, and the revised right-seat framing leaves the wheel clear.
 - No missing cabin surfaces or black frames were observed in these samples. Two screenshots cannot establish frame-to-frame freedom from flicker or long-running livestream stability. Those gates remain open, as does the overall reference-fidelity goal.
+
+### Rejected intermediate speed labels at `1e3d77c`
+
+Tested 10/20 km/h labels aligned with the existing gauge arc. At 1000 × 563 they were too small to read and did not materially improve fidelity (`/tmp/reporoad-cabin-speed-scale-20260909.png`). Removed the experiment. Keep the larger live speed reading and avoid adding miniature typography as a substitute for the reference's broader instrument composition.
