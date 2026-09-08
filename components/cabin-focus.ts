@@ -13,7 +13,9 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
       // The wheel is roughly 1.2 m away; only the near seat edge belongs
       // outside the focal plane, not the controls and their worn trim.
       focusRange: { value: new Vector2(0.72, 0.98) },
-      blurRadius: { value: 2.4 },
+      // Retain the block-woven yarn edges at broadcast size; only a slight
+      // near-edge softness is present in the reference upholstery.
+      blurRadius: { value: 1.4 },
     },
     vertexShader: `varying vec2 vUv;
       void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
