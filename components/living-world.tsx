@@ -522,8 +522,8 @@ export function VoxelCabin({
         color="#ba9667"
       />
       {/* Each wiper pivots at its own mount; blades park along the dash. */}
-      {[-1.35, -0.1].map((x, i) => (
-        <group key={x} position={[x, -0.46, -2.12]}>
+      {[-1.15, -0.1].map((x, i) => (
+        <group key={x} position={[x, -0.43, -2.12]}>
           <Block
             grain={false}
             position={[0, 0, 0]}
@@ -543,8 +543,8 @@ export function VoxelCabin({
             />
             <Block
               grain={false}
-              position={[i === 0 ? 0.16 : 0.47, 0.041, 0]}
-              scale={[i === 0 ? 0.88 : 0.66, 0.018, 0.025]}
+              position={[i === 0 ? 0.24 : 0.47, 0.041, 0]}
+              scale={[i === 0 ? 0.68 : 0.66, 0.018, 0.025]}
               color="#414336"
             />
           </group>
