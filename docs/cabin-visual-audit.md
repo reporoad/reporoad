@@ -139,3 +139,7 @@ The upper steering rim remained approximately 12 pixels below the reference at m
 ### Mirror mounting after `23ff0db`
 
 Narrowed the central mirror stem from 0.13 to 0.08 metres and its upper fastening plate from 0.15 × 0.13 to 0.095 × 0.10 metres. The reference's visible central support is about 21 pixels wide; the previous mounting was about 35 pixels. `/tmp/reporoad-cabin-mirror-support-20260909.png` shows the revised slim support at the same 1000 × 563 framing. Mirror glass, frame position, camera, target and refresh scheduling are unchanged. This is a mounting-proportion improvement, not a change to the reflected view or a motion verification.
+
+### Windshield opening after `b6f4c79`
+
+Increased the aspect-dependent pillar position factor from 1.19 to 1.25, bringing the inner glass boundaries from about x=84/916 toward x=60/940 at 1000 × 563, closer to the supplied reference. Initial trial also displaced the doors: rejected that coupling. Door panels, rails and window hardware now retain the original 1.19 placement through a separate optional model argument, while roof joins and seals follow the wider pillars. Final screenshot `/tmp/reporoad-cabin-windshield-width-final-20260909.png` shows restored hardware. All source tests, TypeScript and build passed; an additional regression test verifies fixed door rails under a wider surround. Dashboard, seats, wheel, reflection and repository exterior are unchanged. Other aspect ratios still require visual checking.

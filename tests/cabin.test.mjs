@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { cabinDashboardModel, cabinSurroundModel } from '../lib/cabin-model.ts';
 import { steeringWheelModel } from '../lib/voxel-models.ts';
 
+test('wider windshield preserves independently positioned door rails', () => {
+  const rails = parts => parts.filter(p => p.position[2] === -1.52 && p.position[1] < -0.5);
+  assert.deepEqual(rails(cabinSurroundModel(2.22, 2.11)), rails(cabinSurroundModel(2.11)));
+  assert.ok(rails(cabinSurroundModel(2.11)).length > 0);
+});
+
 test('window seals are explicitly rubber and stay inside the pillar assemblies', () => {
   for (const frameX of [1.2, 2.12, 3]) {
     const seals = cabinSurroundModel(frameX).filter(part => part.rubber);

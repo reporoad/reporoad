@@ -142,7 +142,7 @@ export function cabinDashboardModel(): VoxelPart[] {
   return parts;
 }
 
-export function cabinSurroundModel(frameX: number): VoxelPart[] {
+export function cabinSurroundModel(frameX: number, doorX = frameX): VoxelPart[] {
   const parts: VoxelPart[] = [];
   const add = (
     position: VoxelPart['position'],
@@ -220,7 +220,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
         ['#554832', '#50432f', '#594b34'][tier],
         true,
       );
-    const handleX = side * (frameX - 0.45);
+    const handleX = side * (doorX - 0.45);
     // Compact manual-window hardware above the recessed door pull.
     // Stepped square collars keep the fitting consistent with the voxel cabin.
     add([handleX, -0.61, -1.426], [0.044, 0.044, 0.022], '#403e31');
@@ -245,7 +245,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
     // Panel rails along the doors catch the side light.
     for (let j = 0; j < 3; j++)
       add(
-        [side * (frameX - 0.45), -0.59 - j * 0.14, -1.52],
+        [side * (doorX - 0.45), -0.59 - j * 0.14, -1.52],
         [0.325, 0.105, 0.15],
         j === 1 ? '#796043' : '#62664d',
         j === 1,

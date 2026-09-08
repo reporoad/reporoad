@@ -342,8 +342,9 @@ export function VoxelCabin({
   const lastMirrorFrame = useRef(0);
   useEffect(() => () => rear.target.dispose(), [rear]);
   const { size } = useThree();
-  const frameX = Math.max(1.2, (size.width / size.height) * 1.19);
-  const surround = useMemo(() => cabinSurroundModel(frameX), [frameX]);
+  const frameX = Math.max(1.2, (size.width / size.height) * 1.25);
+  const doorX = Math.max(1.2, (size.width / size.height) * 1.19);
+  const surround = useMemo(() => cabinSurroundModel(frameX, doorX), [frameX, doorX]);
   const pillarParts = useMemo(() => [-1, 1].map(side => surround
     .filter(part => side * part.position[0] > frameX - 0.13)
     .map(part => ({ ...part, position: [part.position[0] - side * frameX,
@@ -426,13 +427,13 @@ export function VoxelCabin({
         <group key={side}>
           <Block
             grain={false}
-            position={[side * (frameX + 0.05), -0.67, -1.45]}
+            position={[side * (doorX + 0.05), -0.67, -1.45]}
             scale={[0.32, 0.62, 1.1]}
             color="#60533c"
           />
           <Block
             grain={false}
-            position={[side * frameX, -0.49, -1.48]}
+            position={[side * doorX, -0.49, -1.48]}
             scale={[0.39, 0.085, 1.05]}
             color="#8a7955"
           />
