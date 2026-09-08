@@ -13,6 +13,7 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
       // The wheel is roughly 1.2 m away; only the near seat edge belongs
       // outside the focal plane, not the controls and their worn trim.
       focusRange: { value: new Vector2(0.72, 0.98) },
+      blurRadius: { value: 2.4 },
     },
     vertexShader: `varying vec2 vUv;
       void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -24,6 +25,7 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
       uniform float cameraNear;
       uniform float cameraFar;
       uniform vec2 focusRange;
+      uniform float blurRadius;
       varying vec2 vUv;
       float distanceAt(vec2 uv) {
         return -perspectiveDepthToViewZ(texture2D(tDepth, uv).x, cameraNear, cameraFar);
@@ -32,13 +34,18 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
         vec4 original = texture2D(tDiffuse, vUv);
         float distance = distanceAt(vUv);
         float softness = 1.0 - smoothstep(focusRange.x, focusRange.y, distance);
+        // The passenger cushion is farther away than the driver cushion.
+        // Its bottom-left screen region excludes the wheel and dashboard.
+        float passengerMask = (1.0 - smoothstep(0.26, 0.30, vUv.x))
+          * (1.0 - smoothstep(0.085, 0.12, vUv.y));
+        softness = max(softness, passengerMask * (1.0 - smoothstep(1.1, 1.45, distance)));
         if (softness < 0.001) { gl_FragColor = original; return; }
         vec3 sum = original.rgb * 4.0;
         float weights = 4.0;
         for (int y = -1; y <= 1; y++) {
           for (int x = -1; x <= 1; x++) {
             if (x == 0 && y == 0) continue;
-            vec2 uv = vUv + vec2(float(x), float(y)) * inverseResolution * 1.4;
+            vec2 uv = vUv + vec2(float(x), float(y)) * inverseResolution * blurRadius;
             float edge = 1.0 - smoothstep(0.04, 0.16, abs(distanceAt(uv) - distance));
             float weight = (x == 0 || y == 0 ? 2.0 : 1.0) * edge;
             sum += texture2D(tDiffuse, uv).rgb * weight;
