@@ -22,15 +22,15 @@ export function cabinDashboardModel(): VoxelPart[] {
   // The upper pad is a continuous beveled mesh in VoxelCabin.
   add([0, -0.461, -1.52], [5.2, 0.035, 0.06], '#565b43');
   // Recessed passenger glovebox, not a thin board floating above the footwell.
-  add([-0.745, -0.535, -1.48], [0.95, 0.24, 0.08], olive);
-  // Keep the formed edge while the taller face meets the pad above; the
-  // lower trim joint and handle remain at their original heights.
+  add([-0.745, -0.5125, -1.48], [0.95, 0.195, 0.08], olive);
+  // Keep the upper edge fitted to the pad, with a shallower face above the
+  // reference's broader lower trim. The handle remains fixed.
   parts[parts.length - 1].bevel = 0.014;
-  add([-0.745, -0.67, -1.44], [0.95, 0.03, 0.035], '#454734');
-  add([-0.745, -0.696, -1.445], [0.95, 0.018, 0.025], shadow);
-  add([-0.745, -0.8425, -1.43], [0.95, 0.275, 0.03], '#34362a');
+  add([-0.745, -0.6325, -1.44], [0.95, 0.045, 0.035], '#55563d');
+  add([-0.745, -0.664, -1.445], [0.95, 0.018, 0.025], shadow);
+  add([-0.745, -0.8265, -1.43], [0.95, 0.307, 0.03], '#34362a');
   for (const x of [-1.22, -0.27])
-    add([x, -0.535, -1.434], [0.016, 0.24, 0.025], shadow);
+    add([x, -0.5125, -1.434], [0.016, 0.195, 0.025], shadow);
   add([-0.825, -0.515, -1.426], [0.3145, 0.04, 0.02], '#464735');
   add([-0.995, -0.515, -1.421], [0.046, 0.058, 0.018], '#303225');
   add([-0.995, -0.515, -1.408], [0.032, 0.043, 0.006], '#5f5c46');
