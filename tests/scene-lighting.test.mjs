@@ -70,3 +70,14 @@ test('cabin sunlight follows a continuous bounded solar arc and warms only in cl
     assert.ok(a.position.every((n, axis) => Math.abs(n - b.position[axis]) < 0.002));
   }
 });
+
+test('cabin light levels remain continuous across daylight and weather transitions', () => {
+  for (let i = 0; i < 1000; i++) {
+    const day = i / 1000, wet = 1 - day;
+    const a = cabinLighting(day, wet), b = cabinLighting(day + 0.001, wet - 0.001);
+    for (const key of Object.keys(a)) {
+      assert.ok(Number.isFinite(a[key]) && a[key] >= 0);
+      assert.ok(Math.abs(b[key] - a[key]) < 0.12, `${key} changes continuously`);
+    }
+  }
+});

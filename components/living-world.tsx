@@ -270,6 +270,7 @@ export function VoxelCabin({
   const cabinSun = cabinSunlight(environment.daylight, environment.sunAngle, environment.rain + environment.snow);
   const cabinSunColor = useMemo(() => new THREE.Color('#ffdf9d').lerp(new THREE.Color('#ffbb6a'), cabinSun.warmth), [cabinSun.warmth]);
   const cabinKey = useRef<THREE.SpotLight>(null);
+  const cabinFills = useRef<(THREE.Light | null)[]>([]);
   const keyDayColor = useMemo(() => new THREE.Color('#ffdf9d'), []);
   const keyDuskColor = useMemo(() => new THREE.Color('#ffbb6a'), []);
   const dashboard = useMemo(() => cabinDashboardModel(), []);
@@ -350,13 +351,19 @@ export function VoxelCabin({
   useFrame(({ gl, scene, clock: renderClock }) => {
     // Use the same continuously sampled clock as the exterior sun; React's
     // one-second environment updates would otherwise step the cabin shadows.
+    const current = worldAt(clock.current.now(), preview);
+    const exposure = cabinLighting(current.daylight, current.rain + current.snow);
     if (cabinKey.current) {
-      const current = worldAt(clock.current.now(), preview);
       const sun = cabinSunlight(current.daylight, current.sunAngle, current.rain + current.snow);
       cabinKey.current.position.set(...sun.position);
       cabinKey.current.color.copy(keyDayColor).lerp(keyDuskColor, sun.warmth);
-      cabinKey.current.intensity = cabinLighting(current.daylight, current.rain + current.snow).key;
+      cabinKey.current.intensity = exposure.key;
     }
+    // Fill and instrument bounce must follow that same sample, not the
+    // slower React environment snapshot, especially through weather changes.
+    const fillLevels = [0.16 + (1 - current.daylight) * 0.25,
+      exposure.sunBounce, exposure.frontFill, current.daylight * 0.28, exposure.windowFill];
+    cabinFills.current.forEach((light, i) => { if (light) light.intensity = fillLevels[i]; });
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
     if (cabin.current && now - lastMirrorFrame.current > 100) {
@@ -551,12 +558,14 @@ export function VoxelCabin({
         </group>
       ))}
       <pointLight
+        ref={(node) => { cabinFills.current[0] = node; }}
         position={[0, -0.65, -1]}
         intensity={0.16 + (1 - environment.daylight) * 0.25}
         color="#ffcc8b"
         distance={3}
       />
       <pointLight
+        ref={(node) => { cabinFills.current[1] = node; }}
         position={[1.65, 1.4, -2.7]}
         intensity={cabinExposure.sunBounce}
         color="#ffe2ad"
@@ -584,6 +593,7 @@ export function VoxelCabin({
         shadow-radius={2.25}
       />
       <pointLight
+        ref={(node) => { cabinFills.current[2] = node; }}
         position={[-1.1, 0.1, -0.1]}
         intensity={cabinExposure.frontFill}
         color="#ffe4ba"
@@ -591,6 +601,7 @@ export function VoxelCabin({
         decay={2}
       />
       <pointLight
+        ref={(node) => { cabinFills.current[3] = node; }}
         position={[frameX - 0.5, 0.25, -1.95]}
         intensity={environment.daylight * 0.28}
         color="#ffe0ad"
@@ -598,6 +609,7 @@ export function VoxelCabin({
         decay={2}
       />
       <rectAreaLight
+        ref={(node) => { cabinFills.current[4] = node; }}
         position={[0, 0.5, -1.6]}
         rotation={[Math.PI / 2, 0, 0]}
         width={3.5}
