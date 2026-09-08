@@ -195,3 +195,7 @@ The top hood strip (675,380)–(790,389) averaged RGB 124.3/104.0/60.9 against r
 ### Consistent chicken readout at `dd54c5c`
 
 Found a canvas fillStyle leak: the chicken count inherited the final progress tick's colour, making partial/empty/unknown values dimmer than a full crossing. Explicitly set the numeric reading to `#e99b42` and its labels to `#dc984a`, independent of the arc's lit state. Regression tests cover null, zero, partial and full readings without changing their values. `/tmp/reporoad-cabin-count-readability-20260909.png` shows the unknown preview reading and labels with the corrected amber styling. Tests, TypeScript and build passed. Progress indicators still use actual crossing state; no decorative fake data was added.
+
+### Rejected global paint-noise reduction at `1887145`
+
+Compared grayscale variation on the glovebox in the reference and `/tmp/reporoad-cabin-count-readability-20260909.png`. Upper patch (220,405)–(370,417): reference mean/SD 48.96/2.41, current 56.12/20.16. Lower patch (220,449)–(370,459): reference 42.44/9.55, current 38.78/3.76. The mismatch reverses between upper and lower areas, so globally reducing paintedDetail/paintCell strength would not correct both. No shader/source adjustment was made. Investigate the upper face's illumination/bevel/shadow distribution separately before changing the already-tested surface texture; these image statistics alone do not identify the exact cause.
