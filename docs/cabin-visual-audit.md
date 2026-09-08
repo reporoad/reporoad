@@ -127,3 +127,7 @@ Raised the existing dark footwell inset from model y=-1.04 to -0.96 and increase
 ### Region-measured roof colour after `fe32e12`
 
 Roof rectangle x=650–849, y=5–25: reference mean RGB 82.3/49.3/19.6; previous 54.5/32.6/14.3. First material adjustment overshot to 104.4/64.2/29.2 and was reduced. Final outer timber `#7b5e38` and centre `#675b3a` produce 82.0/48.2/20.6 in `/tmp/reporoad-cabin-roof-measured-final-20260909.png`. Geometry, dark retaining straps, seals and all light intensities are unchanged. The numerical match is local evidence for this roof region, not proof of every roof pixel or lighting state.
+
+### Glovebox olive after `a7b58f9`
+
+Changed only the glovebox face paint from `#77745a` to `#625f45`. At the same paused Summer/Sunny 16:00, 1000 × 563 framing, upper rectangle (200,406)–(380,424) mean RGB changed from 75.0/66.4/40.8 to 56.3/48.3/26.8 against reference 56.4/48.7/26.3. Lower rectangle (165,444)–(380,460) changed from 60.8/54.1/32.9 to 43.6/37.9/20.2 against reference 51.0/43.6/22.2: slightly too dark, but lower total channel error than before. Keep this local improvement; do not infer identical lighting from regional means. Screenshot `/tmp/reporoad-cabin-glovebox-olive-20260909.png` retains handle and bevel contrast. Geometry, exterior, real instruments and global lighting are untouched. All 31 test-file entries, TypeScript and production build passed.
