@@ -37,7 +37,7 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
         // The passenger cushion is farther away than the driver cushion.
         // Its bottom-left screen region excludes the wheel and dashboard.
         float passengerMask = (1.0 - smoothstep(0.26, 0.30, vUv.x))
-          * (1.0 - smoothstep(0.085, 0.12, vUv.y));
+          * (1.0 - smoothstep(0.035, 0.105, vUv.y));
         softness = max(softness, passengerMask * (1.0 - smoothstep(1.1, 1.45, distance)));
         if (softness < 0.001) { gl_FragColor = original; return; }
         vec3 sum = original.rgb * 4.0;
