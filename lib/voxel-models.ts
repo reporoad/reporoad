@@ -120,12 +120,12 @@ export function steeringWheelModel(): VoxelPart[] {
       else rim.push({ left, right, bottom: y, top: y, color });
     }
   }
-  // The reference has a shallow lower bowl: keep the upper grip and horn
-  // alignment fixed while lifting the bottom arc into the visible cabin.
-  const lowerBowlY = (y: number) => y < -0.07 ? -0.07 + (y + 0.07) * 0.88 : y;
+  // Raise the upper opening and flatten the lower bowl independently of the
+  // horn. This matches the reference silhouette without moving the controls.
+  const rimY = (y: number) => y < -0.07 ? -0.07 + (y + 0.07) * 0.76 : y > 0 ? y * 1.07 : y;
   for (const r of rim) {
-    const bottom = lowerBowlY((r.bottom - 0.5) * step);
-    const top = lowerBowlY((r.top + 0.5) * step);
+    const bottom = rimY((r.bottom - 0.5) * step);
+    const top = rimY((r.top + 0.5) * step);
     parts.push({
       position: [
         ((r.left + r.right) * step) / 2,

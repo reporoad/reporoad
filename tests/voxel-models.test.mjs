@@ -81,18 +81,22 @@ test('joined wheel grips preserve the stepped cells in the shallow lower bowl', 
       const covered = rim.some(
         (p) =>
           Math.abs(x * 0.045 - p.position[0]) < p.size[0] / 2 &&
-          Math.abs((y * 0.045 < -0.07 ? -0.07 + (y * 0.045 + 0.07) * 0.88 : y * 0.045) - p.position[1]) < p.size[1] / 2,
+          Math.abs((y * 0.045 < -0.07 ? -0.07 + (y * 0.045 + 0.07) * 0.76 : y > 0 ? y * 0.045 * 1.07 : y * 0.045) - p.position[1]) < p.size[1] / 2,
       );
       assert.equal(covered, outer && !inner, `rim cell ${x},${y}`);
     }
 });
 
-test('wheel lower arc has bounded depth without moving its upper grip', () => {
+test('wheel has a raised upper opening and shallow lower bowl around its fixed horn', () => {
   const rim = steeringWheelModel().filter(p => p.position[2] === 0 && p.size[2] === 0.085);
   const bottom = Math.min(...rim.map(p => p.position[1] - p.size[1] / 2));
   const top = Math.max(...rim.map(p => p.position[1] + p.size[1] / 2));
-  assert.ok(bottom > -0.346 && bottom < -0.345);
-  assert.ok(Math.abs(top - 0.383) < 0.00001);
+  assert.ok(Math.abs(bottom + 0.308) < 0.00001);
+  assert.ok(Math.abs(top - 0.409775) < 0.00001);
+  const horn = steeringWheelModel().find(p => p.position[2] === 0.015 && p.size[0] > 0.2);
+  assert.ok(horn);
+  assert.equal(horn.position[0], 0.018);
+  assert.ok(Math.abs(horn.position[1] + 0.05925) < 1e-9);
 });
 
 test('steering column cover stays below and behind the horn pad', () => {
