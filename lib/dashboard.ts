@@ -46,12 +46,11 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
   ctx.font = '24px monospace'; ctx.fillText('km/h', 122, 177);
   ctx.fillStyle = '#b27c3c'; ctx.font = '20px monospace';
   ctx.fillText('0', 40, 218); ctx.fillText('30', 204, 218);
-  ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace'; ctx.fillText('TRAFFIC', 376, 36);
+  ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace'; ctx.fillText('NEXT LIGHT', 376, 36);
+  ctx.font = 'bold 42px monospace'; ctx.fillText(state.nextLight === null ? '—' : `${Math.floor(state.nextLight/60)}:${String(state.nextLight%60).padStart(2,'0')}`, 376, 93);
   ctx.fillStyle = state.signal === 'RED' ? '#ff7555' : state.signal === 'GREEN' ? '#b5ce73' : '#dc984a';
-  ctx.font = 'bold 42px monospace'; ctx.fillText(state.signal, 376, 93);
-  ctx.font = '22px monospace'; ctx.fillText(state.status, 376, 132);
-  ctx.fillStyle = '#dc984a'; ctx.font = '20px monospace'; ctx.fillText('NEXT LIGHT', 376, 174);
-  ctx.font = '32px monospace'; ctx.fillText(state.nextLight === null ? '—' : `${Math.floor(state.nextLight/60)}:${String(state.nextLight%60).padStart(2,'0')}`, 376, 214);
+  ctx.font = 'bold 28px monospace'; ctx.fillText(state.signal, 376, 132);
+  ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace'; ctx.fillText(state.status, 376, 174);
   ctx.font = '22px monospace'; ctx.fillText('CHICKENS', 638, 36);
   const count = state.remaining === null ? '—' : state.remaining.toLocaleString('en-US');
   ctx.font = `bold ${count.length > 7 ? 29 : count.length > 4 ? 38 : 68}px monospace`;

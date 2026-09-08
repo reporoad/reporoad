@@ -42,3 +42,10 @@ test('journey ladder reflects time until the next light without inventing discon
     assert.equal(lit,expected);
   }
 });
+test('next-light timer is drawn in the upper cluster above the horn-pad occlusion',()=>{
+  const text=[];
+  const ctx={fillRect(){},fillText(value,x,y){text.push({value,x,y});}};
+  drawDashboard(ctx,{...dashboardState(0,null,false,false),nextLight:89,signal:'GREEN'});
+  assert.ok(text.some(t=>t.value==='1:29' && t.x===376 && t.y===93));
+  assert.ok(text.some(t=>t.value==='GREEN' && t.y===132));
+});
