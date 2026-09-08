@@ -37,7 +37,9 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
     const angle = Math.PI * (0.85 + i / 18 * 1.3);
     const x = Math.round(122 + Math.cos(angle) * 98);
     const y = Math.round(130 + Math.sin(angle) * 85);
-    ctx.fillStyle = speedFraction > 0 && i / 18 <= speedFraction ? '#e8a74d' : '#493821';
+    // Backlit scale markings remain readable when parked; the brighter
+    // sweep alone communicates speed, rather than hiding the gauge at zero.
+    ctx.fillStyle = speedFraction > 0 && i / 18 <= speedFraction ? '#e8a74d' : '#a56b32';
     const size = i % 3 === 0 ? 10 : 6;
     ctx.fillRect(x - size / 2, y - 5, size, 10);
   }

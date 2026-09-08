@@ -28,10 +28,14 @@ test('instrument labels describe the real state and omit fake mechanical reading
 });
 test('amber speed dial lights only for actual motion and clamps its range',()=>{
   for (const [speedKph, expected] of [[0,0],[15,10],[30,19],[60,19]]) {
-    let lit = 0;
-    const ctx = {fillStyle:'', fillRect(){ if(this.fillStyle === '#e8a74d') lit++; },fillText(){}};
+    let lit = 0, backlit = 0;
+    const ctx = {fillStyle:'', fillRect(){
+      if(this.fillStyle === '#e8a74d') lit++;
+      if(this.fillStyle === '#a56b32') backlit++;
+    },fillText(){}};
     drawDashboard(ctx,{...dashboardState(0,null,false,false),speedKph});
     assert.equal(lit,expected);
+    assert.equal(lit + backlit,19, 'fixed scale remains visible at every speed');
   }
 });
 test('journey ladder reflects time until the next light without inventing disconnected progress',()=>{
