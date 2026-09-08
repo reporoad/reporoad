@@ -67,8 +67,11 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
     ctx.fillRect(x - 3, y - 4, 6, 8);
   }
   const count = state.remaining === null ? '—' : state.remaining.toLocaleString('en-US');
+  // The reading must not inherit the final arc tick's lit/unlit colour.
+  ctx.fillStyle = '#e99b42';
   ctx.font = `bold ${count.length > 7 ? 29 : count.length > 4 ? 38 : 68}px monospace`;
   ctx.fillText(count,638,123,164);
+  ctx.fillStyle = '#dc984a';
   ctx.font = '20px monospace'; ctx.fillText('STILL TO CROSS',638,164);
   ctx.font = '22px monospace'; ctx.fillText(state.status === 'CROSSING' ? 'PLEASE WAIT' : state.live ? 'SHARED ROAD' : 'LOCAL ONLY',638,207);
 }

@@ -191,3 +191,7 @@ Rejected an unneeded roof-grain adjustment: the matched roof rectangle already h
 ### Instrument hood contrast after `2255736`
 
 The top hood strip (675,380)–(790,389) averaged RGB 124.3/104.0/60.9 against reference 67.0/54.3/32.3. Darkened only the hood from `#76745a`, first to `#504b36` (88.2/68.5/36.3), then to `#413e31`. Final screenshot `/tmp/reporoad-cabin-instrument-hood-final-20260909.png` retains the projecting edge and separates it from the dark instrument panel. Dimensions, screen, lights and wheel remain unchanged. Updated the existing geometric hood test to locate the part by dimensions/position rather than an incidental paint colour. Tests, TypeScript and build passed.
+
+### Consistent chicken readout at `dd54c5c`
+
+Found a canvas fillStyle leak: the chicken count inherited the final progress tick's colour, making partial/empty/unknown values dimmer than a full crossing. Explicitly set the numeric reading to `#e99b42` and its labels to `#dc984a`, independent of the arc's lit state. Regression tests cover null, zero, partial and full readings without changing their values. `/tmp/reporoad-cabin-count-readability-20260909.png` shows the unknown preview reading and labels with the corrected amber styling. Tests, TypeScript and build passed. Progress indicators still use actual crossing state; no decorative fake data was added.

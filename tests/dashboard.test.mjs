@@ -65,3 +65,15 @@ test('crossing dial reflects remaining chickens without inventing unknown progre
     assert.equal(lit+dim,13);
   }
 });
+
+test('chicken reading stays bright independently of the final dial tick',()=>{
+  for (const remaining of [null,0,50,100]) {
+    const text=[];
+    const ctx={fillStyle:'',fillRect(){},fillText(value,x,y){text.push({value,x,y,color:this.fillStyle});}};
+    drawDashboard(ctx,{...dashboardState(0,null,false,false),remaining,crossingTotal:100});
+    const reading=text.find(t=>t.x===638 && t.y===123);
+    assert.equal(reading.color,'#e99b42');
+    assert.equal(reading.value,remaining===null?'—':String(remaining));
+    assert.equal(text.find(t=>t.value==='STILL TO CROSS').color,'#dc984a');
+  }
+});
