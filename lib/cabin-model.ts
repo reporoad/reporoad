@@ -9,7 +9,7 @@ export function cabinDashboardModel(): VoxelPart[] {
     color: string,
     wood = color === '#705139',
   ) => parts.push({ position, size, color, wood });
-  const olive = '#6a654b',
+  const olive = '#77745a',
     edge = '#424535',
     shadow = '#24291f',
     wood = '#705139';

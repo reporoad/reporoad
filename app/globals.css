@@ -670,7 +670,7 @@ button svg {
   line-height: 1.6;
   margin: 10px 0 20px;
 }
-.broadcast {
+.app.broadcast {
   height: 100dvh;
   padding: 0;
   max-width: none;

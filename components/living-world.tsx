@@ -563,8 +563,8 @@ export function VoxelCabin({
       />
       <pointLight
         position={[-1.1, 0.1, -0.1]}
-        intensity={environment.daylight * 0.8}
-        color="#ffd1a0"
+        intensity={environment.daylight * 2.2}
+        color="#eee5ca"
         distance={3.5}
         decay={2}
       />
