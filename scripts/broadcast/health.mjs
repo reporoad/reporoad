@@ -1,6 +1,11 @@
 export class CaptureHealth {
   constructor(now, stallMs = 20000) {
-    this.lastProgress = now; this.outTime = -1; this.audioBadSince = null; this.stallMs = stallMs;
+    this.stallMs = stallMs; this.reset(now);
+  }
+  // After a page or browser recovery nothing before it describes the new session:
+  // the frame counter restarts and the gap spent recovering is not a fault.
+  reset(now) {
+    this.lastProgress = now; this.outTime = -1; this.audioBadSince = null;
   }
   progress(outTime, now) {
     if (outTime > this.outTime) { this.outTime = outTime; this.lastProgress = now; }

@@ -1,7 +1,9 @@
 [Unit]
 Description=RepoRoad isolated browser broadcaster
-After=network-online.target
-Wants=network-online.target
+After=network-online.target reporoad-music.service
+# Soft dependency: the local music proxy serves the library the page needs, but a
+# broadcaster pointed straight at a hosted site still starts without it.
+Wants=network-online.target reporoad-music.service
 StartLimitIntervalSec=300
 StartLimitBurst=5
 

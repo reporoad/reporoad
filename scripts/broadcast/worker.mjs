@@ -53,11 +53,17 @@ async function main() {
   const env = {...process.env, DISPLAY:display,XAUTHORITY:auth,PULSE_SERVER:socket,
     PULSE_SINK:'reporoad',PULSE_SOURCE:'reporoad.monitor',PULSE_RUNTIME_PATH:pulseDir};
   if(c.audioLibraryPath)env.LD_LIBRARY_PATH=c.audioLibraryPath;
-  function launch(name,bin,args) {
-    const fd=openSync(join(logDir,`${name}.log`),'w',0o600);logFiles.push(fd);
+  function launch(name,bin,args,onExit) {
+    const fd=openSync(join(logDir,`${name}.log`),'a',0o600);logFiles.push(fd);
     const child=spawn(bin,args,{env,stdio:['ignore',fd,fd]}); children.push(child);
     child.on('error',e=>{console.error(`${name}: ${e.message}`);void stop(1);});
-    child.on('exit',()=>{if(!stopping){console.error(`${name} exited; stopping broadcaster. See ${logDir}`);void stop(1);}});
+    child.on('exit',()=>{
+      if(stopping)return;
+      // Xvfb, the audio sink and FFmpeg are the stream; only a restartable child
+      // supplies its own handler instead of ending the run.
+      if(onExit){onExit();return;}
+      console.error(`${name} exited; stopping broadcaster. See ${logDir}`);void stop(1);
+    });
     return child;
   }
   launch('xvfb','Xvfb',[display,'-screen','0',`${c.width}x${c.height}x24`,'-nolisten','tcp','-auth',auth,'-noreset']);
@@ -72,23 +78,34 @@ async function main() {
     throw Error('Startup timed out; inspect run logs');
   }
   await until(()=>existsSync(join(pulseDir,'native')) && existsSync(`/tmp/.X11-unix/X${c.display}`));
-  const profile=join(runDir,'chrome');
-  launch('chrome',c.chrome,[`--user-data-dir=${profile}`,'--remote-debugging-address=127.0.0.1','--remote-debugging-port=0',
+  // Chrome is the only restartable child. Xvfb, the audio sink and FFmpeg outlive
+  // it, so a browser fault never drops the RTMP connection or makes the streaming
+  // service open a second broadcast.
+  const chromeArgs=['--remote-debugging-address=127.0.0.1','--remote-debugging-port=0',
     '--no-first-run','--no-default-browser-check','--password-store=basic','--disable-sync',
     '--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding',
     '--disable-backgrounding-occluded-windows','--force-device-scale-factor=1',`--window-size=${c.width},${c.height}`,
     '--window-position=0,0','--kiosk',`--use-angle=${c.angle}`,
     ...(c.allowSoftware && c.angle==='swiftshader' ? ['--enable-unsafe-swiftshader'] : []),
-    ...(c.angle==='vulkan' ? ['--enable-features=Vulkan','--disable-vulkan-surface'] : []),'about:blank']);
-  const portFile=join(profile,'DevToolsActivePort');await until(()=>existsSync(portFile));
-  const [port, browserPath]=readFileSync(portFile,'utf8').trim().split('\n');
-  const browser=await CDP.connect(`ws://127.0.0.1:${port}${browserPath}`); clients.push(browser);
-  const targets=await until(async()=>{try { const v=await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();return v.find(t=>t.type==='page'); }catch{return false;}});
-  const page=await CDP.connect(targets.webSocketDebuggerUrl); clients.push(page);
-  await page.send('Page.enable');await page.send('Runtime.enable');
+    ...(c.angle==='vulkan' ? ['--enable-features=Vulkan','--disable-vulkan-surface'] : []),'about:blank'];
   const errors=[];
-  page.on('Runtime.exceptionThrown',e=>{ errors.push(e.exceptionDetails?.exception?.description || e.exceptionDetails?.text); if(errors.length>50)errors.shift(); });
-  await page.send('Page.addScriptToEvaluateOnNewDocument',{source:`
+  let chrome, browser, page, renderer, features, chromeProfile, chromeRuns=0, recovering=false, pageRecoveries=0, recoveredAt=0;
+  const drop=client=>{const i=clients.indexOf(client);if(i>=0)clients.splice(i,1);try{client.close();}catch{/* Already gone. */}};
+  async function connectChrome() {
+    // A fresh profile each time: a killed Chrome leaves a stale debugging port
+    // file and a singleton lock that would break the reconnect.
+    const profile=join(runDir,`chrome-${++chromeRuns}`), previous=chromeProfile;
+    chromeProfile=profile;
+    chrome=launch('chrome',c.chrome,[`--user-data-dir=${profile}`,...chromeArgs],()=>void recover('Chrome exited'));
+    if(previous)rmSync(previous,{recursive:true,force:true});
+    const portFile=join(profile,'DevToolsActivePort');await until(()=>existsSync(portFile));
+    const [port, browserPath]=readFileSync(portFile,'utf8').trim().split('\n');
+    browser=await CDP.connect(`ws://127.0.0.1:${port}${browserPath}`); clients.push(browser);
+    const targets=await until(async()=>{try { const v=await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();return v.find(t=>t.type==='page'); }catch{return false;}});
+    page=await CDP.connect(targets.webSocketDebuggerUrl); clients.push(page);
+    await page.send('Page.enable');await page.send('Runtime.enable');
+    page.on('Runtime.exceptionThrown',e=>{ errors.push(e.exceptionDetails?.exception?.description || e.exceptionDetails?.text); if(errors.length>50)errors.shift(); });
+    await page.send('Page.addScriptToEvaluateOnNewDocument',{source:`
     window.__broadcastProbe={frames:0,audio:[],events:{},started:performance.now()};
     const probe=window.__broadcastProbe;
     const tick=()=>{probe.frames++;requestAnimationFrame(tick)};requestAnimationFrame(tick);
@@ -99,19 +116,62 @@ async function main() {
       } return original.apply(this,args);
     };
   `});
-  await page.send('Page.navigate',{url:c.url});
-  await until(()=>page.evaluate(`Boolean(document.querySelector('.broadcast canvas'))`),90);
-  await page.evaluate(`(()=>{const style=document.createElement('style');style.textContent='.broadcast-exit{display:none!important}';document.head.appendChild(style)})()`);
-  const gpu=await browser.send('SystemInfo.getInfo');
-  const renderer=gpu.gpu.auxAttributes?.glRenderer || JSON.stringify(gpu.gpu.devices);
-  console.log(`Renderer: ${renderer}`);
-  if (!c.allowSoftware && /swiftshader|llvmpipe|softpipe|software/i.test(renderer)) throw Error('Software renderer detected; fix GPU/ANGLE configuration, or explicitly set BROADCAST_ALLOW_SOFTWARE=1 for a diagnostic run');
+    const gpu=await browser.send('SystemInfo.getInfo');
+    renderer=gpu.gpu.auxAttributes?.glRenderer || JSON.stringify(gpu.gpu.devices);
+    features=gpu.gpu.featureStatus;
+  }
   const audioReady=async()=>{
     const missing=await page.evaluate(`document.querySelector('[data-broadcast-error]')?.textContent`);
     if(missing) throw Error(missing);
     return page.evaluate(`window.__broadcastProbe.audio.some(a=>!a.paused && a.readyState>=3 && a.currentTime>0)`);
   };
-  await until(audioReady,90);
+  async function preparePage() {
+    await page.send('Page.navigate',{url:c.url});
+    await until(()=>page.evaluate(`Boolean(document.querySelector('.broadcast canvas'))`),90);
+    await page.evaluate(`(()=>{const style=document.createElement('style');style.textContent='.broadcast-exit{display:none!important}';document.head.appendChild(style)})()`);
+    await until(audioReady,90);
+  }
+  async function restartChrome() {
+    const old=chrome;
+    if(page)drop(page); if(browser)drop(browser);
+    page=browser=undefined;
+    if(old && old.exitCode===null) {
+      old.kill('SIGTERM');
+      await Promise.race([new Promise(r=>old.once('exit',r)), delay(8000)]);
+      if(old.exitCode===null)old.kill('SIGKILL');
+    }
+    const i=children.indexOf(old);if(i>=0)children.splice(i,1);
+    await connectChrome();
+    await preparePage();
+  }
+  // Reloading the page costs seconds; restarting Chrome costs about a minute.
+  // Both keep the encoder running, so neither is worth ending the broadcast over.
+  async function recover(reason) {
+    if(recovering||stopping)return false;
+    recovering=true;
+    const beat=setInterval(()=>{if(process.connected)process.send({type:'heartbeat'});},5000);
+    try {
+      console.error(`${reason}; recovering with the stream still connected`);
+      if(Date.now()-recoveredAt>300000)pageRecoveries=0;
+      if(chrome?.exitCode===null && pageRecoveries<2) {
+        pageRecoveries++;
+        try { await preparePage(); console.log('Recovered by reloading the page'); return true; }
+        catch(e) { console.error(`Page reload did not recover it: ${e.message}`); }
+      }
+      await restartChrome();
+      pageRecoveries=0;
+      console.log('Recovered by restarting the browser');
+      return true;
+    } catch(e) {
+      console.error(`Recovery failed: ${e.message}`);
+      void stop(1);
+      return false;
+    } finally { clearInterval(beat); recovering=false; recoveredAt=Date.now(); }
+  }
+  await connectChrome();
+  console.log(`Renderer: ${renderer}`);
+  if (!c.allowSoftware && /swiftshader|llvmpipe|softpipe|software/i.test(renderer)) throw Error('Software renderer detected; fix GPU/ANGLE configuration, or explicitly set BROADCAST_ALLOW_SOFTWARE=1 for a diagnostic run');
+  await preparePage();
   await delay(c.warmup*1000);
   if(stopping)return;
   const size=await page.evaluate(`({width:innerWidth,height:innerHeight})`);
@@ -141,7 +201,7 @@ async function main() {
   ffmpeg.on('error',e=>{console.error(e.message);void stop(1);});
   let checking=false;
   healthTimer=setInterval(async()=>{
-    if(checking||stopping)return;checking=true;
+    if(checking||stopping||recovering)return;checking=true;
     try {
       const current=await probe();
       const fps=Math.round((current.frames-last.frames)*1000/(current.now-last.now));
@@ -154,13 +214,21 @@ async function main() {
       const unhealthy = health.check(current, last, Date.now());
       if(unhealthy)throw Error(unhealthy);
       last=current;
-    } catch(e) {if(!stopping){console.error(e.message);void stop(1);}} finally{checking=false;}
+    } catch(e) {
+      if(stopping||recovering)return;
+      // The encoder is still connected and streaming: repair the browser rather
+      // than tearing down a healthy broadcast over a page fault.
+      if(await recover(e.message)) {
+        health.reset(Date.now());
+        try { last=await probe(); } catch { void stop(1); }
+      }
+    } finally{checking=false;}
   },5000);
   console.log(c.mode==='record' ? `Recording ${c.seconds}s to ${c.output}` : 'Streaming to configured destination');
   if(process.connected)process.send({type:'capturing'});
   const exit=await new Promise(resolve=>ffmpeg.once('exit',resolve));
   clearInterval(healthTimer);
-  writeFileSync(join(logDir,'report.json'),JSON.stringify({url:c.url,renderer,features:gpu.gpu.featureStatus,width:c.width,height:c.height,fps:c.fps,encoder:c.encoder,exit,errors,samples,progress},null,2));
+  writeFileSync(join(logDir,'report.json'),JSON.stringify({url:c.url,renderer,features,width:c.width,height:c.height,fps:c.fps,encoder:c.encoder,exit,errors,samples,progress},null,2));
   if(exit!==0 && !stopping)throw Error(`Encoder exited ${exit}; inspect ${logDir}/ffmpeg.log`);
   console.log(`Report: ${logDir}/report.json`);
   await stop(exit===0?0:1);

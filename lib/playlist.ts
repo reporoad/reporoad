@@ -5,6 +5,11 @@ export let PLAYLIST: MusicTrack[] = [];
 export const CROSSFADE_SECONDS = FADE_SECONDS;
 export let TRACK_DURATIONS: number[] = [];
 export const PLAYLIST_EPOCH = Date.UTC(2026, 0, 1);
+// Correcting drift costs a fresh range request. Over the network that is close to
+// a second during which the deck does not advance, so a tolerance below it made
+// every correction create the drift that triggered the next one.
+const SYNC_TOLERANCE_SECONDS = 5;
+const SYNC_COOLDOWN_SECONDS = 8;
 let schedule: ReturnType<typeof createMusicSchedule> | undefined;
 
 // Loaded from the broadcaster machine, never bundled or committed with source.
@@ -31,6 +36,7 @@ export class PlaylistPlayer {
   private decks: HTMLAudioElement[];
   private indices = [0, -1];
   private pending = new Set<HTMLAudioElement>();
+  private corrected = new WeakMap<HTMLAudioElement, number>();
   private playing = false;
   private disposed = false;
   private volume = 0.3;
@@ -89,9 +95,26 @@ export class PlaylistPlayer {
     this.onError();
   }
 
+  // A deck that is already seeking or refilling owns its range request; a second
+  // seek restarts it and loses the buffer, which is how one slow fetch used to
+  // escalate into a permanent stall. Only decks that are not playing yet are
+  // positioned unconditionally, so a new track still starts at the right offset.
+  private align(audio: HTMLAudioElement, offset: number, position: number) {
+    if (!audio.paused && (audio.seeking || audio.readyState < 3)) return;
+    const settled = this.corrected.get(audio);
+    if (settled !== undefined && position < settled) return;
+    const time = audio.currentTime;
+    if (Number.isFinite(time) && Math.abs(time - offset) <= SYNC_TOLERANCE_SECONDS) return;
+    try {
+      audio.currentTime = offset;
+      this.corrected.set(audio, position + SYNC_COOLDOWN_SECONDS);
+    } catch { /* Retry after the cooldown once metadata arrives. */ }
+  }
+
   private async update() {
     if (this.disposed) return;
-    const mix = playlistMix(this.position());
+    const position = this.position();
+    const mix = playlistMix(position);
     if (mix.index !== this.index) {
       this.index = mix.index;
       this.onTrack(this.index);
@@ -108,9 +131,7 @@ export class PlaylistPlayer {
       const audio = this.decks[slot];
       audio.preload = 'auto';
       audio.volume = this.volume * track.gain;
-      if (!Number.isFinite(audio.currentTime) || Math.abs(audio.currentTime - track.offset) > 2) {
-        try { audio.currentTime = track.offset; } catch { /* Retry on the next tick after metadata. */ }
-      }
+      this.align(audio, track.offset, position);
       if (this.playing && audio.paused && !this.pending.has(audio)) {
         if (audio.error) audio.load();
         this.pending.add(audio);
