@@ -19,9 +19,9 @@ export function cabinLighting(daylight: number, wet: number) {
   const day = Math.max(0, Math.min(1, daylight));
   const overcast = Math.max(0, Math.min(1, wet));
   return {
-    key: day * 42 * (1 - overcast * 0.85),
+    key: day * (58 * (1 - overcast) + 6.3 * overcast),
     frontFill: day * (1.65 + overcast * 0.4),
-    windowFill: day * (0.8 + overcast * 0.25),
+    windowFill: day * (0.65 + overcast * 0.4),
     sunBounce: day * 1.2 * (1 - overcast * 0.7),
   };
 }
