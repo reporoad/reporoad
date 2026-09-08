@@ -578,6 +578,7 @@ export function VoxelCabin({
         shadow-camera-far={7}
         shadow-bias={-0.0001}
         shadow-normalBias={0.003}
+        shadow-radius={2.25}
       />
       <pointLight
         position={[-1.1, 0.1, -0.1]}
