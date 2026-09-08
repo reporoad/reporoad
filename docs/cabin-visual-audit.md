@@ -107,3 +107,9 @@ Captured `/tmp/reporoad-cabin-full-audit-20260909.png` at 1000 × 563, Summer/Su
 - 1000 × 563 Summer/Rain 16:00: `/tmp/reporoad-cabin-updated-rain-20260909.png`. Diffuse cabin lighting retains the timber/paint distinction; the wipers are visibly raised mid-sweep. Instrument text and the new crossing arc remain visible.
 - Summer/Sunny 21:00: `/tmp/reporoad-cabin-updated-night-20260909.png`. Direct sunlight is absent; radio/instrument illumination and the wheel-pad outline remain visible. The broader canopy transmission has not left sunny patches at night.
 - These samples cover the accumulated wheel, material, instrument and window-light changes. They show no obvious missing surfaces or weather-state visual regression, but are neither a sustained playback test nor proof of almost-identical daylight fidelity. No application source changed during this check.
+
+### Measured local submissions at `610e205`
+
+Temporarily displayed the existing post-composer submission counter in the local browser, sampling every five seconds. Moving Summer/Sunny 16:00, 1000 × 563, mirror at its revised 20 Hz target. Screenshot `/tmp/reporoad-cabin-measured-render-20260909.png` records consecutive samples: 8.6, 60.0, 58.6, 58.4, 60.0, 59.8 submissions/s. The first interval included the broadcast-view/resize startup transition; subsequent five intervals cover approximately 25 seconds of steady movement. The temporary readout was completely removed afterward.
+
+This proves successful CPU-side scene submissions near 60/s during this bounded local sample, not GPU completion, lack of pixel flicker, encoder throughput, or VPS performance. Startup behavior is not certified by excluding its low sample. The sustained production and almost-identical visual-fidelity gates remain open.
