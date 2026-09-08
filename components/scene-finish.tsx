@@ -26,14 +26,14 @@ export default function SceneFinish() {
     const composer = new EffectComposer(gl, target);
     const render = new RenderPass(scene, camera);
     const ao = new GTAOPass(scene, camera, 1, 1);
-    ao.blendIntensity = 0.55;
+    ao.blendIntensity = 0.72;
     ao.updateGtaoMaterial({
-      radius: 0.55,
+      radius: 0.35,
       thickness: 0.8,
       samples: 8,
       distanceFallOff: 0.7,
     });
-    ao.updatePdMaterial({ radius: 5, samples: 8 });
+    ao.updatePdMaterial({ radius: 3, samples: 8 });
     const focus = cabinFocus(
       ao.depthTexture,
       (camera as PerspectiveCamera).near,
