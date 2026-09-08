@@ -377,7 +377,7 @@ export function VoxelCabin({
       >
         <CabinMaterial color="#a19a72" edgeWearStrength={1.6} topPaintStrength={0.3} vertexColors />
       </mesh>
-      {[-0.32, 0.4].map((x) => (
+      {[-0.32, -0.23, 0.32, 0.4].map((x) => (
         <mesh
           key={x}
           geometry={padSeamGeometry}
@@ -385,7 +385,7 @@ export function VoxelCabin({
           castShadow
           receiveShadow
         >
-          <CabinMaterial color="#4b503e" />
+          <CabinMaterial color={x === -0.32 || x === 0.4 ? '#4b503e' : '#777455'} />
         </mesh>
       ))}
       <VoxelModel parts={fixedSurround} cabin />
