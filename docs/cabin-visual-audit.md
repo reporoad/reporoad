@@ -159,3 +159,7 @@ At 1000 × 563, Summer/Rain 16:00 (`/tmp/reporoad-cabin-materials-rain-final-202
 ### Window crank proportions after `963f97c`
 
 The small crank was close to the screen edge compared with the reference's prominent hand grip. Scaled its five existing pieces 1.4× in the door plane, brought the assembly 0.05 metres inward and 0.025 metres down, preserving depth and the recessed pull below. `/tmp/reporoad-cabin-window-crank-20260909.png` shows the chunkier grip on both doors with no obvious pull collision at 1000 × 563, Summer/Sunny 16:00. Tests, TypeScript and build passed. No new interaction is implied: this remains modeled trim, not an operable window control.
+
+### Whole-cabin comparison at `9cebebe`
+
+Captured `/tmp/reporoad-cabin-whole-comparison-20260909.png`, Summer/Sunny 16:00, 1000 × 563, temporarily hiding crossing/exit overlays; the CSS override was removed immediately afterward. This provides an unobstructed current baseline including the latest mirror mount, windshield, upper rim, material colours and door cranks. Glovebox and radio footprint, foreground cushion corners and upper rim are near the reference positions. Broad layout edits now risk regressing those matches. The remaining visually significant gap is the reference's richer low-angle warm light and material shading. Next compare a later daylight state before adjusting more material colours or moving geometry. The reference's village exterior is deliberately not a target for replacement. Full fidelity and sustained motion stability remain unproven.
