@@ -10,6 +10,7 @@ import type { VoxelPart } from '@/lib/voxel-models';
 import VoxelModel from './voxel-model';
 import { loadOwnerAvatar } from '@/lib/owner-avatar';
 import RepositorySupport from './repository-support';
+import { storefrontDetails } from '@/lib/storefront-details';
 
 export function repositoryBuildingModel(
   repo: Repository,
@@ -20,7 +21,8 @@ export function repositoryBuildingModel(
     position: VoxelPart['position'],
     size: VoxelPart['size'],
     color: string,
-  ) => parts.push({ position, size, color });
+    lit = false,
+  ) => parts.push({ position, size, color, lit });
   const floors = repositoryFloors(repo.stars),
     floorHeight = 2.4;
   const timber = repo.building.style === 'woodland';
@@ -79,6 +81,7 @@ export function repositoryBuildingModel(
         [x, y + 1.2, 2.13],
         [1.12, 1.3, 0.04],
         floor % 3 === 1 ? '#bcaa6d' : '#d2b46d',
+        true,
       );
       add([x, y + 1.2, 2.175], [0.07, 1.4, 0.065], frame);
       add([x, y + 1.2, 2.175], [1.18, 0.07, 0.065], frame);
@@ -92,6 +95,7 @@ export function repositoryBuildingModel(
           [side * (width / 2 + 0.13), y + 1.2, z],
           [0.045, 1.1, 0.86],
           '#aeb493',
+          true,
         );
         add([side * (width / 2 + 0.16), y + 1.2, z], [0.07, 1.13, 0.06], frame);
       }
@@ -145,6 +149,14 @@ export default memo(function RepositoryBuilding({
     () => repositoryBuildingModel(repo, season),
     [repo, season],
   );
+  const details = useMemo(() => storefrontDetails(repo.building.garden !== false, season === 'Winter'), [repo.building.garden, season]);
+  const dressed = useMemo(() => {
+    // Reuse the lantern batch for window glass: still only two draws per building.
+    return {
+      solid: [...parts.filter(part => !part.lit), ...details.parts],
+      lit: [...parts.filter(part => part.lit), ...details.lights],
+    };
+  }, [parts, details]);
   const sign = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -201,7 +213,8 @@ export default memo(function RepositoryBuilding({
   return (
     <group>
       <RepositorySupport repo={repo} side={side} preview={supportPreview} />
-      <VoxelModel parts={parts} />
+      <VoxelModel parts={dressed.solid} />
+      <VoxelModel parts={dressed.lit} glow shadows={false} />
       <mesh position={[0, 3.1, 3.25]} castShadow>
         <boxGeometry args={[5.8, 1.5, 0.2]} />
         <meshStandardMaterial color="#685337" />

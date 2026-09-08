@@ -4,17 +4,20 @@ import * as THREE from 'three';
 import { cabinAssemblyGeometry } from '@/lib/cabin-geometry';
 import type { VoxelPart } from '@/lib/voxel-models';
 import CabinMaterial from './cabin-material';
+import ExteriorMaterial from './exterior-material';
 
 export default memo(function VoxelModel({
   parts,
   shadows = true,
   cabin = false,
   edgeWearStrength = 1,
+  glow = false,
 }: {
   parts: VoxelPart[];
   shadows?: boolean;
   cabin?: boolean;
   edgeWearStrength?: number;
+  glow?: boolean;
 }) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const cabinGeometry = useMemo(
@@ -52,7 +55,7 @@ export default memo(function VoxelModel({
       receiveShadow
     >
       <boxGeometry />
-      <meshStandardMaterial roughness={0.92} />
+      <ExteriorMaterial glow={glow} />
     </instancedMesh>
   );
 });

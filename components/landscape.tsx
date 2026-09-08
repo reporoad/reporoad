@@ -69,7 +69,7 @@ export function RoadLandscape({
   const grassMaterial = useRef<THREE.MeshStandardMaterial>(null);
   const gravelMaterial = useRef<THREE.MeshStandardMaterial>(null);
   const asphalt = useMemo(() => {
-    const t = surfaceTexture(71);
+    const t = surfaceTexture(71, 128);
     t.repeat.set(10, 220);
     return t;
   }, []);
@@ -145,10 +145,10 @@ export function RoadLandscape({
         <planeGeometry args={[7.4, 440]} />
         <meshStandardMaterial
           ref={roadMaterial}
-          color="#655e50"
+          color="#454442"
           map={asphalt}
           bumpMap={asphalt}
-          bumpScale={0.018}
+          bumpScale={0.006}
           roughness={0.93}
         />
       </mesh>

@@ -3,6 +3,7 @@ export type VoxelPart = {
   size: [number, number, number];
   color: string;
   wood?: boolean;
+  lit?: boolean;
 };
 export const noise = (n: number) => {
   const value = Math.sin(n * 127.1 + 311.7) * 43758.5453;

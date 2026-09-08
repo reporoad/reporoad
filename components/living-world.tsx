@@ -18,6 +18,7 @@ import CabinMaterial from './cabin-material';
 import { cabinPadGeometry } from '@/lib/cabin-pad';
 import { cabinBolsterGeometry, cabinCushionGeometry, shadeCabinFabric } from '@/lib/cabin-cushion';
 import { cabinMirror } from '@/lib/cabin-mirror';
+import { sceneLighting } from '@/lib/scene-lighting';
 RectAreaLightUniformsLib.init();
 export type Environment = ReturnType<typeof worldAt>;
 export type SharedClock = { current: { now: () => number } };
@@ -93,35 +94,43 @@ export function SkyCycle({
     light = useRef<THREE.DirectionalLight>(null),
     ambient = useRef<THREE.HemisphereLight>(null);
   const color = useRef(new THREE.Color());
+  const skyDay = useMemo(() => new THREE.Color('#e4d6bd'), []);
+  const skyDusk = useMemo(() => new THREE.Color('#e5b58e'), []);
+  const skyWet = useMemo(() => new THREE.Color('#87969c'), []);
+  const sunDay = useMemo(() => new THREE.Color('#fff0d5'), []);
+  const sunDusk = useMemo(() => new THREE.Color('#ffcc89'), []);
   const sky = useRef<THREE.ShaderMaterial>(null);
   useFrame(({ scene }) => {
     const w = worldAt(clock.current.now(), preview),
       sin = Math.sin(w.sunAngle),
       cos = Math.cos(w.sunAngle);
+    const lighting = sceneLighting(w.daylight, w.sunAngle, w.rain + w.snow);
     if (sky.current) {
       sky.current.uniforms.daylight.value = w.daylight;
       sky.current.uniforms.wet.value = w.rain + w.snow;
+      sky.current.uniforms.golden.value = lighting.golden;
     }
-    sun.current?.position.set(-cos * 140, sin * 100, -170);
-    moon.current?.position.set(-cos * 140, -sin * 130, -170);
+    sun.current?.position.set(-cos * 105, sin * 78, -170);
+    moon.current?.position.set(-cos * 105, -sin * 100, -170);
     if (light.current) {
       light.current.position.set(-cos * 60, Math.max(12, sin * 45), -40);
-      light.current.intensity = 0.25 + w.daylight * 3.6;
-      light.current.color.set('#ffdda0');
+      light.current.intensity = lighting.sunlight;
+      light.current.color.copy(sunDay).lerp(sunDusk, lighting.golden);
     }
-    if (ambient.current) ambient.current.intensity = 0.45 + w.daylight * 0.85;
+    if (ambient.current) ambient.current.intensity = lighting.fill;
     color.current
       .set('#142638')
       .lerp(
-        new THREE.Color('#d3b595'),
+        skyDusk,
         Math.max(0, 1 - Math.abs(sin) * 3) * 0.7,
       )
-      .lerp(new THREE.Color('#e9d9b7'), w.daylight * 0.9);
-    color.current.lerp(new THREE.Color('#6a7c85'), (w.rain + w.snow) * 0.35);
+      .lerp(skyDay, w.daylight * 0.9);
+    color.current.lerp(skyWet, (w.rain + w.snow) * 0.5);
     scene.background = color.current;
     if (scene.fog instanceof THREE.Fog) {
       scene.fog.color.copy(color.current);
-      scene.fog.far = 265 - (w.rain + w.snow) * 65;
+      scene.fog.near = lighting.fogNear;
+      scene.fog.far = lighting.fogFar;
     }
   });
   return (
@@ -132,12 +141,12 @@ export function SkyCycle({
           ref={sky}
           side={THREE.BackSide}
           depthWrite={false}
-          uniforms={{ daylight: { value: 1 }, wet: { value: 0 } }}
+          uniforms={{ daylight: { value: 1 }, wet: { value: 0 }, golden: { value: 0 } }}
           vertexShader={
             'varying vec3 direction; void main(){ direction = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }'
           }
           fragmentShader={
-            'varying vec3 direction; uniform float daylight; uniform float wet; void main(){ float h = smoothstep(0.0,0.8,normalize(direction).y); vec3 day = mix(vec3(0.95,0.61,0.32),vec3(0.30,0.48,0.64),h); vec3 night = mix(vec3(0.018,0.033,0.055),vec3(0.004,0.01,0.025),h); vec3 sky = mix(night,day,daylight); gl_FragColor = vec4(mix(sky,vec3(0.24,0.29,0.32),wet*0.45),1.0); }'
+            'varying vec3 direction; uniform float daylight; uniform float wet; uniform float golden; void main(){ float h = smoothstep(0.0,0.65,normalize(direction).y); vec3 horizon = mix(vec3(0.89,0.79,0.62),vec3(1.0,0.59,0.29),golden); vec3 day = mix(horizon,vec3(0.32,0.51,0.68),h); vec3 night = mix(vec3(0.018,0.033,0.055),vec3(0.004,0.01,0.025),h); vec3 sky = mix(night,day,daylight); gl_FragColor = vec4(mix(sky,vec3(0.24,0.29,0.32),wet*0.45),1.0); }'
           }
         />
       </mesh>
@@ -365,7 +374,7 @@ export function VoxelCabin({
         castShadow
         receiveShadow
       >
-        <CabinMaterial color="#c59d69" edgeWearStrength={1.6} topPaintStrength={0.45} vertexColors />
+        <CabinMaterial color="#a19a72" edgeWearStrength={1.6} topPaintStrength={0.3} vertexColors />
       </mesh>
       {[-0.32, 0.4].map((x) => (
         <mesh
@@ -571,7 +580,7 @@ export function VoxelCabin({
         rotation={[Math.PI / 2, 0, 0]}
         width={3.5}
         height={1.4}
-        intensity={environment.daylight * 0.55}
+        intensity={environment.daylight * 0.8}
         color="#ffe0a9"
       />
     </group>
