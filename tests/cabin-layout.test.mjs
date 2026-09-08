@@ -13,6 +13,6 @@ test('driver seat stays clear of every wheel part in depth', () => {
     const box = new Box3().setFromCenterAndSize(new Vector3(...part.position), new Vector3(...part.size)).applyMatrix4(matrix);
     assert.ok(seatRear - box.max.z > .025, `wheel-to-seat clearance ${seatRear - box.max.z}`);
   }
-  assert.ok(Math.abs(driverSeatPosition[0] / driverSeatScale - 1.31) < 1e-9);
+  assert.ok(Math.abs(driverSeatPosition[0] / driverSeatScale - 1.43) < 1e-9);
   assert.ok(Math.abs(driverSeatPosition[2] / driverSeatScale + 1.1) < 1e-9);
 });
