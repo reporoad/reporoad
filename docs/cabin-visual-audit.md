@@ -135,3 +135,7 @@ Changed only the glovebox face paint from `#77745a` to `#625f45`. At the same pa
 ### Upper rim silhouette after `b1d319f`
 
 The upper steering rim remained approximately 12 pixels below the reference at matched 1000 × 563 framing. Increased only its positive-y mapping from 1.07 to 1.17. An initial 1.25 experiment overshot (roughly y=330); the final top is roughly y=340, close to the reference. Final capture `/tmp/reporoad-cabin-upper-rim-final-20260909.png`; initial rejected capture `/tmp/reporoad-cabin-upper-rim-20260909.png`. Horn, spokes, lower bowl, wheel placement and instruments are unchanged. Updated stepped-cell coverage and upper-bound expectations; the suite also checks seat clearance and fixed horn position. This improves the upper silhouette only, not proof of overall identity or motion stability.
+
+### Mirror mounting after `23ff0db`
+
+Narrowed the central mirror stem from 0.13 to 0.08 metres and its upper fastening plate from 0.15 × 0.13 to 0.095 × 0.10 metres. The reference's visible central support is about 21 pixels wide; the previous mounting was about 35 pixels. `/tmp/reporoad-cabin-mirror-support-20260909.png` shows the revised slim support at the same 1000 × 563 framing. Mirror glass, frame position, camera, target and refresh scheduling are unchanged. This is a mounting-proportion improvement, not a change to the reflected view or a motion verification.

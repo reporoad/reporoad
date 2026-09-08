@@ -462,13 +462,13 @@ export function VoxelCabin({
       <Block
         grain={false}
         position={[0.045, 0.99, -1.88]}
-        scale={[0.13, 0.32, 0.10]}
+        scale={[0.08, 0.32, 0.10]}
         color="#303932"
       />
       <Block
         grain={false}
         position={[0.045, 1.065, -1.79]}
-        scale={[0.15, 0.13, 0.11]}
+        scale={[0.095, 0.10, 0.11]}
         color="#30332a"
       />
       <Block
