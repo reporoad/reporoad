@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
+import type { BroadcastConfig } from '@/lib/youtube';
 
-// One shared value in the page keeps the video, chat and external links in sync.
+// One shared value in the page keeps the player, chat and external links in sync.
 export function useYouTubeConfig(enabled: boolean) {
-  const [videoId, setVideoId] = useState<string | null>(null);
+  const [config, setConfig] = useState<BroadcastConfig | null>(null);
   useEffect(() => {
     if (!enabled) return;
     let stopped = false;
@@ -15,9 +16,10 @@ export function useYouTubeConfig(enabled: boolean) {
       try {
         const response = await fetch('/api/broadcast-config', { cache: 'no-store', signal: controller.signal });
         if (!response.ok) throw Error('Configuration unavailable');
-        const data = await response.json() as { videoId?: unknown };
+        const data = await response.json() as { videoId?: unknown; channelId?: unknown };
         if (typeof data.videoId !== 'string' || !/^[\w-]{11}$/.test(data.videoId)) throw Error('Invalid video ID');
-        if (!stopped) setVideoId(data.videoId);
+        if (typeof data.channelId !== 'string' || !/^UC[\w-]{22}$/.test(data.channelId)) throw Error('Invalid channel ID');
+        if (!stopped) setConfig({ videoId: data.videoId, channelId: data.channelId });
       } catch { /* Keep the last working broadcast during transient failures. */ }
       finally {
         clearTimeout(timeout);
@@ -27,5 +29,5 @@ export function useYouTubeConfig(enabled: boolean) {
     void refresh();
     return () => { stopped = true; clearTimeout(timer); controller?.abort(); };
   }, [enabled]);
-  return videoId;
+  return config;
 }

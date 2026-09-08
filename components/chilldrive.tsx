@@ -67,7 +67,7 @@ export default function RepoRoad() {
     () => new URLSearchParams(window.location.search).get('broadcast') === '1',
   );
   const renderWorld = usesRenderedWorld(window.location.search, broadcast);
-  const youtubeVideoId = useYouTubeConfig(!renderWorld);
+  const youtubeConfig = useYouTubeConfig(!renderWorld);
   const [audioOn, setAudioOn] = useState(false),
     [volume, setVolume] = useState(30);
   const track = playlistMix((now - PLAYLIST_EPOCH) / 1000).index;
@@ -412,7 +412,7 @@ export default function RepoRoad() {
             </div>
           )}
           </details>}
-          {renderWorld ? scene : <YouTubeStream videoId={youtubeVideoId}/>}
+          {renderWorld ? scene : <YouTubeStream config={youtubeConfig}/>}
         </section>
         <aside
           ref={directory}
@@ -447,7 +447,7 @@ export default function RepoRoad() {
               )}
               <TabsContent value="repositories" keepMounted><RepoDirectory repositories={repositories} status={dataStatus}/></TabsContent>
               <TabsContent value="chat">
-                <YouTubeChat online={online} videoId={youtubeVideoId} />
+                <YouTubeChat online={online} config={youtubeConfig} />
               </TabsContent>
               <TabsContent value="style" keepMounted><RepoEditor active={tab === 'style'}/></TabsContent>
             </div>

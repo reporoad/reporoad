@@ -1,11 +1,10 @@
 'use client';
 import { ExternalLink } from 'lucide-react';
-import { youtubeEmbedUrls } from '@/lib/youtube';
+import { youtubeEmbedUrls, type BroadcastConfig } from '@/lib/youtube';
 
-export function YouTubeStream({ videoId }: { videoId: string | null }) {
-  if (!videoId) return <div className="youtube-view" role="status">Connecting to the broadcast…</div>;
-  const { player } = youtubeEmbedUrls(window.location.hostname, videoId);
-  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+export function YouTubeStream({ config }: { config: BroadcastConfig | null }) {
+  if (!config) return <div className="youtube-view" role="status">Connecting to the broadcast…</div>;
+  const { player, watch: watchUrl } = youtubeEmbedUrls(window.location.hostname, config);
   return <div className="youtube-view">
     <div className="youtube-player">
       <iframe title="RepoRoad broadcast on YouTube" src={player}
@@ -19,10 +18,9 @@ export function YouTubeStream({ videoId }: { videoId: string | null }) {
   </div>;
 }
 
-export function YouTubeChat({ online, videoId }: { online: number | null; videoId: string | null }) {
-  if (!videoId) return <section className="youtube-chat" role="status">Connecting to YouTube chat…</section>;
-  const { chat } = youtubeEmbedUrls(window.location.hostname, videoId);
-  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+export function YouTubeChat({ online, config }: { online: number | null; config: BroadcastConfig | null }) {
+  if (!config) return <section className="youtube-chat" role="status">Connecting to YouTube chat…</section>;
+  const { chat, watch: watchUrl } = youtubeEmbedUrls(window.location.hostname, config);
   return <section className="youtube-chat" aria-label="Shared YouTube chat">
     <div className="chat-heading"><strong>Along for the ride</strong><span className="pill" title="Active website browsers only, including guests; not the YouTube viewer count">{online === null ? 'Connecting…' : `${online} on site`}</span></div>
     <iframe className="youtube-chat-frame" title="YouTube live chat" src={chat} referrerPolicy="strict-origin-when-cross-origin" />

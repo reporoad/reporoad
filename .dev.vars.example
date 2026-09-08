@@ -1,4 +1,15 @@
-# Public viewer video ID, NOT the RTMP stream key or YouTube Studio URL.
-# Copy to .dev.vars for local development; configure the same runtime variable
+# Public viewer IDs, NOT the RTMP stream key or YouTube Studio URL.
+# Copy to .dev.vars for local development; configure the same runtime variables
 # in Sites environment settings for the published website.
+
+# The channel whose current live broadcast the player follows. Changing it is the
+# only change needed when the broadcaster opens a new event.
+YOUTUBE_CHANNEL_ID=UCV6R_O0gxuj2tNcQWq7yJ3g
+
+# Fallback for the chat tab, used when live-broadcast discovery is unavailable.
 YOUTUBE_VIDEO_ID=WuLbv_j9CGE
+
+# Optional YouTube Data API v3 key. Live chat can only be embedded per video, so
+# without a key the chat tab stays on YOUTUBE_VIDEO_ID while the player still
+# follows the channel. Read-only; never a Studio or streaming credential.
+YOUTUBE_API_KEY=
