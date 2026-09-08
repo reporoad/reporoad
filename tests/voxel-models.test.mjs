@@ -96,7 +96,8 @@ test('wheel has a raised upper opening and shallow lower bowl around its fixed h
   const horn = steeringWheelModel().find(p => p.position[2] === 0.015 && p.size[0] > 0.2);
   assert.ok(horn);
   assert.equal(horn.position[0], 0.018);
-  assert.ok(Math.abs(horn.position[1] + 0.05925) < 1e-9);
+  assert.ok(Math.abs(horn.position[1] + 0.06) < 1e-9);
+  assert.equal(horn.size[1], 0.25, 'pad retains its full height inside the rim');
 });
 
 test('steering column cover stays below and behind the horn pad', () => {

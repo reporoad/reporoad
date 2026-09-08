@@ -231,9 +231,7 @@ export function steeringWheelModel(): VoxelPart[] {
     if (part.position[2] <= 0) continue;
     const widthScale = part.position[2] >= 0.074 ? 1.65 : 1.04;
     part.position[0] = 0.018 + (part.position[0] - 0.018) * widthScale;
-    part.position[1] = -0.055 + (part.position[1] + 0.055) * 0.85;
     part.size[0] *= widthScale;
-    part.size[1] *= 0.85;
   }
   return parts;
 }
