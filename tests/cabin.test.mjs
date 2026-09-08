@@ -41,8 +41,11 @@ test('glovebox clears the pad while preserving its lower trim joint', () => {
   const parts = cabinDashboardModel();
   const face = parts.find(p => p.position[0] === -0.745 && p.size[2] === 0.08 && p.size[0] === 0.95);
   const band = parts.find(p => p.position[0] === -0.745 && p.size[1] === 0.045 && p.size[2] === 0.035);
-  const well = parts.find(p => p.color === '#34362a');
+  const well = parts.find(p => p.position[0] === -0.745 && p.size[1] === 0.245 && p.size[2] === 0.03);
+  const lowerFace = parts.find(p => p.position[0] === -0.745 && p.size[1] === 0.062 && p.size[2] === 0.03);
   assert.ok(face && band && well);
+  assert.ok(lowerFace);
+  assert.ok(Math.abs(lowerFace.position[1] - lowerFace.size[1] / 2 - (well.position[1] + well.size[1] / 2)) < 1e-9);
   assert.equal(face.bevel, 0.014, 'glovebox has a visible formed edge');
   assert.ok(Math.abs(face.position[1] + face.size[1] / 2 + 0.415) < 1e-9);
   assert.ok(Math.abs(face.size[1] - 0.195) < 1e-9);
