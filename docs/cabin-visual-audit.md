@@ -79,3 +79,11 @@ Compared `/tmp/codex-clipboard-22RtXd.png` directly with `/tmp/reporoad-cabin-gr
 | Repository exterior | Repository buildings and name-only signs are retained. The reference village is not being substituted for the requested repository world. |
 
 Overall goal remains incomplete. This audit is a prioritization result, not a completion claim or a reason to repeat tiny palette adjustments.
+
+### Accumulated moving check at `e3775c9`
+
+- Summer/Sunny 16:00 local preview, 1000 × 563, with the revised yarn, reduced seat blur, larger radio type, stronger direct window light, wider/right-shifted wheel and backlit speed scale.
+- Captures `/tmp/reporoad-cabin-motion-updated-a-20260909.png` and `/tmp/reporoad-cabin-motion-updated-b-20260909.png` show different repository positions and mirror contents, both at 23 km/h. The wider rim remains behind the seat without an intersecting edge. The radio spectrum differs between samples.
+- No missing cabin surface or black frame appears in these samples. They do not establish frame-by-frame stability or live-stream reliability.
+- Comparing the accumulated cabin against the original reference, the main remaining material discrepancy is the broad glovebox/trim surface: its large smooth regions still read more like plain game geometry than the reference's irregular voxel relief. Further uniform warmth, tiny typography, or arbitrary wheel moves are not the next priority. Investigate surface-scale relief and its grazing-light response while preserving fitted boundaries and instrument visibility.
+- This check adds runtime evidence but does not prove the almost-identical goal complete. No application code changed during this check.
