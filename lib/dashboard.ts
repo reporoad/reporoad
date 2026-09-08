@@ -19,6 +19,15 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
   ctx.fillStyle = '#121811'; ctx.fillRect(0, 0, 768, 240);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#51422c'; ctx.fillRect(246, 24, 2, 192); ctx.fillRect(506, 24, 2, 192);
+  // The reference's vertical amber ladder becomes a real journey gauge:
+  // it fills as the next traffic light approaches, and stays dark when unknown.
+  const journeyFraction = state.nextLight === null ? 0
+    : Math.max(0, Math.min(1, 1 - state.nextLight / 300));
+  const journeySegments = Math.floor(journeyFraction * 12);
+  for (let i = 0; i < 12; i++) {
+    ctx.fillStyle = i < journeySegments ? '#dba052' : '#493821';
+    ctx.fillRect(259, 210 - i * 14, 13, 9);
+  }
   ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace';
   ctx.fillText(state.live ? 'LIVE SPEED' : 'PREVIEW SPEED', 122, 24);
   // Square amber ticks form a vintage gauge, but the reading still follows

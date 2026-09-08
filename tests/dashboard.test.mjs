@@ -34,3 +34,11 @@ test('amber speed dial lights only for actual motion and clamps its range',()=>{
     assert.equal(lit,expected);
   }
 });
+test('journey ladder reflects time until the next light without inventing disconnected progress',()=>{
+  for (const [nextLight, expected] of [[null,0],[300,0],[150,6],[25,11],[0,12],[-5,12],[400,0]]) {
+    let lit = 0;
+    const ctx = {fillStyle:'', fillRect(){ if(this.fillStyle === '#dba052') lit++; },fillText(){}};
+    drawDashboard(ctx,{...dashboardState(0,null,false,false),nextLight});
+    assert.equal(lit,expected);
+  }
+});
