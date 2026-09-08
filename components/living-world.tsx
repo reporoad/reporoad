@@ -31,6 +31,7 @@ function Block({
   fabric = false,
   wood = false,
   cushion = false,
+  rubber = false,
 }: {
   position: [number, number, number];
   scale: [number, number, number];
@@ -40,6 +41,7 @@ function Block({
   fabric?: boolean;
   wood?: boolean;
   cushion?: boolean;
+  rubber?: boolean;
 }) {
   const softenedGeometry = useMemo(
     () => {
@@ -61,7 +63,7 @@ function Block({
       ) : (
         <boxGeometry args={scale} />
       )}
-      {!grain && !glow ? (
+      {rubber ? <meshStandardMaterial color={color} roughness={1} metalness={0} /> : !grain && !glow ? (
         <CabinMaterial
           color={color}
           fabric={fabric}
@@ -453,7 +455,8 @@ export function VoxelCabin({
         grain={false}
         position={[0, 1.12, -1.97]}
         scale={[frameX * 2, 0.025, 0.08]}
-        color="#303932"
+        color="#252920"
+        rubber
       />
       {/* Small mirror tucked under the roof, outside the central road view. */}
       <Block
