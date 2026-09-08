@@ -41,6 +41,9 @@ export function treeModel(
           : pine
             ? ['#627b3d', '#82964d', '#4d6737']
             : ['#819342', '#a0ab58', '#657c3b'];
+  const phase = noise(seed + 71) * Math.PI * 2;
+  const leanX = (noise(seed + 82) - 0.5) * 0.34;
+  const leanZ = (noise(seed + 93) - 0.5) * 0.34;
   for (let x = -7; x <= 7; x++)
     for (let y = 0; y < 14; y++)
       for (let z = -7; z <= 7; z++) {
@@ -48,9 +51,17 @@ export function treeModel(
         const xx = x * 0.24,
           zz = z * 0.24,
           yy = 2 + y * 0.24;
-        const radius = pine
+        const baseRadius = pine
           ? 1.75 - y * 0.104
           : 1.65 * Math.sqrt(Math.max(0, 1 - ((yy - 3.45) / 1.8) ** 2));
+        // Broad lobes, not a perfect clipped sphere. Every tree keeps the
+        // same seeded silhouette when sections recycle or the page reloads.
+        const angle = Math.atan2(zz, xx);
+        const crown = pine
+          ? 1 + 0.09 * Math.sin(y * 1.6 + phase)
+          : 1 + 0.12 * Math.sin(angle * 3 + phase + y * 0.18)
+            + 0.06 * Math.cos(angle * 5 - phase);
+        const radius = baseRadius * crown;
         const radial = Math.hypot(xx, zz);
         // Keep only the crown shell: hidden interior cubes add cost, not detail.
         if (
@@ -59,9 +70,10 @@ export function treeModel(
         )
           continue;
         add(
-          [xx, yy, zz],
+          [xx + leanX * y / 13, yy, zz + leanZ * y / 13],
           [0.245, 0.245, 0.245],
-          palette[Math.floor(n * palette.length)],
+          // Coherent patches keep leaves from looking like random checkerboard tiles.
+          palette[Math.floor(noise(Math.floor(x / 2) * 97 + Math.floor(y / 2) * 31 + Math.floor(z / 2) * 7 + seed * 13) * palette.length)],
         );
       }
   return parts;
@@ -273,6 +285,15 @@ export function vergeModel(season: string, seed = 0): VoxelPart[] {
         [0.38, 0.13, 0.3],
         season === 'Winter' ? '#d8dfd0' : '#71833f',
       );
+    if (i % 8 === 0) {
+      // Uneven low tussocks bridge the bare gravel between isolated flower stems.
+      // Stay inside the verge and away from the road/chicken crossing lane.
+      const width = 0.2 + noise(n + 21) * 0.2;
+      add([x, 0.13, z], [width, 0.26, 0.25],
+        season === 'Winter' ? '#d0d9d0' : season === 'Autumn' ? '#9c8b4d' : '#657d40');
+      add([x + side * 0.12, 0.09, z + 0.1], [0.18, 0.18, 0.22],
+        season === 'Winter' ? '#e0e5dd' : '#84934e');
+    }
     add(
       [x + 0.055, h * 0.55, z],
       [0.13, 0.05, 0.06],
@@ -288,6 +309,19 @@ export function vergeModel(season: string, seed = 0): VoxelPart[] {
       [0, 0.08],
     ])
       add([x + dx, h, z + dz], [0.1, 0.055, 0.1], color);
+  }
+  // Low split-rail borders frame the flower beds. The final eight metres stay
+  // open for each building's entrance; fences never cross the driving lane.
+  for (const side of [-1, 1]) {
+    for (let post = 0; post < 4; post++) {
+      const z = -3 - post * 7;
+      const height = 0.86 + noise(seed * 19 + post) * 0.1;
+      add([side * 6.25, height / 2, z], [0.18, height, 0.18], '#6a5138');
+      add([side * 6.25, height, z], [0.21, 0.07, 0.21], season === 'Winter' ? '#dce3d9' : '#92734b');
+      if (post === 3) continue;
+      for (const y of [0.31, 0.67])
+        add([side * 6.25, y, z - 3.5], [0.09, 0.1, 7], '#826541');
+    }
   }
   return parts;
 }

@@ -39,6 +39,21 @@ test('roadside flowers remain outside the road and inside the recycling section'
   }
 });
 
+test('tree silhouettes vary by seed but retain a bounded foliage budget', () => {
+  for (const pine of [false, true]) for (const season of ['Summer', 'Winter', 'Autumn', 'Spring']) {
+    for (let seed = 0; seed < 12; seed++) {
+      const tree = treeModel(pine, season, seed);
+      assert.ok(tree.length < 1800);
+      assert.deepEqual(tree, treeModel(pine, season, seed));
+      assert.notDeepEqual(tree, treeModel(pine, season, seed + 1));
+      for (const part of tree) {
+        assert.ok(Math.abs(part.position[0]) < 2);
+        assert.ok(Math.abs(part.position[2]) < 2);
+      }
+    }
+  }
+});
+
 test('wheel has an open upper centre so the instruments can remain visible', () => {
   for (const p of steeringWheelModel()) {
     if (p.position[1] > 0.12 && p.position[1] < 0.25)
