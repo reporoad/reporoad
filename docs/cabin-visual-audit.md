@@ -101,3 +101,9 @@ Captured `/tmp/reporoad-cabin-full-audit-20260909.png` at 1000 × 563, Summer/Su
 - Material richness remains weaker than the reference, particularly the warm wood/paint separation under window light. Shader micro-noise has already failed to improve this at delivered resolution.
 - Instrument composition is still sparser than the reference. Preserve meaningful speed, traffic-light and chicken data if revising its grouping; do not fill space with fake mechanical gauges or unreadable labels.
 - Completion remains unproven: almost-identical material/lighting fidelity and sustained frame-by-frame rendering stability are still open. This paused comparison is not evidence for either gate.
+
+### Weather-state check at `dc6799a`
+
+- 1000 × 563 Summer/Rain 16:00: `/tmp/reporoad-cabin-updated-rain-20260909.png`. Diffuse cabin lighting retains the timber/paint distinction; the wipers are visibly raised mid-sweep. Instrument text and the new crossing arc remain visible.
+- Summer/Sunny 21:00: `/tmp/reporoad-cabin-updated-night-20260909.png`. Direct sunlight is absent; radio/instrument illumination and the wheel-pad outline remain visible. The broader canopy transmission has not left sunny patches at night.
+- These samples cover the accumulated wheel, material, instrument and window-light changes. They show no obvious missing surfaces or weather-state visual regression, but are neither a sustained playback test nor proof of almost-identical daylight fidelity. No application source changed during this check.
