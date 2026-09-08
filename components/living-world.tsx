@@ -345,6 +345,8 @@ export function VoxelCabin({
       part.position[1] + 0.4, part.position[2] + 1.95] as [number, number, number] }))), [surround, frameX]);
   const fixedSurround = useMemo(() => surround.filter(part =>
     Math.abs(part.position[0]) <= frameX - 0.13), [surround, frameX]);
+  const pillarPaint = useMemo(() => pillarParts.map(parts => parts.filter(part => !part.rubber)), [pillarParts]);
+  const pillarSeals = useMemo(() => pillarParts.map(parts => parts.filter(part => part.rubber)), [pillarParts]);
   useFrame(({ gl, scene, clock: renderClock }) => {
     // Use the same continuously sampled clock as the exterior sun; React's
     // one-second environment updates would otherwise step the cabin shadows.
@@ -421,7 +423,8 @@ export function VoxelCabin({
             color="#8a7955"
           />
           <group position={[side * frameX, -0.4, -1.95]} rotation={[0, 0, side * 0.045]}>
-            <VoxelModel parts={pillarParts[side < 0 ? 0 : 1]} cabin edgeWearStrength={3} />
+            <VoxelModel parts={pillarPaint[side < 0 ? 0 : 1]} cabin edgeWearStrength={3} />
+            <VoxelModel parts={pillarSeals[side < 0 ? 0 : 1]} cabin rubber />
             <Block grain={false} position={[0, 0.48, -0.01]}
               scale={[0.13, 2.5, 0.18]} color="#6c4d35" />
           </group>

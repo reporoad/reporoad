@@ -3,6 +3,7 @@ export type VoxelPart = {
   size: [number, number, number];
   color: string;
   wood?: boolean;
+  rubber?: boolean;
   lit?: boolean;
   bevel?: number;
 };

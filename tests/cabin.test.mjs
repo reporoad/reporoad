@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import { cabinDashboardModel, cabinSurroundModel } from '../lib/cabin-model.ts';
 import { steeringWheelModel } from '../lib/voxel-models.ts';
 
+test('window seals are explicitly rubber and stay inside the pillar assemblies', () => {
+  for (const frameX of [1.2, 2.12, 3]) {
+    const seals = cabinSurroundModel(frameX).filter(part => part.rubber);
+    assert.equal(seals.length, 20);
+    assert.ok(seals.every(part => !part.wood));
+    assert.ok(seals.every(part => Math.abs(part.position[0]) > frameX - 0.13));
+    for (const side of [-1, 1]) assert.equal(seals.filter(part => Math.sign(part.position[0]) === side).length, 10);
+  }
+});
+
 test('timber corner tiers join vertically and retain their outer edge at different widths', () => {
   for (const frameX of [1.2, 2.12, 3]) for (const side of [-1, 1]) {
     const tiers = cabinSurroundModel(frameX).filter(p => p.wood && p.size[2] === 0.19 && Math.sign(p.position[0]) === side)

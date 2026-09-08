@@ -146,7 +146,8 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
     size: VoxelPart['size'],
     color: string,
     wood = false,
-  ) => parts.push({ position, size, color, wood });
+    rubber = false,
+  ) => parts.push({ position, size, color, wood, rubber });
   for (const side of [-1, 1]) {
     // Covers wrap the pillar sides as well as the front. Thin face-only
     // patches left the visible inner return as one uninterrupted plank.
@@ -179,12 +180,13 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
         '#777356',
       );
     // Continuous seal backing with flush, subtly varied cover sections.
-    add([side * (frameX - 0.1), 0.34, -1.8905], [0.035, 1.46, 0.05], '#343c30');
+    add([side * (frameX - 0.1), 0.34, -1.8905], [0.035, 1.46, 0.05], '#343c30', false, true);
     for (let i = 0; i < 8; i++)
       add(
         [side * (frameX - 0.1), -0.39 + (i + 0.5) * 0.1825, -1.853],
         [0.035, 0.1805, 0.025],
         ['#414434', '#343c30', '#4a4b39', '#3c4032'][i % 4],
+        false, true,
       );
     // A painted inner return, with rubber confined to the rear glass edge.
     add([side * (frameX - 0.0775), 0.08, -1.9625], [0.02, 2.4, 0.065], '#746b4f');
@@ -194,7 +196,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
         [0.005, 0.0985, 0.065],
         ['#897650', '#625d45', '#7c7052'][(i * 7 + Math.floor(i / 3)) % 3],
       );
-    add([side * (frameX - 0.08), 0.08, -2.0025], [0.025, 2.4, 0.015], '#303932');
+    add([side * (frameX - 0.08), 0.08, -2.0025], [0.025, 2.4, 0.015], '#303932', false, true);
     // Small fitted returns build up the upper corner without covering the
     // continuous lower weatherstrip or projecting like separate attached blocks.
     for (let i = 0; i < 3; i++) {
