@@ -117,9 +117,10 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       // Broad, row-aligned woven dashes match the reference upholstery;
       // the finer old speckles read as scattered dust at driving resolution.
       vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(19.0, 25.0);
-      // Offset alternate rows and break some yarns: avoid long bright diagonal
-      // stripes across the cushion while keeping a coherent woven fabric.
-      stitch.x += mod(floor(stitch.y), 2.0) * 0.5;
+      // Slightly irregular row starts break the checkerboard repetition while
+      // staying fixed to the upholstery, including while the car moves.
+      float rowOffset = cabinHash(vec3(floor(stitch.y), 7.0, 2.0));
+      stitch.x += rowOffset * 0.8;
       vec2 cellUv = fract(stitch);
       float yarn = cabinHash(vec3(floor(stitch), 3.0));
       float wovenRow = 1.0 - step(0.5, mod(floor(stitch.y), 3.0));
@@ -128,7 +129,7 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       float yarnEnd = 0.49 + yarn * 0.18;
       float fleck = yarnPresence * smoothstep(0.07, 0.16, cellUv.x) * (1.0-smoothstep(yarnEnd,yarnEnd+0.10,cellUv.x)) * smoothstep(0.05,0.12,cellUv.y) * (1.0-smoothstep(0.38,0.52,cellUv.y));
       float weave = (wovenDetail - 0.6) * 0.45;
-      diffuseColor.rgb *= 0.71 + fleck * 1.05 * (0.25 + face.y * 0.75) + weave;
+      diffuseColor.rgb *= 0.74 + fleck * 0.85 * (0.25 + face.y * 0.75) + weave;
       float clothPatch = mix(cabinNoise(vec3(clothUv * vec2(35.0, 40.0), 8.0)),
         cabinHash(vec3(floor(clothUv * vec2(35.0, 40.0)), 8.0)), 0.85 * aa);
       diffuseColor.rgb *= 0.675 + clothPatch * 0.65;
@@ -228,7 +229,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v40-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v41-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
