@@ -489,14 +489,14 @@ export function VoxelCabin({
             fabric
             position={[0, 0, -0.11]}
             scale={[0.74, 0.46, 0.28]}
-            color="#9e8d60"
+            color="#8f855b"
           />
           <Block
             grain={false}
             fabric
             position={[0, 0.24, -0.13]}
             scale={[0.71, 0.06, 0.21]}
-            color="#b7a16b"
+            color="#9d9467"
             cushion
           />
           {[-0.355, 0.355].map((edge) => (
@@ -506,11 +506,11 @@ export function VoxelCabin({
               key={edge}
               position={[edge, 0.26, -0.13]}
               scale={[0.014, 0.018, 0.22]}
-              color="#c0a477"
+              color="#a99b6d"
             />
           ))}
           <mesh geometry={bolsters[x < 0 ? 0 : 1]} castShadow receiveShadow>
-            <CabinMaterial color="#9b8b5f" fabric vertexColors />
+            <CabinMaterial color="#8d8258" fabric vertexColors />
           </mesh>
         </group>
       ))}
