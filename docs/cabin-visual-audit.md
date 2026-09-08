@@ -87,3 +87,7 @@ Overall goal remains incomplete. This audit is a prioritization result, not a co
 - No missing cabin surface or black frame appears in these samples. They do not establish frame-by-frame stability or live-stream reliability.
 - Comparing the accumulated cabin against the original reference, the main remaining material discrepancy is the broad glovebox/trim surface: its large smooth regions still read more like plain game geometry than the reference's irregular voxel relief. Further uniform warmth, tiny typography, or arbitrary wheel moves are not the next priority. Investigate surface-scale relief and its grazing-light response while preserving fitted boundaries and instrument visibility.
 - This check adds runtime evidence but does not prove the almost-identical goal complete. No application code changed during this check.
+
+### Rejected broad paint-normal relief at `5e5ba7b`
+
+Tested 2 mm broad, object-fixed noise relief at 16 × 24 × 16 cells/metre, filtered with the existing paint footprint and excluded from timber/fabric. Screenshot: `/tmp/reporoad-cabin-paint-relief-20260909.png`. At 1000 × 563 this did not visibly close the reference gap; the glovebox still read as a broad flat panel. Reverted the shader and cache-key changes completely. Do not repeat small normal-amplitude adjustments as the next material pass. Inspect actual silhouette/bevel variation and panel edge geometry instead, with a before/after showing a clearly perceptible improvement.
