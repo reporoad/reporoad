@@ -23,6 +23,9 @@ export function cabinDashboardModel(): VoxelPart[] {
   add([0, -0.461, -1.52], [5.2, 0.035, 0.06], '#565b43');
   // Recessed passenger glovebox, not a thin board floating above the footwell.
   add([-0.745, -0.545, -1.48], [0.95, 0.22, 0.08], olive);
+  // A broader single-step chamfer catches window light like the reference's
+  // formed glovebox edge, while retaining the original fitted outer bounds.
+  parts[parts.length - 1].bevel = 0.014;
   add([-0.745, -0.67, -1.44], [0.95, 0.03, 0.035], '#454734');
   add([-0.745, -0.696, -1.445], [0.95, 0.018, 0.025], shadow);
   add([-0.745, -0.8425, -1.43], [0.95, 0.275, 0.03], '#34362a');

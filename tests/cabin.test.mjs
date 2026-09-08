@@ -37,6 +37,7 @@ test('glovebox clears the pad while preserving its lower trim joint', () => {
   const band = parts.find(p => p.color === '#454734');
   const well = parts.find(p => p.color === '#34362a');
   assert.ok(face && band && well);
+  assert.equal(face.bevel, 0.014, 'glovebox has a visible formed edge');
   assert.ok(Math.abs(face.position[1] + face.size[1] / 2 + 0.435) < 1e-9);
   assert.ok(Math.abs(face.size[1] - 0.22) < 1e-9);
   const handle = parts.find(p => p.size[0] === 0.3145);
