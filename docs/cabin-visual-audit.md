@@ -42,3 +42,7 @@ The cabin key now uses `cabinSunlight` for a bounded position following the shar
 - Summer/rain while driving: `/tmp/reporoad-cabin-rain-wipers-a-20260908.png` and `/tmp/reporoad-cabin-rain-wipers-b-20260908.png`. Road and mirror advance, wipers are raised into their sweep, and radio/speed displays remain visible.
 - Short screenshot observations did not expose missing cabin meshes or black frames. They do not establish flicker-free frame-to-frame playback or sustained stream stability.
 - Restored paused Summer/Sunny 16:00 and normal viewport. No runtime source changed in this pass.
+
+### Rejected painted-scuff experiment
+
+At `1b06e88`, tested sparse surface-attached short scuffs with derivative filtering, maximum 8% darkening and an 18% cell occupancy. Capture: `/tmp/reporoad-cabin-paint-scuffs-20260908.png`. At 1000 × 563 the difference was not a meaningful improvement toward the reference. Removed the shader experiment completely. Do not repeat fine-scuff micro-tuning without a larger-scale material discrepancy and a visibly better comparison; broad lighting and material response matter more at the delivered camera distance.
