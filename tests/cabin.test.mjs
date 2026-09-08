@@ -249,7 +249,7 @@ test('compact vents clear the pad and keep louvers inside the shallow frame', ()
         p.color === '#525543' &&
         Math.abs(p.position[0] - opening.position[0]) < 0.01,
     );
-    assert.equal(louvers.length, 4);
+    assert.equal(louvers.length, 3);
     for (const louver of louvers) {
       const louverFront = louver.position[2] + louver.size[2] / 2;
       assert.ok(louverFront > front && louverFront < -1.4775);
