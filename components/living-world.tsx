@@ -458,11 +458,11 @@ export function VoxelCabin({
       />
       <Block
         grain={false}
-        position={[0.045, 0.79, -1.84]}
-        scale={[0.73, 0.26, 0.085]}
+        position={[0.045, 0.81, -1.84]}
+        scale={[0.73, 0.22, 0.085]}
         color="#37372c"
       />
-      <mesh position={[0.045, 0.79, -1.791]} scale={[-1, 1, 1]}>
+      <mesh position={[0.045, 0.81, -1.791]} scale={[-1, 1, 1]}>
         <planeGeometry args={[cabinMirror.width, cabinMirror.height]} />
         <meshBasicMaterial
           map={rear.target.texture}
