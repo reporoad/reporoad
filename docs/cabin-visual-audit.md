@@ -317,3 +317,47 @@ are approximate visual landmark readings, not a full image registration.
 Outer pad height, inset proportions and instrument layout are unchanged.
 Updated the centre-position geometry assertion; the full test suite,
 TypeScript check and production build pass, including seat clearance.
+# Neutral horn inset finish — 2026-09-09
+
+At fixed daylight/framing, two inset-face patches were too yellow-brown:
+RGB 55.8/43.1/27.2 and 54.8/44.2/28.0 against reference
+56.6/44.3/34.5 and 60.0/47.3/36.8. Changed inset and side-face
+colour #827056 to #857363, preserving outer padding, edging, badge and
+geometry. Final patches: 57.7/44.9/32.5 and 57.5/46.3/34.6.
+Screenshot `/tmp/reporoad-hub-neutral-finish.png`. Both measured patches
+are closer; this does not establish whole-cabin or all-lighting fidelity.
+Full tests, type check and build passed.
+# Right-seat within-patch contrast — 2026-09-09
+
+Subregion checks revealed the prior broad average concealed spatial
+differences: top cloth luma 153.4 versus reference 114.1, and middle
+weave standard deviation 12.1 versus 36.9 despite almost equal means.
+Right-seat-only base/yarn gains changed from 0.64/0.6 to 0.55/1.5
+after rejecting a too-dark 0.5 base. Left seat and geometry unchanged.
+Final screenshot `/tmp/reporoad-right-weave-balanced.png` shows stronger
+yarn contrast rather than uniformly bright cloth. Regional shading still
+differs; this is not proof of exact upholstery reproduction. Full suite
+passed at the 0.5 experiment; final 0.55 adjustment type-checks/builds.
+# Lower-console timber lip — 2026-09-09
+
+The recess patch already nearly matched the reference (RGB15.0/14.3/5.6
+vs17.2/14.9/7.7), but the timber above it was too dark/red
+(32.0/17.8/7.4 vs49.9/36.1/15.9). #78684b brought the timber to
+51.1/33.8/16.7, but brightened the side borders excessively. Split the
+original 0.23-high panel into a 0.038 upper lip and 0.192 lower panel,
+joined exactly at y=-0.983 before the existing console transformation.
+The lower panel retains #59442e; recess and controls are unchanged.
+Final visual check `/tmp/reporoad-lower-console-lip.png`. Tests, type
+check and build passed. Exact lighting/texture equivalence remains unproven.
+# Whole-cabin checkpoint and panel regression — 2026-09-09
+
+Reviewed the original reference and `/tmp/reporoad-lower-console-lip.png`
+together at equal dimensions. Preserve the current windshield/mirror,
+glovebox, radio, wheel and seat layout as the next lighting/material baseline.
+Do not infer full completion from individual matched patches: the cabin's
+overall light distribution and surface variation still differ. Repository
+exterior and real instrument contents intentionally differ and must remain.
+Added a regression check proving the two lower timber pieces meet exactly
+and preserve the original top, bottom, width and depth after transformation.
+Full suite passed. No further broad geometry adjustment justified by this
+checkpoint; focus subsequent evidence on lighting and texture distribution.

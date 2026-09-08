@@ -152,7 +152,7 @@ export function steeringWheelModel(): VoxelPart[] {
     {
       position: [0.018, -0.055, 0.059],
       size: [0.224, 0.22, 0.016],
-      color: '#827056',
+      color: '#857363',
       bevel: 0.006,
     },
     { position: [0, -0.07, 0], size: [0.6, 0.085, 0.065], color: '#79705e' },
@@ -200,7 +200,7 @@ export function steeringWheelModel(): VoxelPart[] {
     parts.push({
       position: [0.018 + side * 0.121, -0.055, 0.059],
       size: [0.018, 0.176, 0.016],
-      color: '#827056',
+      color: '#857363',
     });
     parts.push({
       position: [0.018 + side * 0.128, -0.055, 0.071],

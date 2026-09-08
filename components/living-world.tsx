@@ -511,8 +511,8 @@ export function VoxelCabin({
             grain={false}
             fabric
             position={[0, 0, -0.11]}
-            fabricBase={x > 0 ? 0.64 : undefined}
-            fabricYarnGain={x > 0 ? 0.6 : undefined}
+            fabricBase={x > 0 ? 0.55 : undefined}
+            fabricYarnGain={x > 0 ? 1.5 : undefined}
             scale={[0.74, 0.46, 0.28]}
             color="#8f855b"
           />
@@ -520,8 +520,8 @@ export function VoxelCabin({
             grain={false}
             fabric
             position={[0, 0.24, -0.13]}
-            fabricBase={x > 0 ? 0.64 : undefined}
-            fabricYarnGain={x > 0 ? 0.6 : undefined}
+            fabricBase={x > 0 ? 0.55 : undefined}
+            fabricYarnGain={x > 0 ? 1.5 : undefined}
             scale={[0.71, 0.06, 0.21]}
             color="#9d9467"
             cushion
@@ -531,8 +531,8 @@ export function VoxelCabin({
               grain={false}
               fabric
               key={edge}
-              fabricBase={x > 0 ? 0.64 : undefined}
-              fabricYarnGain={x > 0 ? 0.6 : undefined}
+              fabricBase={x > 0 ? 0.55 : undefined}
+              fabricYarnGain={x > 0 ? 1.5 : undefined}
               position={[edge, 0.26, -0.13]}
               scale={[0.014, 0.018, 0.22]}
               color="#a99b6d"
@@ -540,8 +540,8 @@ export function VoxelCabin({
           ))}
           <mesh geometry={bolsters[x < 0 ? 0 : 1]} castShadow receiveShadow>
             <CabinMaterial color="#8d8258" fabric vertexColors
-              fabricBase={x > 0 ? 0.64 : undefined}
-              fabricYarnGain={x > 0 ? 0.6 : undefined} />
+              fabricBase={x > 0 ? 0.55 : undefined}
+              fabricYarnGain={x > 0 ? 1.5 : undefined} />
           </mesh>
         </group>
       ))}

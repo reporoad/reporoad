@@ -3,6 +3,22 @@ import assert from 'node:assert/strict';
 import { cabinDashboardModel, cabinSurroundModel } from '../lib/cabin-model.ts';
 import { steeringWheelModel } from '../lib/voxel-models.ts';
 
+test('lower console timber pieces meet without changing the original envelope', () => {
+  const pieces = cabinDashboardModel().filter(p => p.wood && p.position[2] === -1.418)
+    .sort((a, b) => b.position[1] - a.position[1]);
+  assert.equal(pieces.length, 2);
+  const [lip, lower] = pieces;
+  const transformedY = y => (y + 0.08 + 0.57) * 0.82 - 0.535;
+  assert.ok(Math.abs(lip.position[1] + lip.size[1] / 2 - transformedY(-0.945)) < 1e-9);
+  assert.ok(Math.abs(lower.position[1] - lower.size[1] / 2 - transformedY(-1.175)) < 1e-9);
+  assert.ok(Math.abs(lip.position[1] - lip.size[1] / 2 - lower.position[1] - lower.size[1] / 2) < 1e-9);
+  for (const part of pieces) {
+    assert.equal(part.position[0], -0.015);
+    assert.ok(Math.abs(part.size[0] - 0.63 * 0.94) < 1e-9);
+    assert.equal(part.size[2], 0.018);
+  }
+});
+
 test('wider windshield preserves independently positioned door rails', () => {
   const rails = parts => parts.filter(p => p.position[2] === -1.52 && p.position[1] < -0.5);
   assert.deepEqual(rails(cabinSurroundModel(2.22, 2.11)), rails(cabinSurroundModel(2.11)));
