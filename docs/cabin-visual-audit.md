@@ -119,3 +119,7 @@ This proves successful CPU-side scene submissions near 60/s during this bounded 
 Compared the same left-cushion rectangle (x=35–214, y=517–540) at 1000 × 563. Reference mean RGB was 124.4/98.1/52.7 with luma standard deviation 27.4. Before adjustment (`/tmp/reporoad-cabin-upper-seal-20260909.png`) it was 162.1/135.1/76.9 and 20.2: too bright and too low-contrast. Lowered the fabric shader's base from 0.74 to 0.42 and increased yarn gain from 0.85 to 1.05, leaving its geometry and mapping fixed. New capture `/tmp/reporoad-cabin-cloth-contrast-20260909.png` measures 126.2/101.0/53.0 and 27.0. Visual inspection retains the woven highlights against a darker field.
 
 These are sRGB image-region measurements, not calibrated material properties or proof of whole-cabin identity. Other diagnostic rectangles indicated the roof panel is darker than the reference and parts of the lower console brighter; inspect those independently rather than applying another global lighting increase.
+
+### Region-measured roof colour after `fe32e12`
+
+Roof rectangle x=650–849, y=5–25: reference mean RGB 82.3/49.3/19.6; previous 54.5/32.6/14.3. First material adjustment overshot to 104.4/64.2/29.2 and was reduced. Final outer timber `#7b5e38` and centre `#675b3a` produce 82.0/48.2/20.6 in `/tmp/reporoad-cabin-roof-measured-final-20260909.png`. Geometry, dark retaining straps, seals and all light intensities are unchanged. The numerical match is local evidence for this roof region, not proof of every roof pixel or lighting state.

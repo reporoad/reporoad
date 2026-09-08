@@ -257,7 +257,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
     add(
       [(roofEdges[i] + roofEdges[i + 1]) / 2, 1.2225, -1.786],
       [width - 0.008, 0.33, 0.04],
-      i === 1 ? '#514934' : '#604b32',
+      i === 1 ? '#675b3a' : '#7b5e38',
       true,
     );
   }
