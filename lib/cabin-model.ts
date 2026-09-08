@@ -154,7 +154,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
   for (const side of [-1, 1]) {
     // Covers wrap the pillar sides as well as the front. Thin face-only
     // patches left the visible inner return as one uninterrupted plank.
-    const coverSpans = [1, 2, 1, 1, 2, 1, 3, 1, 2, 2];
+    const coverSpans = [1, 2, 1, 1, 2, 1, 1, 2, 1, 2, 2];
     let coverBottom = -0.3975;
     for (let i = 0; i < coverSpans.length; i++) {
       const height = coverSpans[i] * 0.095;
