@@ -110,7 +110,7 @@ export function steeringWheelModel(): VoxelPart[] {
       const left = row[i];
       let right = left;
       while (++i < row.length && row[i] === right + 1) right = row[i];
-      const color = y > 3 ? '#514d40' : '#6d6658';
+      const color = y > 3 ? '#8d7357' : '#6d6658';
       const previous = rim.find(
         (r) =>
           r.left === left &&
