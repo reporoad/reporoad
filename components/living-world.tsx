@@ -258,15 +258,20 @@ export function VoxelCabin({
   environment,
   clock,
   readDashboard,
+  preview,
 }: {
   environment: Environment;
   clock: SharedClock;
   readDashboard?: () => DashboardState;
+  preview?: WorldPreview;
 }) {
   const wheel = useMemo(() => steeringWheelModel(), []);
   const cabinExposure = cabinLighting(environment.daylight, environment.rain + environment.snow);
   const cabinSun = cabinSunlight(environment.daylight, environment.sunAngle, environment.rain + environment.snow);
   const cabinSunColor = useMemo(() => new THREE.Color('#ffdf9d').lerp(new THREE.Color('#ffbb6a'), cabinSun.warmth), [cabinSun.warmth]);
+  const cabinKey = useRef<THREE.SpotLight>(null);
+  const keyDayColor = useMemo(() => new THREE.Color('#ffdf9d'), []);
+  const keyDuskColor = useMemo(() => new THREE.Color('#ffbb6a'), []);
   const dashboard = useMemo(() => cabinDashboardModel(), []);
   const padGeometry = useMemo(() => cabinPadGeometry(), []);
   const padSeamGeometry = useMemo(() => cabinPadGeometry(true), []);
@@ -341,6 +346,15 @@ export function VoxelCabin({
   const fixedSurround = useMemo(() => surround.filter(part =>
     Math.abs(part.position[0]) <= frameX - 0.13), [surround, frameX]);
   useFrame(({ gl, scene, clock: renderClock }) => {
+    // Use the same continuously sampled clock as the exterior sun; React's
+    // one-second environment updates would otherwise step the cabin shadows.
+    if (cabinKey.current) {
+      const current = worldAt(clock.current.now(), preview);
+      const sun = cabinSunlight(current.daylight, current.sunAngle, current.rain + current.snow);
+      cabinKey.current.position.set(...sun.position);
+      cabinKey.current.color.copy(keyDayColor).lerp(keyDuskColor, sun.warmth);
+      cabinKey.current.intensity = cabinLighting(current.daylight, current.rain + current.snow).key;
+    }
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
     if (cabin.current && now - lastMirrorFrame.current > 100) {
@@ -548,6 +562,7 @@ export function VoxelCabin({
       />
       <primitive object={cabinLightTarget} />
       <spotLight
+        ref={cabinKey}
         position={cabinSun.position}
         target={cabinLightTarget}
         map={canopyLight}

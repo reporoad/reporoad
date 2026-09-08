@@ -750,7 +750,7 @@ function World({
           <RepositoryBuilding repo={repo} season={environment.season} side={i % 2 ? 'right' : 'left'} supportPreview={supportPreview} />
         </group>
       ))}
-      <VoxelCabin environment={environment} clock={clock} readDashboard={() => dashboardState(clock.current.now(), chickenSchedule, live, playing)} />
+      <VoxelCabin environment={environment} clock={clock} preview={preview} readDashboard={() => dashboardState(clock.current.now(), chickenSchedule, live, playing)} />
     </>
   );
 }
