@@ -14,7 +14,15 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       // subtle and surface-attached; no animated noise or glossy fabric.
       roughnessFactor = clamp(roughnessFactor
         + (0.6 - paintedDetail) * 0.16 - edgeWear * 0.08, 0.55, 1.0);
+      // Worn varnish catches broader highlights than the painted fascia;
+      // mixed cabin batches retain their per-face wood classification.
+      roughnessFactor = mix(roughnessFactor, 0.66 + (0.6 - paintedDetail) * 0.16, vCabinWood);
     #endif`,
+  );
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <metalnessmap_fragment>',
+    `#include <metalnessmap_fragment>
+      metalnessFactor *= 1.0 - vCabinWood;`,
   );
   shader.vertexShader =
     `varying vec3 vCabinPoint;
@@ -229,7 +237,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v41-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v43-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
