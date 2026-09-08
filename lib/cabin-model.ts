@@ -154,7 +154,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
     let coverBottom = -0.3975;
     for (let i = 0; i < coverSpans.length; i++) {
       const height = coverSpans[i] * 0.095;
-      const palette = ['#735e41', '#6e5b3f', '#7c6647'];
+      const palette = ['#736e50', '#62614a', '#827b58'];
       const tint = (i * 7 + Math.floor(i / 3)) % 3;
       // Taller covers have offset fitted joints, not raised face stickers.
       // Keep the complete pillar envelope and the original horizontal gaps.
@@ -176,7 +176,7 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
       add(
         [side * (frameX - 0.055), -0.35 + i * 0.095, -1.827],
         [0.031, 0.11, 0.028],
-        '#776647',
+        '#777356',
       );
     // Continuous seal backing with flush, subtly varied cover sections.
     add([side * (frameX - 0.1), 0.34, -1.8905], [0.035, 1.46, 0.05], '#343c30');
