@@ -124,7 +124,7 @@ export function steeringWheelModel(): VoxelPart[] {
   }
   // Raise the upper opening and flatten the lower bowl independently of the
   // horn. This matches the reference silhouette without moving the controls.
-  const rimY = (y: number) => y < -0.07 ? -0.07 + (y + 0.07) * 0.76 : y > 0 ? y * 1.07 : y;
+  const rimY = (y: number) => y < -0.07 ? -0.07 + (y + 0.07) * 0.76 : y > 0 ? y * 1.17 : y;
   for (const r of rim) {
     const bottom = rimY((r.bottom - 0.5) * step);
     const top = rimY((r.top + 0.5) * step);
