@@ -155,3 +155,7 @@ Measured rather than following the initial impression that the pad was too brigh
 ### Accumulated rain/night check at `e050f9f`
 
 At 1000 × 563, Summer/Rain 16:00 (`/tmp/reporoad-cabin-materials-rain-final-20260909.png`) retains distinguishable olive paint and timber with softened top-pad highlights and raised wipers. Summer/Rain 21:00 (`/tmp/reporoad-cabin-materials-night-final-20260909.png`) removes the strong direct highlights; the radio, instrument readout and horn silhouette remain visible. These captures include the revised roof, cloth, glovebox, pad, mirror support, rim and windshield. No obvious material or join regression is visible in these samples. They are not playback/flicker evidence or proof of complete reference fidelity. No product source changed during this check.
+
+### Window crank proportions after `963f97c`
+
+The small crank was close to the screen edge compared with the reference's prominent hand grip. Scaled its five existing pieces 1.4× in the door plane, brought the assembly 0.05 metres inward and 0.025 metres down, preserving depth and the recessed pull below. `/tmp/reporoad-cabin-window-crank-20260909.png` shows the chunkier grip on both doors with no obvious pull collision at 1000 × 563, Summer/Sunny 16:00. Tests, TypeScript and build passed. No new interaction is implied: this remains modeled trim, not an operable window control.
