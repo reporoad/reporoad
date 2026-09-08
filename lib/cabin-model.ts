@@ -213,6 +213,13 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
         true,
       );
     const handleX = side * (frameX - 0.45);
+    // Compact manual-window hardware above the recessed door pull.
+    // Stepped square collars keep the fitting consistent with the voxel cabin.
+    add([handleX, -0.61, -1.426], [0.044, 0.044, 0.022], '#403e31');
+    add([handleX, -0.61, -1.408], [0.032, 0.032, 0.016], '#82775d');
+    add([handleX - side * 0.038, -0.623, -1.393], [0.076, 0.017, 0.018], '#706a54');
+    add([handleX - side * 0.073, -0.626, -1.376], [0.026, 0.035, 0.025], '#48483a');
+    add([handleX - side * 0.073, -0.619, -1.36], [0.023, 0.021, 0.008], '#8d8165');
     add([handleX, -0.7, -1.49], [0.1, 0.05, 0.012], '#6e614a');
     add([handleX, -0.7, -1.476], [0.075, 0.035, 0.004], '#383b2d');
     for (const edge of [-1, 1]) {
