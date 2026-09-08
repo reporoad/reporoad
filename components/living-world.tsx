@@ -298,7 +298,9 @@ export function VoxelCabin({
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 256;
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#444438';
+    // Keep diffuse transmission between leaf gaps: the reference cabin is
+    // sunlit with dappled shade, not uniformly under a dense canopy.
+    ctx.fillStyle = '#808074';
     ctx.fillRect(0, 0, 256, 256);
     ctx.translate(256, 0);
     ctx.scale(-1, 1);
