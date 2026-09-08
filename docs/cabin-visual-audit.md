@@ -35,3 +35,10 @@ The cabin key now uses `cabinSunlight` for a bounded position following the shar
 - 16:00 rain: `/tmp/reporoad-cabin-solar-rain-20260908.png`. Directional highlights are subdued and the controls remain readable.
 - These are paused local preview snapshots, not long-running animation or livestream validation. They close the basic morning/night/rain snapshot checks only. Snow, continuous transitions, moving shadow stability and populated live instruments remain unverified.
 - Restored 16:00 sunny and the normal viewport after checking. No runtime code changes in this validation pass.
+
+### Moving weather checks at `0d41d2f`
+
+- Winter/snow while driving: `/tmp/reporoad-cabin-snow-drive-20260908.png`. The mirror reflects the winter world, speed reads 23 km/h, and cabin materials remain legible under diffuse light.
+- Summer/rain while driving: `/tmp/reporoad-cabin-rain-wipers-a-20260908.png` and `/tmp/reporoad-cabin-rain-wipers-b-20260908.png`. Road and mirror advance, wipers are raised into their sweep, and radio/speed displays remain visible.
+- Short screenshot observations did not expose missing cabin meshes or black frames. They do not establish flicker-free frame-to-frame playback or sustained stream stability.
+- Restored paused Summer/Sunny 16:00 and normal viewport. No runtime source changed in this pass.
