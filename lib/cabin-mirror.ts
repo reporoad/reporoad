@@ -11,3 +11,10 @@ export const cabinMirror = {
   targetHeight: Math.round(384 * height / width),
   refreshIntervalMs: 50,
 } as const;
+
+/** At most one refresh per frame; retain the remainder after a delayed frame. */
+export function mirrorRefreshAt(previous: number, now: number): number | null {
+  const elapsed = now - previous;
+  if (elapsed < cabinMirror.refreshIntervalMs) return null;
+  return now - elapsed % cabinMirror.refreshIntervalMs;
+}

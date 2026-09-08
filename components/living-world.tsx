@@ -17,7 +17,7 @@ import { cabinDashboardModel, cabinSurroundModel } from '@/lib/cabin-model';
 import CabinMaterial from './cabin-material';
 import { cabinPadGeometry } from '@/lib/cabin-pad';
 import { cabinBolsterGeometry, cabinCushionGeometry, shadeCabinFabric } from '@/lib/cabin-cushion';
-import { cabinMirror } from '@/lib/cabin-mirror';
+import { cabinMirror, mirrorRefreshAt } from '@/lib/cabin-mirror';
 import { sceneLighting, cabinLighting, cabinSunlight } from '@/lib/scene-lighting';
 RectAreaLightUniformsLib.init();
 export type Environment = ReturnType<typeof worldAt>;
@@ -368,10 +368,11 @@ export function VoxelCabin({
     cabinFills.current.forEach((light, i) => { if (light) light.intensity = fillLevels[i]; });
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
-    if (cabin.current && now - lastMirrorFrame.current >= cabinMirror.refreshIntervalMs) {
+    const mirrorAt = mirrorRefreshAt(lastMirrorFrame.current, now);
+    if (cabin.current && mirrorAt !== null) {
       // Retain fractional elapsed time so frame scheduling does not make the
       // reflection drift below its intended cadence. Never render catch-up loops.
-      lastMirrorFrame.current = now - (now - lastMirrorFrame.current) % cabinMirror.refreshIntervalMs;
+      lastMirrorFrame.current = mirrorAt;
       const target = gl.getRenderTarget();
       const shadows = gl.shadowMap.autoUpdate;
       gl.shadowMap.autoUpdate = false;
