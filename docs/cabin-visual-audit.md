@@ -27,3 +27,11 @@ Non-main branch; local-only work; existing radio/dashboard functionality; seat/w
 ## Sun-responsive key follow-up
 
 The cabin key now uses `cabinSunlight` for a bounded position following the shared solar arc, plus clear-weather low-sun warmth. Other fill lights and the exterior are unchanged. Unit tests cover morning/evening direction, bounded continuous movement, and suppression of extra warmth at night and in overcast weather. Browser comparisons are saved at `/tmp/reporoad-cabin-solar-16-20260908.png` and `/tmp/reporoad-cabin-solar-1730-20260908.png`. The latter shows changed illumination across the upper pad and seat surfaces. Full morning/night/weather visual checks and long-running stability checks remain outstanding; this does not close the fidelity goal.
+
+### Additional browser checks at `0643742`
+
+- 08:00 sunny: `/tmp/reporoad-cabin-solar-morning-20260908.png`. Opposite-side light is visible on the passenger pad, with readable instruments.
+- 21:00 sunny: `/tmp/reporoad-cabin-solar-night-20260908.png`. Daylight highlights are absent; amber instruments and cabin outlines remain visible.
+- 16:00 rain: `/tmp/reporoad-cabin-solar-rain-20260908.png`. Directional highlights are subdued and the controls remain readable.
+- These are paused local preview snapshots, not long-running animation or livestream validation. They close the basic morning/night/rain snapshot checks only. Snow, continuous transitions, moving shadow stability and populated live instruments remain unverified.
+- Restored 16:00 sunny and the normal viewport after checking. No runtime code changes in this validation pass.
