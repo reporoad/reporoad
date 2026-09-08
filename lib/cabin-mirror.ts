@@ -9,4 +9,5 @@ export const cabinMirror = {
   verticalFov: 40,
   targetWidth: 384,
   targetHeight: Math.round(384 * height / width),
+  refreshIntervalMs: 50,
 } as const;

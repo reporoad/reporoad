@@ -368,8 +368,10 @@ export function VoxelCabin({
     cabinFills.current.forEach((light, i) => { if (light) light.intensity = fillLevels[i]; });
     // Refresh cadence must not stall when the shared clock is corrected.
     const now = renderClock.elapsedTime * 1000;
-    if (cabin.current && now - lastMirrorFrame.current > 100) {
-      lastMirrorFrame.current = now;
+    if (cabin.current && now - lastMirrorFrame.current >= cabinMirror.refreshIntervalMs) {
+      // Retain fractional elapsed time so frame scheduling does not make the
+      // reflection drift below its intended cadence. Never render catch-up loops.
+      lastMirrorFrame.current = now - (now - lastMirrorFrame.current) % cabinMirror.refreshIntervalMs;
       const target = gl.getRenderTarget();
       const shadows = gl.shadowMap.autoUpdate;
       gl.shadowMap.autoUpdate = false;
