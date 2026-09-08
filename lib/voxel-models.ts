@@ -126,7 +126,8 @@ export function steeringWheelModel(): VoxelPart[] {
   // horn. This matches the reference silhouette without moving the controls.
   const rimY = (y: number) => y < -0.07 ? -0.07 + (y + 0.07) * 0.76 : y > 0 ? y * 1.17 : y;
   for (const r of rim) {
-    const bottom = rimY((r.bottom - 0.5) * step);
+    // The upper hand grip is deeper below its fixed crown than the corner steps.
+    const bottom = rimY((r.bottom - 0.5) * step) - (r.top === 8 && r.bottom === 8 ? 0.022 : 0);
     const top = rimY((r.top + 0.5) * step);
     parts.push({
       position: [

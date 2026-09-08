@@ -414,7 +414,7 @@ export function VoxelCabin({
         castShadow
         receiveShadow
       >
-        <CabinMaterial color="#c3ad7c" edgeWearStrength={1.6} topPaintStrength={0.3} vertexColors />
+        <CabinMaterial color="#efd196" edgeWearStrength={1.6} topPaintStrength={0.3} vertexColors />
       </mesh>
       {[-0.32, -0.23, 0.32, 0.4].map((x) => (
         <mesh

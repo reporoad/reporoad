@@ -361,3 +361,36 @@ Added a regression check proving the two lower timber pieces meet exactly
 and preserve the original top, bottom, width and depth after transformation.
 Full suite passed. No further broad geometry adjustment justified by this
 checkpoint; focus subsequent evidence on lighting and texture distribution.
+# Upper grip face depth — 2026-09-09
+
+Row comparison x695–780 showed reference grip face through y354–357,
+but current face ended around y351 before revealing the bright background.
+Extended only the topmost horizontal grip downward 0.022 units, keeping
+its top bound fixed. Final `/tmp/reporoad-upper-grip-depth.png` has face
+RGB65/47/31 at y354 versus reference66/50/37 (previous73/63/36,
+then rapidly brighter). Rows345–354 now remain consistent grip material.
+The bright strip below y360 is still unlike the reference's dark underside;
+do not conflate that remaining region with grip-face thickness or claim it
+resolved. Existing stepped coverage, fixed crown and seat-clearance tests
+pass; added explicit crown-thickness assertion. Build/type check passed.
+# Rejected rearward grip-depth experiment — 2026-09-09
+
+Extended the upper grip rearward from 0.085 to 0.155 depth with its
+front face fixed. The y360 strip changed RGB114/92/55 to93/68/39,
+but y363 remained137/106/63 versus reference23/18/7. Thus extra grip
+depth does not solve the dominant mismatch. Reverted depth and associated
+test-selector changes; retained the previously verified downward 0.022
+grip-face extension. Experiment screenshot:
+`/tmp/reporoad-upper-grip-underside.png`. Do not keep enlarging the grip
+to cover unrelated background pixels. All checks passed during experiment.
+# Dashboard top highlight — 2026-09-09
+
+Changed only the continuous pad colour #c3ad7c to #efd196. At
+160,391–385,403 its RGB moved from125.9/104.5/63.1 to140.3/118.6/75.6,
+closer to reference161.3/129.5/78.3. Shaded glovebox sample remained
+49.6/43.0/23.8, effectively unchanged. Screenshot:
+`/tmp/reporoad-dashboard-top-light.png`. Whole-view inspection retained
+the warm highlight/shaded fascia separation. Remaining highlight deficit
+should be investigated as light distribution, not solved by indefinitely
+raising albedo toward white. Tests/type check/build passed; no world light
+or geometry was changed.

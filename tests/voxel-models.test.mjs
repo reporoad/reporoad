@@ -93,6 +93,9 @@ test('wheel has a raised upper opening and shallow lower bowl around its fixed h
   const top = Math.max(...rim.map(p => p.position[1] + p.size[1] / 2));
   assert.ok(Math.abs(bottom + 0.308) < 0.00001);
   assert.ok(Math.abs(top - 0.448025) < 0.00001);
+  const crown = rim.find(p => p.size[0] > 0.4 && p.position[1] > 0.3);
+  assert.ok(crown);
+  assert.ok(Math.abs(crown.size[1] - (0.045 * 1.17 + 0.022 + 0.001)) < 1e-9);
   const horn = steeringWheelModel().find(p => p.position[2] === 0.015 && p.size[0] > 0.2);
   assert.ok(horn);
   assert.ok(Math.abs(horn.position[0] + 0.008) < 1e-9);
