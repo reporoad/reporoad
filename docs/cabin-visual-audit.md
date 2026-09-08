@@ -187,3 +187,7 @@ Cloth's three largest changes were at frames 12, 101 and 202. The latter two are
 ### Upper grip finish after `c15e540`
 
 Rejected an unneeded roof-grain adjustment: the matched roof rectangle already has luma standard deviation 3.17 versus reference 3.09, and 10th/90th percentiles 49.00/57.42 versus 49.65/57.28. Instead addressed the visibly dark upper wheel grip. Rectangle (685,345)–(785,351) previously averaged RGB 25.5/23.1/14.6 against reference 63.1/47.7/34.7. Upper grip material changed from `#514d40` to `#8d7357`, producing 66.5/49.1/31.4 in `/tmp/reporoad-cabin-upper-grip-finish-20260909.png` at Summer/Sunny 16:00. Lower grip, centre pad, silhouette, lights and controls remain unchanged. Tests, TypeScript and build passed. This regional match is not whole-cabin completion evidence.
+
+### Instrument hood contrast after `2255736`
+
+The top hood strip (675,380)–(790,389) averaged RGB 124.3/104.0/60.9 against reference 67.0/54.3/32.3. Darkened only the hood from `#76745a`, first to `#504b36` (88.2/68.5/36.3), then to `#413e31`. Final screenshot `/tmp/reporoad-cabin-instrument-hood-final-20260909.png` retains the projecting edge and separates it from the dark instrument panel. Dimensions, screen, lights and wheel remain unchanged. Updated the existing geometric hood test to locate the part by dimensions/position rather than an incidental paint colour. Tests, TypeScript and build passed.

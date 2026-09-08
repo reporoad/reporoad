@@ -85,7 +85,7 @@ export function cabinDashboardModel(): VoxelPart[] {
   const consoleEnd = parts.length;
   // Binnacle: dark inset gauges, a projecting hood, layered square edges.
   add([0.83, -0.565, -1.57], [0.664, 0.34, 0.14], '#353b2e');
-  add([0.83, -0.385, -1.465], [0.728, 0.065, 0.18], '#76745a');
+  add([0.83, -0.385, -1.465], [0.728, 0.065, 0.18], '#413e31');
   for (const x of [0.478, 1.182])
     add([x, -0.53, -1.44], [0.064, 0.31, 0.16], '#65634c');
   add([0.83, -0.67, -1.433], [0.688, 0.055, 0.13], '#716b50');

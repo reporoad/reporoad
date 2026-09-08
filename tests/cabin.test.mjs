@@ -267,7 +267,7 @@ test('compact vents clear the pad and keep louvers inside the shallow frame', ()
 test('compact gauge housing leaves its display in front of the backing', () => {
   const parts = cabinDashboardModel();
   const backing = parts.find((p) => p.color === '#353b2e');
-  const hood = parts.find((p) => p.color === '#76745a');
+  const hood = parts.find((p) => p.position[0] === 0.83 && p.size[0] === 0.728 && p.size[2] === 0.18);
   assert.ok(backing && hood);
   assert.ok(backing.position[2] + backing.size[2] / 2 < -1.488);
   assert.ok(backing.size[0] > 0.52, 'display fits within the housing');
