@@ -103,10 +103,14 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       // Broad, row-aligned woven dashes match the reference upholstery;
       // the finer old speckles read as scattered dust at driving resolution.
       vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(15.0, 22.0);
+      // Offset alternate rows and break some yarns: avoid long bright diagonal
+      // stripes across the cushion while keeping a coherent woven fabric.
+      stitch.x += mod(floor(stitch.y), 2.0) * 0.5;
       vec2 cellUv = fract(stitch);
       float yarn = cabinHash(vec3(floor(stitch), 3.0));
       float wovenRow = 1.0 - step(0.5, mod(floor(stitch.y), 3.0));
-      float yarnPresence = wovenRow * 0.85 + step(0.85, yarn) * 0.15;
+      float yarnPresence = wovenRow * (0.45 + step(0.22, yarn) * 0.40)
+        + (1.0 - wovenRow) * step(0.72, yarn) * 0.6;
       float yarnEnd = 0.49 + yarn * 0.18;
       float fleck = yarnPresence * smoothstep(0.07, 0.16, cellUv.x) * (1.0-smoothstep(yarnEnd,yarnEnd+0.10,cellUv.x)) * smoothstep(0.05,0.12,cellUv.y) * (1.0-smoothstep(0.38,0.52,cellUv.y));
       float weave = (sin(clothUv.x * 1200.0) * sin(clothUv.y * 1200.0) * 0.025
@@ -165,6 +169,7 @@ export default function CabinMaterial({
   wood = false,
   edgeWearStrength = 1,
   topPaintStrength = 0.22,
+  matte = false,
 }: {
   color?: string;
   fabric?: boolean;
@@ -172,6 +177,7 @@ export default function CabinMaterial({
   wood?: boolean;
   edgeWearStrength?: number;
   topPaintStrength?: number;
+  matte?: boolean;
 }) {
   const detail = useLoader(
     THREE.TextureLoader,
@@ -203,11 +209,11 @@ export default function CabinMaterial({
         ...(vertexColors ? { CABIN_SURFACES: 1 } : {}),
         ...(wood ? { CABIN_WOOD: 1 } : {}),
       }}
-      roughness={fabric ? 0.98 : 0.79}
-      metalness={fabric ? 0 : 0.03}
+      roughness={fabric ? 0.98 : matte ? 0.93 : 0.79}
+      metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v35-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v36-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );

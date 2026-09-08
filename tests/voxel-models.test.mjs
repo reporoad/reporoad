@@ -98,7 +98,7 @@ test('wheel lower arc has bounded depth without moving its upper grip', () => {
 test('steering column cover stays below and behind the horn pad', () => {
   const parts = steeringWheelModel();
   const column = parts.find((p) => p.color === '#454334');
-  const pad = parts.find((p) => p.color === '#71604f' && p.size[0] > 0.2);
+  const pad = parts.find((p) => p.position[2] === 0.059 && p.size[0] > 0.2);
   assert.ok(column && pad);
   assert.ok(column.size[0] >= 0.14, 'cover is wider than the exposed lower spoke');
   assert.ok(column.position[1] + column.size[1] / 2 < pad.position[1]);
@@ -111,7 +111,7 @@ test('steering column cover stays below and behind the horn pad', () => {
 
 test('horn emblem has clipped corners and an inset dark centre', () => {
   const parts = steeringWheelModel();
-  const badge = parts.filter(p => p.color === '#99866c');
+  const badge = parts.filter(p => p.position[2] === 0.074 && p.size[2] === 0.014);
   assert.equal(badge.length, 3);
   const middle = badge.find(p => Math.abs(p.position[1] + 0.055) < 1e-8);
   assert.ok(middle);

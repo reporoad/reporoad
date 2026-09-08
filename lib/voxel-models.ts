@@ -108,7 +108,7 @@ export function steeringWheelModel(): VoxelPart[] {
       const left = row[i];
       let right = left;
       while (++i < row.length && row[i] === right + 1) right = row[i];
-      const color = y > 3 ? '#5d5141' : '#796858';
+      const color = y > 3 ? '#514d40' : '#6d6658';
       const previous = rim.find(
         (r) =>
           r.left === left &&
@@ -144,15 +144,15 @@ export function steeringWheelModel(): VoxelPart[] {
     {
       position: [0.018, -0.06, 0.015],
       size: [0.3, 0.25, 0.085],
-      color: '#786855',
+      color: '#746e5d',
     },
     {
       position: [0.018, -0.055, 0.059],
       size: [0.224, 0.22, 0.016],
-      color: '#71604f',
+      color: '#696252',
     },
-    { position: [0, -0.07, 0], size: [0.6, 0.085, 0.065], color: '#82705e' },
-    { position: [0, -0.17, 0], size: [0.05, 0.28, 0.055], color: '#82705e' },
+    { position: [0, -0.07, 0], size: [0.6, 0.085, 0.065], color: '#79705e' },
+    { position: [0, -0.17, 0], size: [0.05, 0.28, 0.055], color: '#79705e' },
     // A stepped column cover sits behind the horn pad and lower spoke.
     {
       position: [0.018, -0.205, -0.03],
@@ -172,7 +172,7 @@ export function steeringWheelModel(): VoxelPart[] {
     {
       position: [0.018, -0.055, 0.074],
       size: [0.065, 0.055, 0.014],
-      color: '#99866c',
+      color: '#87816c',
     },
     {
       position: [0.018, -0.055, 0.084],
@@ -190,13 +190,13 @@ export function steeringWheelModel(): VoxelPart[] {
     parts.push({
       position: [0.018, -0.055 + side * 0.0375, 0.074],
       size: [0.043, 0.02, 0.014],
-      color: '#99866c',
+      color: '#87816c',
     });
   for (const side of [-1, 1]) {
     parts.push({
       position: [0.018 + side * 0.121, -0.055, 0.059],
       size: [0.018, 0.176, 0.016],
-      color: '#71604f',
+      color: '#696252',
     });
     parts.push({
       position: [0.018 + side * 0.128, -0.055, 0.071],

@@ -12,12 +12,14 @@ export default memo(function VoxelModel({
   cabin = false,
   edgeWearStrength = 1,
   glow = false,
+  matte = false,
 }: {
   parts: VoxelPart[];
   shadows?: boolean;
   cabin?: boolean;
   edgeWearStrength?: number;
   glow?: boolean;
+  matte?: boolean;
 }) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const cabinGeometry = useMemo(
@@ -43,7 +45,7 @@ export default memo(function VoxelModel({
   if (cabinGeometry) {
     return (
       <mesh geometry={cabinGeometry} castShadow={shadows} receiveShadow>
-        <CabinMaterial vertexColors edgeWearStrength={edgeWearStrength} />
+        <CabinMaterial vertexColors edgeWearStrength={edgeWearStrength} matte={matte} />
       </mesh>
     );
   }

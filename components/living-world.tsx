@@ -455,7 +455,7 @@ export function VoxelCabin({
         scale={wheelScale}
         rotation={wheelRotation}
       >
-        <VoxelModel parts={wheel} cabin edgeWearStrength={5} />
+        <VoxelModel parts={wheel} cabin edgeWearStrength={3} matte />
       </group>
       {/* Upholstered foreground corners complete the enclosed car silhouette. */}
       {[-1.13, 1.31].map((x) => (
