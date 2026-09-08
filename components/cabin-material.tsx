@@ -102,7 +102,7 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       vec2 clothUv = face.y > 0.5 ? p.xz : (face.z > 0.5 ? p.xy : p.zy);
       // Broad, row-aligned woven dashes match the reference upholstery;
       // the finer old speckles read as scattered dust at driving resolution.
-      vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(15.0, 22.0);
+      vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(19.0, 25.0);
       // Offset alternate rows and break some yarns: avoid long bright diagonal
       // stripes across the cushion while keeping a coherent woven fabric.
       stitch.x += mod(floor(stitch.y), 2.0) * 0.5;
@@ -115,7 +115,7 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       float fleck = yarnPresence * smoothstep(0.07, 0.16, cellUv.x) * (1.0-smoothstep(yarnEnd,yarnEnd+0.10,cellUv.x)) * smoothstep(0.05,0.12,cellUv.y) * (1.0-smoothstep(0.38,0.52,cellUv.y));
       float weave = (sin(clothUv.x * 1200.0) * sin(clothUv.y * 1200.0) * 0.025
         + sin(clothUv.x * 320.0) * sin(clothUv.y * 320.0) * 0.055) * aa;
-      diffuseColor.rgb *= 0.71 + fleck * 1.25 * (0.25 + face.y * 0.75) + weave;
+      diffuseColor.rgb *= 0.71 + fleck * 1.05 * (0.25 + face.y * 0.75) + weave;
       float clothPatch = mix(cabinNoise(vec3(clothUv * vec2(35.0, 40.0), 8.0)),
         cabinHash(vec3(floor(clothUv * vec2(35.0, 40.0)), 8.0)), 0.85 * aa);
       diffuseColor.rgb *= 0.675 + clothPatch * 0.65;
@@ -215,7 +215,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v37-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v38-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
