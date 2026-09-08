@@ -53,3 +53,9 @@ At `1b06e88`, tested sparse surface-attached short scuffs with derivative filter
 - Includes the reduced sunny front fill, shallower glovebox, central pad inset, straw yarn tint and wider horn emblem. The top edge and handle of the glovebox remain fixed, and its lower edge now sits close to the reference. Instruments are readable in both snapshots.
 - Low sun changes the seat and dashboard illumination but does not supply the reference's material richness. Do not treat another global warmth or fill adjustment as the default next step. Compare broad surface variation and edge treatment at delivered size instead; avoid repeating rejected fine-scuff work.
 - These are paused visual checks, not evidence of uninterrupted motion or stream reliability. Overall fidelity remains incomplete, especially material richness. No application source changes in this check.
+
+### Moving cabin check at `e7f1fe7`
+
+- Local Summer/Sunny 16:00 driving preview, 1000 × 563: `/tmp/reporoad-cabin-motion-a-20260909.png` and `/tmp/reporoad-cabin-motion-b-20260909.png`, captured about 14 seconds apart.
+- Roadside buildings and mirror advance; speed reads 23 km/h; audio bars differ between captures. Paint patches remain attached to the cabin, the seal assemblies remain present, and the revised right-seat framing leaves the wheel clear.
+- No missing cabin surfaces or black frames were observed in these samples. Two screenshots cannot establish frame-to-frame freedom from flicker or long-running livestream stability. Those gates remain open, as does the overall reference-fidelity goal.
