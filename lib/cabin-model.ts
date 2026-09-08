@@ -39,7 +39,7 @@ export function cabinDashboardModel(): VoxelPart[] {
   // Central console: inset radio, lower switch bank, side rails and footwell.
   const consoleStart = parts.length;
   add([0.035, -0.86, -1.48], [0.7, 0.72, 0.1], '#55553f');
-  add([0.035, -0.655, -1.44], [0.63, 0.245, 0.055], '#6b5035', true);
+  add([0.035, -0.655, -1.44], [0.63, 0.245, 0.055], '#403323', true);
   add([0.035, -0.65, -1.38], [0.51, 0.2, 0.025], '#292b22');
   add([0.035, -0.82, -1.405], [0.63, 0.034, 0.05], '#302d23');
   add([0.035, -0.865, -1.435], [0.63, 0.115, 0.045], '#6b5035', true);

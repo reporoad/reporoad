@@ -29,6 +29,8 @@ function Block({
   glow = 0,
   grain = true,
   fabric = false,
+  fabricBase,
+  fabricYarnGain,
   wood = false,
   cushion = false,
   rubber = false,
@@ -39,6 +41,8 @@ function Block({
   glow?: number;
   grain?: boolean;
   fabric?: boolean;
+  fabricBase?: number;
+  fabricYarnGain?: number;
   wood?: boolean;
   cushion?: boolean;
   rubber?: boolean;
@@ -67,6 +71,8 @@ function Block({
         <CabinMaterial
           color={color}
           fabric={fabric}
+          fabricBase={fabricBase}
+          fabricYarnGain={fabricYarnGain}
           wood={wood}
           vertexColors={cushion || fabric}
         />
@@ -504,6 +510,8 @@ export function VoxelCabin({
             grain={false}
             fabric
             position={[0, 0, -0.11]}
+            fabricBase={x > 0 ? 0.64 : undefined}
+            fabricYarnGain={x > 0 ? 0.6 : undefined}
             scale={[0.74, 0.46, 0.28]}
             color="#8f855b"
           />
@@ -511,6 +519,8 @@ export function VoxelCabin({
             grain={false}
             fabric
             position={[0, 0.24, -0.13]}
+            fabricBase={x > 0 ? 0.64 : undefined}
+            fabricYarnGain={x > 0 ? 0.6 : undefined}
             scale={[0.71, 0.06, 0.21]}
             color="#9d9467"
             cushion
@@ -520,13 +530,17 @@ export function VoxelCabin({
               grain={false}
               fabric
               key={edge}
+              fabricBase={x > 0 ? 0.64 : undefined}
+              fabricYarnGain={x > 0 ? 0.6 : undefined}
               position={[edge, 0.26, -0.13]}
               scale={[0.014, 0.018, 0.22]}
               color="#a99b6d"
             />
           ))}
           <mesh geometry={bolsters[x < 0 ? 0 : 1]} castShadow receiveShadow>
-            <CabinMaterial color="#8d8258" fabric vertexColors />
+            <CabinMaterial color="#8d8258" fabric vertexColors
+              fabricBase={x > 0 ? 0.64 : undefined}
+              fabricYarnGain={x > 0 ? 0.6 : undefined} />
           </mesh>
         </group>
       ))}

@@ -211,3 +211,37 @@ The remaining lower-patch variance was a horizontal boundary, not missing textur
 ### Lower-panel / footwell separation after `1d47597`
 
 Reference (180,480)–(380,495) mean RGB 27.2/23.1/9.1 versus current 12.4/11.5/5.4. Lightening the entire lower panel overshot the footwell: (300,520)–(380,550) rose to 35.5/32.4/14.7 versus reference 14.8/13.3/5.9. Replaced that uniform treatment with two edge-joined sections: short upper `#505035` from y=-0.673 to -0.735 and original dark `#34362a` below to -0.98. The first split at -0.8 extended the light panel too low and was rejected. Final `/tmp/reporoad-cabin-lower-panel-verified-20260909.png` retains dark depth below the readable olive strip. Added an exact edge-join assertion; outer bounds and handle remain unchanged. Tests, TypeScript and build passed.
+# Right-seat cloth balance — 2026-09-09
+
+Matched 1000×563 Summer/Sunny 16:00 preview against the cosy reference.
+The left cushion patch (35,517–215,541) was already close: RGB
+126.3/101.0/53.1 versus 124.4/98.1/52.7. Kept its material defaults.
+The right patch (850,526–970,547) was too dark: 113.4/90.4/46.1
+versus 135.2/106.7/60.3. Added independent fabric base/yarn gains,
+using 0.64/0.60 for the right seat only (defaults remain 0.42/1.05).
+Final patch is 136.6/111.3/60.1. Luminance variation remains higher
+than the reference (39.4 versus 33.4), so this is a brightness improvement,
+not proof of full cloth or cabin fidelity. Geometry, controls and radio
+are unchanged. Final screenshot: `/tmp/reporoad-right-seat-final.png`.
+All 31 test files, TypeScript checking and production build passed.
+# Horn-pad layering — 2026-09-09
+
+Compared `/tmp/reporoad-right-seat-final.png` and the reference at 1000×563.
+The outer horn pad was visibly broader than the reference while its centre
+and vertical outer bounds were already close. Reduced pad/trim horizontal
+scale from 1.04 to 0.84, retaining the rim, emblem and column dimensions.
+Shortened the inset face and its surrounding stepped trim to 82% height,
+centred on the existing face, exposing more of the outer padded surround.
+Final visual check: `/tmp/reporoad-horn-pad-layered.png`. The emblem and
+instruments remain in place. Geometry tests cover fixed outer height, new
+width, shorter inset, column depth separation and seat clearance. This is
+a local silhouette improvement; overall lighting/material fidelity remains
+incomplete and no live deployment was made.
+# Radio surround — 2026-09-09
+
+The 450,414–550,420 upper surround patch measured RGB 66.8/40.3/19.5
+against reference 38.4/26.2/13.3. Adjusted only the upper wooden radio
+housing from #6b5035 through #4f3e2b to #403323. The switch-bank wood,
+radio texture, physical controls and geometry are unchanged. Screenshot:
+`/tmp/reporoad-radio-surround-final.png`. Matched local Summer/Sunny
+16:00 preview; no claim that this single region establishes overall fidelity.

@@ -229,9 +229,15 @@ export function steeringWheelModel(): VoxelPart[] {
   // stays readable at driver-eye distance without widening the padded face.
   for (const part of parts) {
     if (part.position[2] <= 0) continue;
-    const widthScale = part.position[2] >= 0.074 ? 1.65 : 1.04;
+    const widthScale = part.position[2] >= 0.074 ? 1.65
+      : part.position[1] <= -0.16 ? 1.04 : 0.84;
     part.position[0] = 0.018 + (part.position[0] - 0.018) * widthScale;
     part.size[0] *= widthScale;
+    // Recessed face is shorter than its outer padding; retain the badge size.
+    if (part.position[2] >= 0.059 && part.position[2] < 0.074) {
+      part.position[1] = -0.055 + (part.position[1] + 0.055) * 0.82;
+      part.size[1] *= 0.82;
+    }
   }
   return parts;
 }

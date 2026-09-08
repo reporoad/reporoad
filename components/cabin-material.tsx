@@ -140,7 +140,7 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       float yarnEnd = 0.49 + yarn * 0.18;
       float fleck = yarnPresence * smoothstep(0.07, 0.16, cellUv.x) * (1.0-smoothstep(yarnEnd,yarnEnd+0.10,cellUv.x)) * smoothstep(0.05,0.12,cellUv.y) * (1.0-smoothstep(0.38,0.52,cellUv.y));
       float weave = (wovenDetail - 0.6) * 0.45;
-      diffuseColor.rgb *= 0.42 + fleck * 1.05 * (0.25 + face.y * 0.75) + weave;
+      diffuseColor.rgb *= CABIN_FABRIC_BASE + fleck * CABIN_FABRIC_YARN_GAIN * (0.25 + face.y * 0.75) + weave;
       float clothPatch = mix(cabinNoise(vec3(clothUv * vec2(35.0, 40.0), 8.0)),
         cabinHash(vec3(floor(clothUv * vec2(35.0, 40.0)), 8.0)), 0.85 * aa);
       // Keep dyed-cloth variation subordinate to the larger woven yarn;
@@ -202,6 +202,8 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
 export default function CabinMaterial({
   color = '#ffffff',
   fabric = false,
+  fabricBase = 0.42,
+  fabricYarnGain = 1.05,
   vertexColors = false,
   wood = false,
   edgeWearStrength = 1,
@@ -210,6 +212,8 @@ export default function CabinMaterial({
 }: {
   color?: string;
   fabric?: boolean;
+  fabricBase?: number;
+  fabricYarnGain?: number;
   vertexColors?: boolean;
   wood?: boolean;
   edgeWearStrength?: number;
@@ -240,6 +244,8 @@ export default function CabinMaterial({
       color={color}
       vertexColors={vertexColors}
       defines={{
+        CABIN_FABRIC_BASE: fabricBase.toFixed(2),
+        CABIN_FABRIC_YARN_GAIN: fabricYarnGain.toFixed(2),
         CABIN_EDGE_GAIN: edgeWearStrength.toFixed(2),
         CABIN_TOP_PAINT_GAIN: topPaintStrength.toFixed(2),
         ...(fabric ? { CABIN_FABRIC: 1 } : {}),
@@ -250,7 +256,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v50-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v51-${fabric}-${fabricBase}-${fabricYarnGain}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );

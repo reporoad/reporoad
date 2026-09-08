@@ -98,13 +98,15 @@ test('wheel has a raised upper opening and shallow lower bowl around its fixed h
   assert.equal(horn.position[0], 0.018);
   assert.ok(Math.abs(horn.position[1] + 0.06) < 1e-9);
   assert.equal(horn.size[1], 0.25, 'pad retains its full height inside the rim');
+  assert.ok(Math.abs(horn.size[0] - 0.252) < 1e-9, 'pad has narrower reference proportions');
 });
 
 test('steering column cover stays below and behind the horn pad', () => {
   const parts = steeringWheelModel();
   const column = parts.find((p) => p.color === '#454334');
-  const pad = parts.find((p) => p.position[2] === 0.059 && p.size[0] > 0.2);
+  const pad = parts.find((p) => p.position[2] === 0.059 && p.size[0] > 0.18);
   assert.ok(column && pad);
+  assert.ok(Math.abs(pad.size[1] - 0.1804) < 1e-9, 'short inset exposes the outer padding');
   assert.ok(column.size[0] >= 0.14, 'cover is wider than the exposed lower spoke');
   assert.ok(column.position[1] + column.size[1] / 2 < pad.position[1]);
   assert.ok(
