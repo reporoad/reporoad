@@ -12,7 +12,8 @@ export function dashboardState(now: number, schedule: CrossingSchedule | null | 
   return { speedKph: speed * 3.6, status, live,
     signal: !live ? 'LOCAL' : !schedule ? 'SYNC' : now < schedule.departAt || cycle.waiting || seconds >= 296 ? 'RED' : 'GREEN',
     nextLight: live && schedule && now >= schedule.departAt && !cycle.waiting ? cycle.nextIn : null,
-    remaining: live && schedule ? cycle.remaining : null };
+    remaining: live && schedule ? cycle.remaining : null,
+    crossingTotal: live && schedule ? schedule.crossingCount : null };
 }
 export type DashboardState = ReturnType<typeof dashboardState>;
 export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardState) {
@@ -54,9 +55,20 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
   ctx.font = 'bold 28px monospace'; ctx.fillText(state.signal, 376, 132);
   ctx.fillStyle = '#dc984a'; ctx.font = '22px monospace'; ctx.fillText(state.status, 376, 174);
   ctx.font = '22px monospace'; ctx.fillText('CHICKENS', 638, 36);
+  // A second backlit arc balances the speed dial. Only the actual fraction
+  // still crossing lights up; unknown or empty rounds retain a dim scale.
+  const crossingFraction = state.crossingTotal && state.remaining !== null
+    ? Math.max(0, Math.min(1, state.remaining / state.crossingTotal)) : 0;
+  for (let i = 0; i < 13; i++) {
+    const angle = Math.PI * (0.85 + i / 12 * 1.3);
+    const x = Math.round(638 + Math.cos(angle) * 100);
+    const y = Math.round(121 + Math.sin(angle) * 64);
+    ctx.fillStyle = i < Math.ceil(crossingFraction * 13) ? '#efad58' : '#805529';
+    ctx.fillRect(x - 3, y - 4, 6, 8);
+  }
   const count = state.remaining === null ? '—' : state.remaining.toLocaleString('en-US');
   ctx.font = `bold ${count.length > 7 ? 29 : count.length > 4 ? 38 : 68}px monospace`;
-  ctx.fillText(count,638,123,218);
+  ctx.fillText(count,638,123,164);
   ctx.font = '20px monospace'; ctx.fillText('STILL TO CROSS',638,164);
   ctx.font = '22px monospace'; ctx.fillText(state.status === 'CROSSING' ? 'PLEASE WAIT' : state.live ? 'SHARED ROAD' : 'LOCAL ONLY',638,207);
 }

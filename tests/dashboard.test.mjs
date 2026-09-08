@@ -53,3 +53,15 @@ test('next-light timer is drawn in the upper cluster above the horn-pad occlusio
   assert.ok(text.some(t=>t.value==='1:29' && t.x===376 && t.y===93));
   assert.ok(text.some(t=>t.value==='GREEN' && t.y===132));
 });
+test('crossing dial reflects remaining chickens without inventing unknown progress',()=>{
+  for (const [remaining,crossingTotal,expected] of [[null,null,0],[0,0,0],[100,100,13],[50,100,7],[0,100,0]]) {
+    let lit=0,dim=0;
+    const ctx={fillStyle:'',fillRect(){
+      if(this.fillStyle==='#efad58') lit++;
+      if(this.fillStyle==='#805529') dim++;
+    },fillText(){}};
+    drawDashboard(ctx,{...dashboardState(0,null,false,false),remaining,crossingTotal});
+    assert.equal(lit,expected);
+    assert.equal(lit+dim,13);
+  }
+});
