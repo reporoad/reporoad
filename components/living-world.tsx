@@ -565,7 +565,7 @@ export function VoxelCabin({
       <pointLight
         position={[-1.1, 0.1, -0.1]}
         intensity={cabinExposure.frontFill}
-        color="#eee5ca"
+        color="#ffe4ba"
         distance={3.5}
         decay={2}
       />
