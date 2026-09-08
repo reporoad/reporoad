@@ -20,17 +20,22 @@ test('dashboard pad and seams follow one continuous slope with finite normals', 
 test('molded pad has a bounded six-millimetre recess and closed triangle edges', () => {
   const g = cabinPadGeometry();
   const p = g.getAttribute('position'), n = g.getAttribute('normal');
-  let recessed = 0;
+  let recessed = 0, radioRecessed = 0;
   const keys = Array.from({length:p.count}, (_,i) => {
     const x=p.getX(i), y=p.getY(i)-p.getZ(i)*.143, z=p.getZ(i);
     if(n.getY(i)>.8 && x>=-1.061 && x<=-.739 && z>=-.001 && z<=.141) {
       assert.ok(Math.abs(y-.034)<1e-6);
       recessed++;
     }
+    if(n.getY(i)>.8 && x>=-.121 && x<=.121 && z>=-.001 && z<=.141) {
+      assert.ok(Math.abs(y-.037)<1e-6);
+      radioRecessed++;
+    }
     assert.ok(Math.abs(Math.hypot(n.getX(i),n.getY(i),n.getZ(i))-1)<1e-6);
     return [x,p.getY(i),z].map(v=>Math.round(v*1e6)).join(',');
   });
   assert.ok(recessed>=4);
+  assert.ok(radioRecessed>=4, 'shallow central panel remains part of the closed pad');
   const colors=g.getAttribute('color');
   assert.ok([...colors.array].every(v=>v>=.319999 && v<=1));
   assert.ok([...colors.array].some(v=>Math.abs(v-.32)<1e-6));

@@ -4,7 +4,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 function moldedPadGeometry() {
   // Non-uniform grid places vertices at the recess and bevel boundaries,
   // keeping adjoining faces watertight without a dense full-pad tessellation.
-  const xs = [-2.6, -2.592, -1.10, -1.08, -1.06, -.74, -.72, -.70, 2.592, 2.6];
+  const xs = [-2.6, -2.592, -1.10, -1.08, -1.06, -.74, -.72, -.70,
+    -.14, -.13, -.12, .12, .13, .14, 2.592, 2.6];
   const ys = [-.04, -.032, .032, .04];
   const zs = [-.4, -.392, -.04, -.02, 0, .14, .15, .16, .392, .4];
   const g = new BoxGeometry(5.2, .08, .8, xs.length - 1, ys.length - 1, zs.length - 1);
@@ -38,6 +39,18 @@ function moldedPadGeometry() {
       colors.set([1 - .68 * inset, 1 - .60 * inset, 1 - .42 * inset], i * 3);
       nx += .006 * (da * (1 - b) - a * db) * fz;
       nz += .006 * fx * (dc * (1 - e) - c * de);
+      // A second, shallower molded detail above the radio matches the
+      // reference's broad panel work. It belongs to this closed mesh rather
+      // than a coplanar decal, so there is no z-fighting in the moving cabin.
+      const [ra, rda] = sample(x, -.14, -.12);
+      const [rb, rdb] = sample(x, .12, .14);
+      const radioInset = ra * (1 - rb) * fz;
+      y -= .003 * radioInset;
+      colors[i * 3] *= 1 - .24 * radioInset;
+      colors[i * 3 + 1] *= 1 - .22 * radioInset;
+      colors[i * 3 + 2] *= 1 - .18 * radioInset;
+      nx += .003 * (rda * (1 - rb) - ra * rdb) * fz;
+      nz += .003 * ra * (1 - rb) * (dc * (1 - e) - c * de);
     }
     p.setXYZ(i, x, y, z);
     const length = Math.hypot(nx, ny, nz);
