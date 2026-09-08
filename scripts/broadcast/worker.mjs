@@ -119,7 +119,7 @@ async function main() {
   // Capture remains the exact configured X screen size; reject larger mismatch.
   if(Math.abs(size.width-c.width)>2 || Math.abs(size.height-c.height)>2)throw Error(`Unexpected browser viewport ${JSON.stringify(size)}; expected ${c.width}x${c.height}`);
   const started=Date.now();
-  const probe=async()=>page.evaluate(`(()=>{const p=window.__broadcastProbe;return {frames:p.frames,now:performance.now(),audio:p.audio.map(a=>({paused:a.paused,time:a.currentTime,ready:a.readyState,volume:a.volume})),events:p.events}})()`);
+  const probe=async()=>page.evaluate(`(()=>{const p=window.__broadcastProbe;return {frames:p.frames,now:performance.now(),scene:window.__reporoadRenderProbe || null,audio:p.audio.map(a=>({paused:a.paused,time:a.currentTime,ready:a.readyState,volume:a.volume})),events:p.events}})()`);
   let last=await probe();const samples=[];
   const logFd=openSync(join(logDir,'ffmpeg.log'),'w',0o600);logFiles.push(logFd);
   const args=ffmpegArgs(c,display,socket);
@@ -145,10 +145,12 @@ async function main() {
     try {
       const current=await probe();
       const fps=Math.round((current.frames-last.frames)*1000/(current.now-last.now));
-      samples.push({seconds:Math.round((Date.now()-started)/1000),fps,...current});
+      const sceneFps=current.scene && last.scene && current.scene.submittedFrames >= last.scene.submittedFrames
+        ? Math.round((current.scene.submittedFrames-last.scene.submittedFrames)*1000/(current.now-last.now)) : null;
+      samples.push({seconds:Math.round((Date.now()-started)/1000),fps,sceneFps,...current});
       if(samples.length>720)samples.shift();
       if(process.connected)process.send({type:'heartbeat'});
-      console.log(`Capture ${samples.at(-1).seconds}s · browser ${fps} FPS · audio ${current.audio.some(a=>!a.paused&&a.ready>=3)?'playing':'waiting'}`);
+      console.log(`Capture ${samples.at(-1).seconds}s · browser ${fps} FPS · scene ${sceneFps ?? 'unknown'} submissions/s · audio ${current.audio.some(a=>!a.paused&&a.ready>=3)?'playing':'waiting'}`);
       const unhealthy = health.check(current, last, Date.now());
       if(unhealthy)throw Error(unhealthy);
       last=current;

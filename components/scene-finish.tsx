@@ -14,10 +14,16 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { cabinFocus } from './cabin-focus';
+import { recordSceneSubmission, type RenderProbe } from '@/lib/render-probe';
 
 /** Spatial denoising only: no animated noise or temporal ghost trails. */
 export default function SceneFinish() {
   const { gl, scene, camera, size } = useThree();
+  const probe = useMemo<RenderProbe>(() => ({ submittedFrames: 0, lastSubmittedAt: null, maxGapMs: 0 }), []);
+  useEffect(() => {
+    window.__reporoadRenderProbe = probe;
+    return () => { if (window.__reporoadRenderProbe === probe) delete window.__reporoadRenderProbe; };
+  }, [probe]);
   const pipeline = useMemo(() => {
     const target = new WebGLRenderTarget(1, 1, {
       type: HalfFloatType,
@@ -61,6 +67,10 @@ export default function SceneFinish() {
     [pipeline],
   );
   // Render after movement, lighting and mirror capture have been updated.
-  useFrame((_, delta) => pipeline.composer.render(delta), 1);
+  useFrame((_, delta) => {
+    pipeline.composer.render(delta);
+    // Successful CPU submission, not proof that GPU work or video capture completed.
+    recordSceneSubmission(probe, performance.now());
+  }, 1);
   return null;
 }
