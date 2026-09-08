@@ -10,6 +10,9 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
       inverseResolution: { value: new Vector2(1, 1) },
       cameraNear: { value: near },
       cameraFar: { value: far },
+      // The wheel is roughly 1.2 m away; only the near seat edge belongs
+      // outside the focal plane, not the controls and their worn trim.
+      focusRange: { value: new Vector2(0.72, 0.98) },
     },
     vertexShader: `varying vec2 vUv;
       void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -20,6 +23,7 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
       uniform vec2 inverseResolution;
       uniform float cameraNear;
       uniform float cameraFar;
+      uniform vec2 focusRange;
       varying vec2 vUv;
       float distanceAt(vec2 uv) {
         return -perspectiveDepthToViewZ(texture2D(tDepth, uv).x, cameraNear, cameraFar);
@@ -27,7 +31,7 @@ export function cabinFocus(depth: DepthTexture, near: number, far: number) {
       void main() {
         vec4 original = texture2D(tDiffuse, vUv);
         float distance = distanceAt(vUv);
-        float softness = 1.0 - smoothstep(1.05, 1.42, distance);
+        float softness = 1.0 - smoothstep(focusRange.x, focusRange.y, distance);
         if (softness < 0.001) { gl_FragColor = original; return; }
         vec3 sum = original.rgb * 4.0;
         float weights = 4.0;
