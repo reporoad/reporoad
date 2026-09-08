@@ -147,7 +147,9 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       float thread = smoothstep(0.12, 0.22, threadPhase) * (1.0 - smoothstep(0.65, 0.75, threadPhase));
       diffuseColor.rgb *= 1.0 + sewnChannel * (-0.12 + thread * 1.80) * aa;
       float threadTint = clamp(fleck + sewnChannel * thread * 0.65, 0.0, 1.0);
-      diffuseColor.rgb *= mix(vec3(1.0), vec3(1.30, 0.85, 0.70), threadTint);
+      // Straw yarn on olive cloth: let the window light supply its warmth,
+      // rather than multiplying in a red cast on every highlighted stitch.
+      diffuseColor.rgb *= mix(vec3(1.0), vec3(1.08, 1.0, 0.78), threadTint);
     #else
       vec3 face = abs(normalize(cross(dFdx(p), dFdy(p))));
       vec2 detailUv = face.y > 0.5 ? p.xz : (face.z > 0.5 ? p.xy : p.zy);
@@ -240,7 +242,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v44-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v45-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
