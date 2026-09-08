@@ -18,7 +18,7 @@ import CabinMaterial from './cabin-material';
 import { cabinPadGeometry } from '@/lib/cabin-pad';
 import { cabinBolsterGeometry, cabinCushionGeometry, shadeCabinFabric } from '@/lib/cabin-cushion';
 import { cabinMirror } from '@/lib/cabin-mirror';
-import { sceneLighting, cabinLighting } from '@/lib/scene-lighting';
+import { sceneLighting, cabinLighting, cabinSunlight } from '@/lib/scene-lighting';
 RectAreaLightUniformsLib.init();
 export type Environment = ReturnType<typeof worldAt>;
 export type SharedClock = { current: { now: () => number } };
@@ -265,6 +265,8 @@ export function VoxelCabin({
 }) {
   const wheel = useMemo(() => steeringWheelModel(), []);
   const cabinExposure = cabinLighting(environment.daylight, environment.rain + environment.snow);
+  const cabinSun = cabinSunlight(environment.daylight, environment.sunAngle, environment.rain + environment.snow);
+  const cabinSunColor = useMemo(() => new THREE.Color('#ffdf9d').lerp(new THREE.Color('#ffbb6a'), cabinSun.warmth), [cabinSun.warmth]);
   const dashboard = useMemo(() => cabinDashboardModel(), []);
   const padGeometry = useMemo(() => cabinPadGeometry(), []);
   const padSeamGeometry = useMemo(() => cabinPadGeometry(true), []);
@@ -546,11 +548,11 @@ export function VoxelCabin({
       />
       <primitive object={cabinLightTarget} />
       <spotLight
-        position={[1.6, 1.8, -3.1]}
+        position={cabinSun.position}
         target={cabinLightTarget}
         map={canopyLight}
         intensity={cabinExposure.key}
-        color="#ffdf9d"
+        color={cabinSunColor}
         distance={7}
         angle={0.9}
         penumbra={0.65}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneLighting, cabinLighting } from '../lib/scene-lighting.ts';
+import { sceneLighting, cabinLighting, cabinSunlight } from '../lib/scene-lighting.ts';
 import { storefrontDetails } from '../lib/storefront-details.ts';
 
 test('lighting keeps night readable and reduces direct sun in rain', () => {
@@ -48,5 +48,23 @@ test('cabin window light softens in wet weather and turns off at night', () => {
   for (const wet of [0, 0.5, 1, 2]) {
     const half = cabinLighting(0.5, wet), full = cabinLighting(1, wet);
     for (const key of Object.keys(full)) assert.equal(half[key], full[key] / 2);
+  }
+});
+
+test('cabin sunlight follows a continuous bounded solar arc and warms only in clear daylight', () => {
+  const dawn = cabinSunlight(1, 0, 0), dusk = cabinSunlight(1, Math.PI, 0);
+  assert.equal(dawn.position[0], -1.8);
+  assert.equal(dusk.position[0], 1.8);
+  assert.equal(cabinSunlight(1, Math.PI / 2, 0).warmth, 0);
+  assert.equal(cabinSunlight(1, 0, 1).warmth, 0);
+  assert.equal(cabinSunlight(0, 0, 0).warmth, 0);
+  assert.equal(dawn.warmth, 1);
+  for (let i = 0; i < 1440; i++) {
+    const angle = i / 1440 * Math.PI * 2;
+    const a = cabinSunlight(1, angle, 0), b = cabinSunlight(1, angle + 0.001, 0);
+    assert.ok(a.position.every(Number.isFinite));
+    assert.ok(Math.abs(a.position[0]) <= 1.8);
+    assert.ok(a.position[1] >= 0.9 && a.position[1] <= 2.7);
+    assert.ok(a.position.every((n, axis) => Math.abs(n - b.position[axis]) < 0.002));
   }
 });

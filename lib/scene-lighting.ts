@@ -25,3 +25,12 @@ export function cabinLighting(daylight: number, wet: number) {
     sunBounce: day * 1.2 * (1 - overcast * 0.7),
   };
 }
+
+/** Bounded window-light proxy following the same solar arc as the exterior. */
+export function cabinSunlight(daylight: number, sunAngle: number, wet: number) {
+  const sin = Math.sin(sunAngle);
+  return {
+    position: [-Math.cos(sunAngle) * 1.8, 0.9 + Math.max(0, sin) * 1.8, -3.1] as [number, number, number],
+    warmth: sceneLighting(daylight, sunAngle, wet).golden * (1 - Math.max(0, Math.min(1, wet))),
+  };
+}
