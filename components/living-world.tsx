@@ -294,16 +294,16 @@ export function VoxelCabin({
     ctx.fillRect(0, 0, 256, 256);
     ctx.translate(256, 0);
     ctx.scale(-1, 1);
-    ctx.filter = 'blur(1.2px)';
-    for (let i = 0; i < 240; i++) {
+    ctx.filter = 'blur(0.8px)';
+    for (let i = 0; i < 720; i++) {
       const n = Math.sin(i * 127.1 + 17.7) * 43758.5453;
       const random = n - Math.floor(n);
       ctx.fillStyle = `rgba(255, 255, 245, ${0.65 + random * 0.3})`;
       ctx.fillRect(
-        (i * 47) % 250,
-        (i * 79) % 250,
-        5 + random * 10,
+        (i * 47) % 251,
+        (i * 79) % 241,
         3 + random * 6,
+        2 + random * 4,
       );
     }
     const texture = new THREE.CanvasTexture(canvas);
