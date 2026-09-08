@@ -49,7 +49,7 @@ test('cabin window light softens in wet weather and turns off at night', () => {
   assert.ok(Object.values(cabinLighting(0, 0)).every(n => n === 0));
   for (const wet of [0, 0.5, 1, 2]) {
     const half = cabinLighting(0.5, wet), full = cabinLighting(1, wet);
-    for (const key of Object.keys(full)) assert.equal(half[key], full[key] / 2);
+    for (const key of Object.keys(full)) assert.equal(half[key], full[key] * 0.75);
   }
 });
 

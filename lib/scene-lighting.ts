@@ -16,7 +16,10 @@ export function sceneLighting(daylight: number, sunAngle: number, wet: number) {
 
 /** Window light: directional in sunshine, diffuse under rain or snow. */
 export function cabinLighting(daylight: number, wet: number) {
-  const day = Math.max(0, Math.min(1, daylight));
+  const solarDay = Math.max(0, Math.min(1, daylight));
+  // Retain warm window illumination through the low-angle daylight interval,
+  // while keeping full daylight and complete night exactly unchanged.
+  const day = solarDay * (2 - solarDay);
   const overcast = Math.max(0, Math.min(1, wet));
   return {
     key: day * (72 * (1 - overcast) + 6.3 * overcast),
