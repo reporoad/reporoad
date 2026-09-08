@@ -298,3 +298,22 @@ No obvious texture displacement or wheel/seat collision in these sampled
 views. This is explicitly not a consecutive-frame flicker test, and cannot
 replace the prior video audit with one covering the new weave. No smoothing
 or compensating material changes made from this limited evidence.
+# Rejected long-grip bevel experiment — 2026-09-09
+
+Tested 9 mm instead of the default 5 mm bevel on joined wheel rim spans
+of at least four cells, preserving short steps and all bounds. The matched
+1000×563 screenshot `/tmp/reporoad-wheel-grip-bevel.png` did not establish
+a convincing reference-fidelity improvement at normal viewing size. Reverted
+the experiment in full; no wheel source change remains. Tests/build passed
+for the experiment, but passing checks were not treated as visual evidence.
+Avoid further grip-bevel tuning without a more specific visible mismatch.
+# Hub horizontal alignment — 2026-09-09
+
+The matched image placed the badge around x766 versus roughly x754 in
+the reference. Shifted the pad, layered face, badge and column cover left
+by 0.026 model units; rim and zero-depth spokes remain fixed. Final image
+`/tmp/reporoad-hub-alignment.png` places the badge around x757. These
+are approximate visual landmark readings, not a full image registration.
+Outer pad height, inset proportions and instrument layout are unchanged.
+Updated the centre-position geometry assertion; the full test suite,
+TypeScript check and production build pass, including seat clearance.

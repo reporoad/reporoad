@@ -95,7 +95,7 @@ test('wheel has a raised upper opening and shallow lower bowl around its fixed h
   assert.ok(Math.abs(top - 0.448025) < 0.00001);
   const horn = steeringWheelModel().find(p => p.position[2] === 0.015 && p.size[0] > 0.2);
   assert.ok(horn);
-  assert.equal(horn.position[0], 0.018);
+  assert.ok(Math.abs(horn.position[0] + 0.008) < 1e-9);
   assert.ok(Math.abs(horn.position[1] + 0.06) < 1e-9);
   assert.equal(horn.size[1], 0.25, 'pad retains its full height inside the rim');
   assert.ok(Math.abs(horn.size[0] - 0.252) < 1e-9, 'pad has narrower reference proportions');

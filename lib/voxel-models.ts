@@ -239,6 +239,10 @@ export function steeringWheelModel(): VoxelPart[] {
       part.size[1] *= 0.82;
     }
   }
+  // Centre the padded hub in the opening without shifting the rim or spokes.
+  for (const part of parts) {
+    if (part.position[2] !== 0) part.position[0] -= 0.026;
+  }
   return parts;
 }
 
