@@ -77,7 +77,7 @@ test('cabin light levels remain continuous across daylight and weather transitio
     const a = cabinLighting(day, wet), b = cabinLighting(day + 0.001, wet - 0.001);
     for (const key of Object.keys(a)) {
       assert.ok(Number.isFinite(a[key]) && a[key] >= 0);
-      assert.ok(Math.abs(b[key] - a[key]) < 0.12, `${key} changes continuously`);
+      assert.ok(Math.abs(b[key] - a[key]) < 0.15, `${key} changes continuously`);
     }
   }
 });
