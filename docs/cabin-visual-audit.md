@@ -46,3 +46,10 @@ The cabin key now uses `cabinSunlight` for a bounded position following the shar
 ### Rejected painted-scuff experiment
 
 At `1b06e88`, tested sparse surface-attached short scuffs with derivative filtering, maximum 8% darkening and an 18% cell occupancy. Capture: `/tmp/reporoad-cabin-paint-scuffs-20260908.png`. At 1000 × 563 the difference was not a meaningful improvement toward the reference. Removed the shader experiment completely. Do not repeat fine-scuff micro-tuning without a larger-scale material discrepancy and a visibly better comparison; broad lighting and material response matter more at the delivered camera distance.
+
+### Accumulated material check at `6224582`
+
+- Same-size local Summer/Sunny 17:30 preview: `/tmp/reporoad-cabin-golden-audit-20260909.png`; 16:00 comparison: `/tmp/reporoad-cabin-badge-fit-20260909.png`.
+- Includes the reduced sunny front fill, shallower glovebox, central pad inset, straw yarn tint and wider horn emblem. The top edge and handle of the glovebox remain fixed, and its lower edge now sits close to the reference. Instruments are readable in both snapshots.
+- Low sun changes the seat and dashboard illumination but does not supply the reference's material richness. Do not treat another global warmth or fill adjustment as the default next step. Compare broad surface variation and edge treatment at delivered size instead; avoid repeating rejected fine-scuff work.
+- These are paused visual checks, not evidence of uninterrupted motion or stream reliability. Overall fidelity remains incomplete, especially material richness. No application source changes in this check.
