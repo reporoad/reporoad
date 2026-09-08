@@ -63,3 +63,19 @@ At `1b06e88`, tested sparse surface-attached short scuffs with derivative filter
 ### Rejected intermediate speed labels at `1e3d77c`
 
 Tested 10/20 km/h labels aligned with the existing gauge arc. At 1000 × 563 they were too small to read and did not materially improve fidelity (`/tmp/reporoad-cabin-speed-scale-20260909.png`). Removed the experiment. Keep the larger live speed reading and avoid adding miniature typography as a substitute for the reference's broader instrument composition.
+
+### Whole-cabin comparison at `de0c476`
+
+Compared `/tmp/codex-clipboard-22RtXd.png` directly with `/tmp/reporoad-cabin-grouped-paint-20260909.png`, both 1000 × 563. The latter is the current branch's sunny local preview; its broadcast labels cover part of the roof.
+
+| Requirement | Current evidence and remaining gap |
+| --- | --- |
+| Proportions | Glovebox height, mirror frame, wheel/horn height, right-seat placement and parked wipers are closer. Avoid further arbitrary moves without a specific silhouette discrepancy. |
+| Materials | Olive paint has connected block wear and wood/rubber are separated. The reference still has richer surface and edge variation; not proven almost identical. |
+| Trim | Stepped pillar covers and inset seals are present; housing and window boundaries remain intact. Roof is partly obscured by the broadcast overlay in this capture. |
+| Seats | Olive/straw colours and foreground softness are closer. Repeated fleck rows remain more regular than the reference: this is the next focused material target. |
+| Instruments | Live radio/audio bands, speed and shared-state displays are retained. Their meaningful content deliberately differs from the reference's fictitious radio/time text. |
+| Lighting/stability | All cabin lights now sample the shared clock continuously. Short moving and rain checks exist; no sustained frame-by-frame flicker or livestream proof. |
+| Repository exterior | Repository buildings and name-only signs are retained. The reference village is not being substituted for the requested repository world. |
+
+Overall goal remains incomplete. This audit is a prioritization result, not a completion claim or a reason to repeat tiny palette adjustments.
