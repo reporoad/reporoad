@@ -43,6 +43,8 @@ test('cabin window light softens in wet weather and turns off at night', () => {
   const sun = cabinLighting(1, 0), rain = cabinLighting(1, 1);
   assert.ok(sun.key > rain.key * 5);
   assert.ok(rain.frontFill > sun.frontFill);
+  assert.equal(sun.frontFill, 0.85);
+  assert.equal(rain.frontFill, 2.05);
   assert.ok(rain.windowFill > sun.windowFill);
   assert.ok(Object.values(cabinLighting(0, 0)).every(n => n === 0));
   for (const wet of [0, 0.5, 1, 2]) {

@@ -20,7 +20,9 @@ export function cabinLighting(daylight: number, wet: number) {
   const overcast = Math.max(0, Math.min(1, wet));
   return {
     key: day * (58 * (1 - overcast) + 6.3 * overcast),
-    frontFill: day * (1.65 + overcast * 0.4),
+    // Preserve the sunlit crown / shaded fascia contrast. Cloud cover still
+    // wraps diffuse light into the cabin at the previous overcast strength.
+    frontFill: day * (0.85 * (1 - overcast) + 2.05 * overcast),
     windowFill: day * (0.65 + overcast * 0.4),
     sunBounce: day * 1.2 * (1 - overcast * 0.7),
   };
