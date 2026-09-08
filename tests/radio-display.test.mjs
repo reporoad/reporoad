@@ -23,9 +23,9 @@ test('radio truncates long track titles to two readable lines beside the spectru
     fillText(value, x, y) { text.push({value, y, font: this.font}); },
     measureText(value) { return {width: value.length * 25}; }, fillRect() {} };
   drawRadio(ctx, 'A very long evening soundtrack title with many extra words across the mountains and distant valleys', new Float32Array(9));
-  const title = text.filter(t => t.font === 'bold 36px monospace');
+  const title = text.filter(t => t.font === 'bold 44px monospace');
   assert.equal(title.length, 2);
   assert.ok(title[1].value.endsWith('…'));
   assert.ok(title[1].value.length * 25 <= 392);
-  assert.equal(title[1].y, 156);
+  assert.equal(title[1].y, 160);
 });

@@ -2,10 +2,10 @@ export function drawRadio(ctx: CanvasRenderingContext2D, title: string, bands: F
   ctx.fillStyle = '#11170f';
   ctx.fillRect(0, 0, 768, 240);
   ctx.fillStyle = '#c8924c';
-  ctx.font = '26px monospace';
+  ctx.font = '32px monospace';
   ctx.fillText('REPOROAD', 40, 55);
   ctx.fillStyle = '#e99b42';
-  ctx.font = 'bold 36px monospace';
+  ctx.font = 'bold 44px monospace';
   const lines: string[] = [''];
   for (const word of title.split(' ')) {
     const last = lines.length - 1;
@@ -19,7 +19,7 @@ export function drawRadio(ctx: CanvasRenderingContext2D, title: string, bands: F
     while (last && ctx.measureText(`${last}…`).width > 392) last = last.slice(0, -1);
     visibleLines[1] = `${last.trimEnd()}…`;
   }
-  visibleLines.forEach((line, i) => ctx.fillText(line, 40, 112 + i * 44, 392));
+  visibleLines.forEach((line, i) => ctx.fillText(line, 40, 112 + i * 48, 392));
   ctx.fillStyle = '#c8924c';
   ctx.font = '22px monospace';
   ctx.fillText('NOW PLAYING', 40, 208);
