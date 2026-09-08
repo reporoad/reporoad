@@ -132,9 +132,11 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       stitch.x += rowOffset * 0.8;
       vec2 cellUv = fract(stitch);
       float yarn = cabinHash(vec3(floor(stitch), 3.0));
-      float wovenRow = 1.0 - step(0.5, mod(floor(stitch.y), 3.0));
-      float yarnPresence = wovenRow * (0.45 + step(0.22, yarn) * 0.40)
-        + (1.0 - wovenRow) * step(0.72, yarn) * 0.6;
+      // Uneven runs of pale yarn retain the weave direction without a
+      // repeating bright stripe every third row. All choices are object-fixed.
+      float wovenRow = step(0.56, cabinHash(vec3(floor(stitch.y), 11.0, 5.0)));
+      float yarnPresence = wovenRow * step(0.3, yarn) * (0.55 + yarn * 0.30)
+        + (1.0 - wovenRow) * step(0.86, yarn) * 0.6;
       float yarnEnd = 0.49 + yarn * 0.18;
       float fleck = yarnPresence * smoothstep(0.07, 0.16, cellUv.x) * (1.0-smoothstep(yarnEnd,yarnEnd+0.10,cellUv.x)) * smoothstep(0.05,0.12,cellUv.y) * (1.0-smoothstep(0.38,0.52,cellUv.y));
       float weave = (wovenDetail - 0.6) * 0.45;
@@ -248,7 +250,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v48-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v49-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
