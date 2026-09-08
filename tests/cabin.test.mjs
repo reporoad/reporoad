@@ -298,10 +298,15 @@ test('varied pillar panels retain their envelope and consistent seams', () => {
     const panels = cabinSurroundModel(frameX)
       .filter(
         (p) =>
-          Math.abs(p.position[0] - frameX) < 0.08 && p.size[2] === 0.22,
+          Math.abs(p.position[0] - frameX) < 0.08 && p.size[2] >= 0.196 && p.size[2] <= 0.22,
       )
       .sort((a, b) => a.position[1] - b.position[1]);
     assert.equal(panels.length, 15);
+    assert.ok(new Set(panels.map(p => p.size[2])).size > 1);
+    for (const panel of panels) {
+      assert.ok(Math.abs(panel.position[2] - panel.size[2] / 2 + 2.06) < 1e-9);
+      assert.ok(panel.position[2] + panel.size[2] / 2 <= -1.84 + 1e-9);
+    }
     const rows = [...new Set(panels.map((p) => p.position[1]))].map((y) =>
       panels
         .filter((p) => p.position[1] === y)

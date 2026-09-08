@@ -164,9 +164,12 @@ export function cabinSurroundModel(frameX: number): VoxelPart[] {
         : [0.145];
       let left = -0.0725;
       widths.forEach((width, column) => {
+        // Fitted cover sections have shallow relief, not one flat tiled face.
+        // Keep the back plane fixed so every recess remains seated on the pillar.
+        const recess = [0, 0.012, 0.024, 0.006][(i + column * 2) % 4];
         add(
-          [side * (frameX + left + width / 2), coverBottom + height / 2, -1.95],
-          [width, height - 0.005, 0.22],
+          [side * (frameX + left + width / 2), coverBottom + height / 2, -1.95 - recess / 2],
+          [width, height - 0.005, 0.22 - recess],
           palette[(tint + column) % palette.length],
         );
         left += width + 0.002;
