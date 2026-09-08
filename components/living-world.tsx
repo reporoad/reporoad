@@ -18,7 +18,7 @@ import CabinMaterial from './cabin-material';
 import { cabinPadGeometry } from '@/lib/cabin-pad';
 import { cabinBolsterGeometry, cabinCushionGeometry, shadeCabinFabric } from '@/lib/cabin-cushion';
 import { cabinMirror } from '@/lib/cabin-mirror';
-import { sceneLighting } from '@/lib/scene-lighting';
+import { sceneLighting, cabinLighting } from '@/lib/scene-lighting';
 RectAreaLightUniformsLib.init();
 export type Environment = ReturnType<typeof worldAt>;
 export type SharedClock = { current: { now: () => number } };
@@ -264,6 +264,7 @@ export function VoxelCabin({
   readDashboard?: () => DashboardState;
 }) {
   const wheel = useMemo(() => steeringWheelModel(), []);
+  const cabinExposure = cabinLighting(environment.daylight, environment.rain + environment.snow);
   const dashboard = useMemo(() => cabinDashboardModel(), []);
   const padGeometry = useMemo(() => cabinPadGeometry(), []);
   const padSeamGeometry = useMemo(() => cabinPadGeometry(true), []);
@@ -538,7 +539,7 @@ export function VoxelCabin({
       />
       <pointLight
         position={[1.65, 1.4, -2.7]}
-        intensity={environment.daylight * 1.2}
+        intensity={cabinExposure.sunBounce}
         color="#ffe2ad"
         distance={5}
         decay={2}
@@ -548,7 +549,7 @@ export function VoxelCabin({
         position={[1.6, 1.8, -3.1]}
         target={cabinLightTarget}
         map={canopyLight}
-        intensity={environment.daylight * 35}
+        intensity={cabinExposure.key}
         color="#ffdf9d"
         distance={7}
         angle={0.9}
@@ -563,7 +564,7 @@ export function VoxelCabin({
       />
       <pointLight
         position={[-1.1, 0.1, -0.1]}
-        intensity={environment.daylight * 2.2}
+        intensity={cabinExposure.frontFill}
         color="#eee5ca"
         distance={3.5}
         decay={2}
@@ -580,7 +581,7 @@ export function VoxelCabin({
         rotation={[Math.PI / 2, 0, 0]}
         width={3.5}
         height={1.4}
-        intensity={environment.daylight * 0.8}
+        intensity={cabinExposure.windowFill}
         color="#ffe0a9"
       />
     </group>

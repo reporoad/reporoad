@@ -13,3 +13,15 @@ export function sceneLighting(daylight: number, sunAngle: number, wet: number) {
     fogFar: 290 - overcast * 90,
   };
 }
+
+/** Window light: directional in sunshine, diffuse under rain or snow. */
+export function cabinLighting(daylight: number, wet: number) {
+  const day = Math.max(0, Math.min(1, daylight));
+  const overcast = Math.max(0, Math.min(1, wet));
+  return {
+    key: day * 42 * (1 - overcast * 0.85),
+    frontFill: day * (1.65 + overcast * 0.4),
+    windowFill: day * (0.8 + overcast * 0.25),
+    sunBounce: day * 1.2 * (1 - overcast * 0.7),
+  };
+}

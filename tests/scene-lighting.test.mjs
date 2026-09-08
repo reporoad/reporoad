@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneLighting } from '../lib/scene-lighting.ts';
+import { sceneLighting, cabinLighting } from '../lib/scene-lighting.ts';
 import { storefrontDetails } from '../lib/storefront-details.ts';
 
 test('lighting keeps night readable and reduces direct sun in rain', () => {
@@ -37,4 +37,16 @@ test('storefront detail is deterministic, bounded and respects gardens/seasons',
   }
   assert.ok(storefrontDetails(true, false).parts.length > storefrontDetails(false, false).parts.length);
   assert.ok(!storefrontDetails(true, true).parts.some(p => p.color === '#cf9da9'));
+});
+
+test('cabin window light softens in wet weather and turns off at night', () => {
+  const sun = cabinLighting(1, 0), rain = cabinLighting(1, 1);
+  assert.ok(sun.key > rain.key * 5);
+  assert.ok(rain.frontFill > sun.frontFill);
+  assert.ok(rain.windowFill > sun.windowFill);
+  assert.ok(Object.values(cabinLighting(0, 0)).every(n => n === 0));
+  for (const wet of [0, 0.5, 1, 2]) {
+    const half = cabinLighting(0.5, wet), full = cabinLighting(1, wet);
+    for (const key of Object.keys(full)) assert.equal(half[key], full[key] / 2);
+  }
 });
