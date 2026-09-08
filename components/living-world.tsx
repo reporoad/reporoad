@@ -436,6 +436,7 @@ export function VoxelCabin({
             position={[side * (doorX + 0.05), -0.67, -1.45]}
             scale={[0.32, 0.62, 1.1]}
             color="#60533c"
+            wood
           />
           <Block
             grain={false}

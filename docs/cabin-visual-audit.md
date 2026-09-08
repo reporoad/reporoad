@@ -245,3 +245,56 @@ housing from #6b5035 through #4f3e2b to #403323. The switch-bank wood,
 radio texture, physical controls and geometry are unchanged. Screenshot:
 `/tmp/reporoad-radio-surround-final.png`. Matched local Summer/Sunny
 16:00 preview; no claim that this single region establishes overall fidelity.
+# Post-refinement rain/night check — 2026-09-09
+
+Verified current commit cab0947 in the local browser at 1000×563, Summer,
+paused car, with Rain at 16:00 and 21:00. Saved screenshots:
+`/tmp/reporoad-cabin-refinements-rain.png` and
+`/tmp/reporoad-cabin-refinements-night.png`.
+The darker radio surround retains separation from the display and switch
+bank in both states. The shorter inset horn face remains distinguishable
+from its outer pad. Amber music and instrument displays remain visible;
+the changing track title and spectrum continue rendering while the car is
+paused. No compensating light increase is warranted from these views.
+These are still-frame material/readability checks, not a renewed motion,
+audio, server or comprehensive flicker test. Neither is a reference-matched
+night image available, so this does not prove overall reference fidelity.
+Next comparison should address surface detail rather than undoing the
+recent darker trim with additional fill lighting.
+# Door substrate material — 2026-09-09
+
+The broad brown door substrate at [±(doorX+0.05), -0.67, -1.45]
+was still routed through the painted material despite the reference's wood
+door treatment. Enabled the existing wood treatment for these two blocks
+only. Olive upper caps, panel rails, hardware, geometry and exterior remain
+unchanged. Checked the matched 1000×563 daylight rendering in
+`/tmp/reporoad-door-wood.png`: this is a subtle surface correction because
+much of each substrate is outside the camera view or behind the rails.
+Tests, TypeScript and production build passed. This does not resolve the
+remaining whole-cabin fidelity gap.
+# Upholstery weave scale — 2026-09-09
+
+Reduced the oversized woven dashes by raising object-space stitch density
+from 19×25 to 27×35. Fixed irregular row starts and yarn selection remain;
+seat shapes and material base/yarn gains are unchanged. Matched screenshot:
+`/tmp/reporoad-seat-weave-finer.png`.
+Left patch RGB now 122.2/97.5/50.6 vs reference 124.4/98.1/52.7;
+right 135.6/110.2/59.2 vs 135.2/106.7/60.3. Luminance SD is
+22.8/38.5 versus reference 27.4/33.4: pattern scale improves visibly,
+but contrast is not identical and this still frame does not prove temporal
+stability of the finer pattern. Existing motion audit predates this change.
+All 31 test files, type checking and production build passed.
+# Finer-weave moving spot check — 2026-09-09
+
+Resumed the local drive at fixed Summer/Sunny 16:00 and 1000×563.
+Two screenshots, `/tmp/reporoad-weave-moving-a.png` and
+`/tmp/reporoad-weave-moving-b.png`, show different roadside positions and
+23 km/h. Cloth texture features remain aligned: left/right luminance
+correlation 0.989/0.974; spatial-gradient correlations 0.984–0.993 and
+0.980–0.982. Brightness changes between sampled views (especially right
+seat) mean they are not identical frames; lighting is a plausible contributor,
+not proven as the sole cause. Glovebox sample is unchanged.
+No obvious texture displacement or wheel/seat collision in these sampled
+views. This is explicitly not a consecutive-frame flicker test, and cannot
+replace the prior video audit with one covering the new weave. No smoothing
+or compensating material changes made from this limited evidence.

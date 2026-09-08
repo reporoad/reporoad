@@ -125,7 +125,7 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
       float wovenDetail = texture2D(cabinDetail, clothUv / 0.35).r;
       // Broad, row-aligned woven dashes match the reference upholstery;
       // the finer old speckles read as scattered dust at driving resolution.
-      vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(19.0, 25.0);
+      vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(27.0, 35.0);
       // Slightly irregular row starts break the checkerboard repetition while
       // staying fixed to the upholstery, including while the car moves.
       float rowOffset = cabinHash(vec3(floor(stitch.y), 7.0, 2.0));
@@ -256,7 +256,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v51-${fabric}-${fabricBase}-${fabricYarnGain}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v52-${fabric}-${fabricBase}-${fabricYarnGain}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
