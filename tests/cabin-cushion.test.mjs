@@ -45,7 +45,7 @@ test('upholstered base shading preserves geometry and keeps tops lighter than si
   for (let i = 0; i < colors.count; i++) {
     if (normal.getY(i) === 1) assert.equal(colors.getX(i), 1);
     else {
-      assert.equal(colors.getX(i), 0.5);
+      assert.equal(colors.getX(i), 0.625);
       assert.ok(colors.getY(i) > colors.getX(i));
     }
   }
@@ -65,9 +65,9 @@ test('padded seat top retains its footprint and a bounded shallow crown', () => 
   const colors = geometry.getAttribute('color');
   const wood = geometry.getAttribute('cabinWood');
   assert.ok([...wood.array].every((v) => v === 0));
-  assert.ok([...colors.array].every((v) => v >= 0.5 && v <= 1));
+  assert.ok([...colors.array].every((v) => v >= 0.625 && v <= 1));
   assert.ok([...colors.array].some((v) => v === 1), 'top keeps its original tint');
-  assert.ok([...colors.array].some((v) => v === 0.5), 'skirt has its darker tint');
+  assert.ok([...colors.array].some((v) => v === 0.625), 'skirt has its darker tint');
   geometry.dispose();
 });
 

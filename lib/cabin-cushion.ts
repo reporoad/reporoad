@@ -28,7 +28,7 @@ export function shadeCabinFabric<T extends BufferGeometry>(geometry: T): T {
   const colors = new Float32Array(normals.count * 3);
   for (let i = 0; i < normals.count; i++) {
     const top = Math.max(0, Math.min(1, normals.getY(i) / 0.8));
-    colors.set([0.5 + top * 0.5, 0.62 + top * 0.38, 0.6 + top * 0.4], i * 3);
+    colors.set([0.625 + top * 0.375, 0.6875 + top * 0.3125, 0.65625 + top * 0.34375], i * 3);
   }
   geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
   geometry.setAttribute('cabinWood', new Float32BufferAttribute(new Float32Array(normals.count), 1));
@@ -43,7 +43,7 @@ export function cabinCushionGeometry(size: [number, number, number]) {
   const normals = geometry.getAttribute('normal');
   const colors = new Float32Array(positions.count * 3);
   for (let i = 0; i < positions.count; i++) {
-    const radius = 0.005;
+    const radius = 0.01;
     const p = [positions.getX(i), positions.getY(i), positions.getZ(i)];
     const inner = p.map((v, axis) =>
       Math.max(-size[axis] / 2 + radius, Math.min(size[axis] / 2 - radius, v)),
@@ -65,9 +65,9 @@ export function cabinCushionGeometry(size: [number, number, number]) {
       delta[2] / distance,
     );
     const top = Math.max(0, Math.min(1, normals.getY(i) / 0.8));
-    colors[i * 3] = 0.5 + top * 0.5;
-    colors[i * 3 + 1] = 0.62 + top * 0.38;
-    colors[i * 3 + 2] = 0.6 + top * 0.4;
+    colors[i * 3] = 0.625 + top * 0.375;
+    colors[i * 3 + 1] = 0.6875 + top * 0.3125;
+    colors[i * 3 + 2] = 0.65625 + top * 0.34375;
     if (normals.getY(i) < 0.5) continue;
     const u = Math.min(1, Math.abs(positions.getX(i)) / (size[0] / 2));
     const v = Math.min(1, Math.abs(positions.getZ(i)) / (size[2] / 2));
