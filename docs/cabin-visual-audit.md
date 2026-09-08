@@ -147,3 +147,7 @@ Increased the aspect-dependent pillar position factor from 1.19 to 1.25, bringin
 ### Responsive framing after `cb37de6`
 
 1000 × 750 broadcast capture `/tmp/reporoad-cabin-windshield-4x3-20260909.png` shows joined pillar/roof geometry, but the fixed vertical field of view crops the right wheel edge. The regular 390 × 844 page had the same issue because its mobile drive surface explicitly used 4:3 (`/tmp/reporoad-cabin-phone-20260909.png`). Changed that CSS surface to 16:9; `/tmp/reporoad-cabin-phone-wide-20260909.png` now retains both seat corners and the wheel composition. Production build passed. Arbitrary non-landscape full-screen broadcast composition remains outside this fix; do not claim it is verified against the landscape reference.
+
+### Upper dashboard warmth after `28daefb`
+
+Measured rather than following the initial impression that the pad was too bright. Passenger top region (180,387)–(380,400) reference RGB 168.8/134.9/81.2 versus previous 129.5/114.6/71.1; centre (445,388)–(560,400) reference 186.0/146.1/85.1 versus previous 150.3/128.2/76.9. Changing only the pad base colour from `#a19a72` to `#c3ad7c` yields 159.0/132.0/83.6 and 163.5/136.4/84.4 respectively in `/tmp/reporoad-cabin-pad-warmth-20260909.png`. Both regions are closer, although centre brightness remains short. Seams, vertex wear, lighting and exterior remain untouched. Tests, TypeScript and build passed. Regional means do not prove identical shading or material response in other weather states.
