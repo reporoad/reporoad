@@ -44,7 +44,7 @@ test('glovebox clears the pad while preserving its lower trim joint', () => {
 
 test('headliner panels retain the upper boundary and a deeper joined cover', () => {
   for (const frameX of [1.2, 2.1]) {
-    const panels = cabinSurroundModel(frameX).filter(p => ['#5d5437', '#7b5e3b'].includes(p.color));
+    const panels = cabinSurroundModel(frameX).filter(p => p.position[1] === 1.2225 && p.size[1] === 0.33);
     assert.equal(panels.length, 3);
     const ordered = [...panels].sort((a, b) => a.position[0] - b.position[0]);
     const straps = cabinSurroundModel(frameX).filter(p => p.color === '#493627');
