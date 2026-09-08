@@ -4,7 +4,7 @@ export function drawRadio(ctx: CanvasRenderingContext2D, title: string, bands: F
   ctx.fillStyle = '#c8924c';
   ctx.font = '26px monospace';
   ctx.fillText('REPOROAD', 40, 55);
-  ctx.fillStyle = '#efb565';
+  ctx.fillStyle = '#e99b42';
   ctx.font = 'bold 36px monospace';
   const lines: string[] = [''];
   for (const word of title.split(' ')) {
@@ -26,7 +26,7 @@ export function drawRadio(ctx: CanvasRenderingContext2D, title: string, bands: F
   for (let i = 0; i < bands.length; i++) {
     const level = Math.round(Math.max(0, Math.min(1, bands[i])) * 7);
     for (let j = 0; j < 7; j++) {
-      ctx.fillStyle = j < level ? '#f2b24f' : '#30281a';
+      ctx.fillStyle = j < level ? '#f09a32' : '#30281a';
       ctx.fillRect(466 + i * 29, 210 - j * 22, 20, 14);
     }
   }

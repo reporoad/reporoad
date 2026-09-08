@@ -41,7 +41,7 @@ export function drawDashboard(ctx: CanvasRenderingContext2D, state: DashboardSta
     const size = i % 3 === 0 ? 10 : 6;
     ctx.fillRect(x - size / 2, y - 5, size, 10);
   }
-  ctx.fillStyle = '#f1b665';
+  ctx.fillStyle = '#e99b42';
   ctx.font = 'bold 64px monospace'; ctx.fillText(Math.round(state.speedKph).toString().padStart(2, '0'), 122, 142);
   ctx.font = '24px monospace'; ctx.fillText('km/h', 122, 177);
   ctx.fillStyle = '#b27c3c'; ctx.font = '20px monospace';
