@@ -6,6 +6,16 @@ import { useLoader } from '@react-three/fiber';
 // Object-space patina stays attached to the cabin. Derivative filtering fades
 // subpixel grain, rather than introducing animated noise or texture shimmer.
 const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <roughnessmap_fragment>',
+    `#include <roughnessmap_fragment>
+    #ifndef CABIN_FABRIC
+      // Pigment wear changes the finish as well as its colour. Keep this
+      // subtle and surface-attached; no animated noise or glossy fabric.
+      roughnessFactor = clamp(roughnessFactor
+        + (0.6 - paintedDetail) * 0.16 - edgeWear * 0.08, 0.55, 1.0);
+    #endif`,
+  );
   shader.vertexShader =
     `varying vec3 vCabinPoint;
     varying float vCabinWood;
@@ -218,7 +228,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v39-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v40-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
