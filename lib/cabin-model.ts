@@ -9,7 +9,7 @@ export function cabinDashboardModel(): VoxelPart[] {
     color: string,
     wood = color === '#705139',
   ) => parts.push({ position, size, color, wood });
-  const olive = '#625f45',
+  const olive = '#69654a',
     edge = '#424535',
     shadow = '#24291f',
     wood = '#705139';
@@ -22,15 +22,15 @@ export function cabinDashboardModel(): VoxelPart[] {
   // The upper pad is a continuous beveled mesh in VoxelCabin.
   add([0, -0.461, -1.52], [5.2, 0.035, 0.06], '#565b43');
   // Recessed passenger glovebox, not a thin board floating above the footwell.
-  add([-0.745, -0.545, -1.48], [0.95, 0.22, 0.08], olive);
-  // A broader single-step chamfer catches window light like the reference's
-  // formed glovebox edge, while retaining the original fitted outer bounds.
+  add([-0.745, -0.535, -1.48], [0.95, 0.24, 0.08], olive);
+  // Keep the formed edge while the taller face meets the pad above; the
+  // lower trim joint and handle remain at their original heights.
   parts[parts.length - 1].bevel = 0.014;
   add([-0.745, -0.67, -1.44], [0.95, 0.03, 0.035], '#454734');
   add([-0.745, -0.696, -1.445], [0.95, 0.018, 0.025], shadow);
   add([-0.745, -0.8425, -1.43], [0.95, 0.275, 0.03], '#34362a');
   for (const x of [-1.22, -0.27])
-    add([x, -0.545, -1.434], [0.016, 0.22, 0.025], shadow);
+    add([x, -0.535, -1.434], [0.016, 0.24, 0.025], shadow);
   add([-0.825, -0.515, -1.426], [0.3145, 0.04, 0.02], '#464735');
   add([-0.995, -0.515, -1.421], [0.046, 0.058, 0.018], '#303225');
   add([-0.995, -0.515, -1.408], [0.032, 0.043, 0.006], '#5f5c46');
