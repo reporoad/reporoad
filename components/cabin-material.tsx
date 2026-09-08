@@ -43,7 +43,8 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
     #ifdef CABIN_FABRIC
       // Raised woven yarn and a shallow sewn channel, in metres. The broad
       // filtered pattern avoids high-frequency normal noise at driving size.
-      float reliefHeight = (fleck * 0.0006 - sewnChannel * 0.0003) * aa;
+      float reliefHeight = (fleck * 0.0006 - sewnChannel * 0.0003
+        + (wovenDetail - 0.6) * 0.0012) * aa;
     #else
       // Surface-gradient relief uses the already mip-filtered patina sample.
       float reliefHeight = paintedDetail * 0.0025 * mix(0.4, 0.3, vCabinWood);
@@ -100,6 +101,9 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
     #ifdef CABIN_FABRIC
       vec3 face = abs(normalize(cross(dFdx(p), dFdy(p))));
       vec2 clothUv = face.y > 0.5 ? p.xz : (face.z > 0.5 ? p.xy : p.zy);
+      // Real yarn variation beneath the larger voxel weave. The same
+      // object-space scale is used on cushions and their side bolsters.
+      float wovenDetail = texture2D(cabinDetail, clothUv / 0.35).r;
       // Broad, row-aligned woven dashes match the reference upholstery;
       // the finer old speckles read as scattered dust at driving resolution.
       vec2 stitch = (clothUv - vec2(0.0, 0.035)) * vec2(19.0, 25.0);
@@ -113,8 +117,7 @@ const compile: THREE.MeshStandardMaterial['onBeforeCompile'] = (shader) => {
         + (1.0 - wovenRow) * step(0.72, yarn) * 0.6;
       float yarnEnd = 0.49 + yarn * 0.18;
       float fleck = yarnPresence * smoothstep(0.07, 0.16, cellUv.x) * (1.0-smoothstep(yarnEnd,yarnEnd+0.10,cellUv.x)) * smoothstep(0.05,0.12,cellUv.y) * (1.0-smoothstep(0.38,0.52,cellUv.y));
-      float weave = (sin(clothUv.x * 1200.0) * sin(clothUv.y * 1200.0) * 0.025
-        + sin(clothUv.x * 320.0) * sin(clothUv.y * 320.0) * 0.055) * aa;
+      float weave = (wovenDetail - 0.6) * 0.45;
       diffuseColor.rgb *= 0.71 + fleck * 1.05 * (0.25 + face.y * 0.75) + weave;
       float clothPatch = mix(cabinNoise(vec3(clothUv * vec2(35.0, 40.0), 8.0)),
         cabinHash(vec3(floor(clothUv * vec2(35.0, 40.0)), 8.0)), 0.85 * aa);
@@ -183,7 +186,7 @@ export default function CabinMaterial({
 }) {
   const detail = useLoader(
     THREE.TextureLoader,
-    '/textures/cabin-patina-v1.png',
+    fabric ? '/textures/cabin-fabric-v1.png' : '/textures/cabin-patina-v1.png',
   );
   useLayoutEffect(() => {
     detail.wrapS = detail.wrapT = THREE.MirroredRepeatWrapping;
@@ -215,7 +218,7 @@ export default function CabinMaterial({
       metalness={fabric || matte ? 0 : 0.03}
       onBeforeCompile={withDetail}
       customProgramCacheKey={() =>
-        `chilldrive-cabin-patina-v38-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
+        `chilldrive-cabin-patina-v39-${fabric}-${wood}-${vertexColors}-${edgeWearStrength}-${topPaintStrength}`
       }
     />
   );
