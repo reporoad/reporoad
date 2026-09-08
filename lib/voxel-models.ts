@@ -4,6 +4,7 @@ export type VoxelPart = {
   color: string;
   wood?: boolean;
   lit?: boolean;
+  bevel?: number;
 };
 export const noise = (n: number) => {
   const value = Math.sin(n * 127.1 + 311.7) * 43758.5453;
@@ -145,11 +146,13 @@ export function steeringWheelModel(): VoxelPart[] {
       position: [0.018, -0.06, 0.015],
       size: [0.3, 0.25, 0.085],
       color: '#807b69',
+      bevel: 0.014,
     },
     {
       position: [0.018, -0.055, 0.059],
       size: [0.224, 0.22, 0.016],
       color: '#797360',
+      bevel: 0.006,
     },
     { position: [0, -0.07, 0], size: [0.6, 0.085, 0.065], color: '#79705e' },
     { position: [0, -0.17, 0], size: [0.05, 0.28, 0.055], color: '#79705e' },

@@ -6,11 +6,13 @@ import type { VoxelPart } from './voxel-models.ts';
 /** One draw call, with bevels measured in metres rather than scaled cube UVs. */
 export function cabinAssemblyGeometry(parts: VoxelPart[]): BufferGeometry {
   if (!parts.length) return new BufferGeometry();
-  const geometries = parts.map(({ position, size, color, wood = false }) => {
+  const geometries = parts.map(({ position, size, color, wood = false, bevel }) => {
     const geometry = new RoundedBoxGeometry(
       ...size,
       1,
-      Math.min(0.005, Math.min(...size) * 0.15),
+      bevel === undefined
+        ? Math.min(0.005, Math.min(...size) * 0.15)
+        : Math.max(0, Math.min(bevel, Math.min(...size) * 0.45)),
     );
     geometry.translate(...position);
     const tint = new Color(color);
