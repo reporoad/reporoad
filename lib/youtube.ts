@@ -15,36 +15,56 @@ export function youtubeRuntimeConfig(value?: string, channel?: string): Broadcas
 }
 
 // Live chat can only be embedded for one concrete video, so the active broadcast
-// has to be looked up. A search costs 100 quota units against a 10,000/day budget
-// while every viewer re-reads the configuration twice a minute: cache the answer
-// rather than spending the day's quota in the first few minutes.
-export function liveVideoResolver(request: typeof fetch = fetch, ttlMs = 60000, now: () => number = Date.now) {
-  let cached: { videoId: string; at: number } | undefined;
-  return async (channelId: string, apiKey: string) => {
-    if (cached && now() - cached.at < ttlMs) return cached.videoId;
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.search = new URLSearchParams({ part: 'snippet', channelId, eventType: 'live', type: 'video', maxResults: '1', key: apiKey }).toString();
-    const response = await request(url.href, { signal: AbortSignal.timeout(10000) });
-    if (!response.ok) throw Error('YouTube broadcast lookup failed');
-    const data = await response.json() as { items?: { id?: { videoId?: unknown } }[] };
-    const videoId = data.items?.[0]?.id?.videoId;
-    if (typeof videoId !== 'string' || !VIDEO_ID.test(videoId)) throw Error('No live broadcast found');
-    cached = { videoId, at: now() };
-    return videoId;
+// has to be resolved. YouTube's own channel live page redirects to whatever is
+// live and names it in its canonical link, which needs no API key, cloud project
+// or quota. It reads undocumented markup, so callers must treat a failure as
+// ordinary and keep their configured fallback.
+const LOOKUP_TIMEOUT_MS = 10000;
+
+export async function findLiveVideo(channelId: string, request: typeof fetch = fetch) {
+  if (!CHANNEL_ID.test(channelId)) throw Error('Invalid YouTube channel ID');
+  const response = await request(`https://www.youtube.com/channel/${channelId}/live`, {
+    redirect: 'follow',
+    headers: { 'Accept-Language': 'en' },
+    signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+  });
+  if (!response.ok) throw Error('YouTube broadcast lookup failed');
+  // An offline channel keeps its own page as the canonical URL, so requiring a
+  // watch link is also the liveness test.
+  const canonical = /<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/.exec(await response.text());
+  if (!canonical) throw Error('No live broadcast found');
+  return canonical[1];
+}
+
+export function liveVideoResolver(request: typeof fetch = fetch, ttlMs = 300000, now: () => number = Date.now) {
+  let cached: { videoId?: string; at: number } | undefined;
+  return async (channelId: string) => {
+    // Failures are cached too, for a fifth as long: a lookup that starts failing
+    // must not turn every viewer's poll into a request to YouTube.
+    if (cached && now() - cached.at < (cached.videoId ? ttlMs : ttlMs / 5)) {
+      if (cached.videoId) return cached.videoId;
+      throw Error('No live broadcast found');
+    }
+    try {
+      const videoId = await findLiveVideo(channelId, request);
+      cached = { videoId, at: now() };
+      return videoId;
+    }
+    catch (error) { cached = { at: now() }; throw error; }
   };
 }
 
 export async function youtubeConfigResponse(
-  value?: string, channel?: string, apiKey?: string,
-  resolve?: (channelId: string, apiKey: string) => Promise<string>,
+  value?: string, channel?: string,
+  resolve?: (channelId: string) => Promise<string>,
 ) {
   const headers = { 'Cache-Control': 'no-store' };
   try {
     const config = youtubeRuntimeConfig(value, channel);
     // Discovery only sharpens the chat tab; the player follows the channel either
     // way, so a lookup failure must not take the configuration down with it.
-    if (apiKey && resolve) {
-      try { config.videoId = await resolve(config.channelId, apiKey); } catch { /* Keep the configured broadcast. */ }
+    if (resolve) {
+      try { config.videoId = await resolve(config.channelId); } catch { /* Keep the configured broadcast. */ }
     }
     return Response.json(config, { headers });
   }

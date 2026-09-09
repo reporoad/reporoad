@@ -6,10 +6,7 @@
 # only change needed when the broadcaster opens a new event.
 YOUTUBE_CHANNEL_ID=UCV6R_O0gxuj2tNcQWq7yJ3g
 
-# Fallback for the chat tab, used when live-broadcast discovery is unavailable.
+# Chat fallback. Live chat can only be embedded for one concrete video, so the
+# server looks the current broadcast up from the channel. This value is used
+# while that lookup is unavailable. No API key or cloud project is needed.
 YOUTUBE_VIDEO_ID=WuLbv_j9CGE
-
-# Optional YouTube Data API v3 key. Live chat can only be embedded per video, so
-# without a key the chat tab stays on YOUTUBE_VIDEO_ID while the player still
-# follows the channel. Read-only; never a Studio or streaming credential.
-YOUTUBE_API_KEY=
