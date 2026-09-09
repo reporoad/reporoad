@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { config, ffmpegArgs } from './config.mjs';
+import { config, ffmpegArgs, reclaimDisplay } from './config.mjs';
 import { CDP } from './cdp.mjs';
 import { CaptureHealth } from './health.mjs';
 
@@ -38,8 +38,7 @@ async function main() {
     const check = spawnSync('which',[bin],{encoding:'utf8'});
     if (check.status !== 0) throw Error(`Missing ${bin}; see docs/broadcaster.md`);
   }
-  if (existsSync(`/tmp/.X${c.display}-lock`) || existsSync(`/tmp/.X11-unix/X${c.display}`))
-    throw Error(`Display :${c.display} already in use; choose BROADCAST_DISPLAY`);
+  if (!reclaimDisplay(c.display)) throw Error(`Display :${c.display} already in use; choose BROADCAST_DISPLAY`);
   if (c.mode === 'record' && existsSync(c.output)) throw Error('Output already exists; choose another BROADCAST_OUTPUT');
   mkdirSync(dirname(c.output),{recursive:true});
   const logDir = `${c.output}.logs`; mkdirSync(logDir,{recursive:true,mode:0o700});

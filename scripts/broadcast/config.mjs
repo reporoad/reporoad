@@ -1,5 +1,21 @@
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+// A hard-killed worker leaves Xvfb's lock and socket behind, and every retry then
+// refuses to start on a display no process owns — turning one crash into an outage
+// that only a human can clear. Reclaim it, but only once the recorded X server is
+// really gone: a live or another user's display is left untouched.
+export function reclaimDisplay(display, { lock = `/tmp/.X${display}-lock`, socket = `/tmp/.X11-unix/X${display}`, kill = process.kill } = {}) {
+  if (!existsSync(lock) && !existsSync(socket)) return true;
+  let pid = 0;
+  try { pid = Number(readFileSync(lock, 'utf8').trim()); } catch { /* No readable lock: nothing claims it. */ }
+  if (Number.isInteger(pid) && pid > 0) {
+    try { kill(pid, 0); return false; }
+    catch (error) { if (error.code === 'EPERM') return false; }
+  }
+  try { rmSync(lock, { force: true }); rmSync(socket, { force: true }); } catch { return false; }
+  return true;
+}
 
 export function config(argv, env = process.env) {
   const mode = argv[0] || 'record';

@@ -1,6 +1,5 @@
-import { config } from './config.mjs';
+import { config, reclaimDisplay } from './config.mjs';
 import { supervise } from './supervisor.mjs';
-import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 try {
@@ -11,7 +10,7 @@ try {
     if(process.getuid?.() === 0)throw Error('Run as a non-root user.');
     for (const bin of ['Xvfb','xauth','ffmpeg',c.chrome,c.pulse])
       if(spawnSync('which',[bin],{stdio:'ignore'}).status !== 0)throw Error(`Missing ${bin}; see docs/broadcaster.md`);
-    if(existsSync(`/tmp/.X${c.display}-lock`) || existsSync(`/tmp/.X11-unix/X${c.display}`))throw Error(`Display :${c.display} is occupied. Stop the previous broadcaster or choose BROADCAST_DISPLAY.`);
+    if(!reclaimDisplay(c.display))throw Error(`Display :${c.display} is occupied. Stop the previous broadcaster or choose BROADCAST_DISPLAY.`);
     console.log('Stream supervisor enabled: output/browser/audio monitoring, automatic retries, Ctrl+C to stop.');
     await supervise(new URL('./worker.mjs', import.meta.url), ['stream']);
   }
