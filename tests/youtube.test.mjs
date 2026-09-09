@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { youtubeEmbedUrls, usesRenderedWorld, YOUTUBE_VIDEO_ID, YOUTUBE_CHANNEL_ID, youtubeRuntimeConfig, youtubeConfigResponse, liveVideoResolver, findLiveVideo } from '../lib/youtube.ts';
 
-const livePage = videoId => new Response(`<html><head><link rel="canonical" href="https://www.youtube.com/watch?v=${videoId}"><title>x</title></head></html>`);
+const feed = (...videoIds) => new Response(`<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"><yt:channelId>${YOUTUBE_CHANNEL_ID}</yt:channelId>
+${videoIds.map(id => `<entry><yt:videoId>${id}</yt:videoId><title>Live</title></entry>`).join('')}</feed>`);
 
 test('runtime configuration changes both destinations without rebuilding', async () => {
   assert.equal(youtubeRuntimeConfig().videoId, YOUTUBE_VIDEO_ID);
@@ -45,19 +47,22 @@ test('chat and the watch link still address one concrete broadcast', () => {
 });
 test('the live broadcast is discovered without an API key', async () => {
   let asked;
-  const videoId = await findLiveVideo(YOUTUBE_CHANNEL_ID, async (url, init) => {
-    asked = { url, init };
-    return livePage('veEzKWcJlY8');
+  const videoId = await findLiveVideo(YOUTUBE_CHANNEL_ID, async url => {
+    asked = url;
+    return feed('veEzKWcJlY8', 'OW-KSVBNzEI');
   });
-  assert.equal(videoId, 'veEzKWcJlY8');
-  assert.match(asked.url, new RegExp(`youtube\\.com/channel/${YOUTUBE_CHANNEL_ID}/live$`));
-  assert.equal(asked.init.redirect, 'follow');
-  assert.doesNotMatch(asked.url, /key=|googleapis/, 'still went through the Data API');
-  await assert.rejects(findLiveVideo('UC../evil', async () => livePage('veEzKWcJlY8')));
+  assert.equal(videoId, 'veEzKWcJlY8', 'did not take the newest entry');
+  assert.match(asked, new RegExp(`feeds/videos\\.xml\\?channel_id=${YOUTUBE_CHANNEL_ID}$`));
+  assert.doesNotMatch(asked, /key=|googleapis/, 'still went through the Data API');
+  await assert.rejects(findLiveVideo('UC../evil', async () => feed('veEzKWcJlY8')));
+});
+test('a feed for a different channel is refused', async () => {
+  const wrong = new Response('<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"><yt:channelId>UCzzzzzzzzzzzzzzzzzzzzzz</yt:channelId><entry><yt:videoId>veEzKWcJlY8</yt:videoId></entry></feed>');
+  await assert.rejects(findLiveVideo(YOUTUBE_CHANNEL_ID, async () => wrong));
 });
 test('the live broadcast is discovered once per interval, not once per viewer', async () => {
   let calls = 0, clock = 0;
-  const resolve = liveVideoResolver(async () => { calls++; return livePage('veEzKWcJlY8'); }, 300000, () => clock);
+  const resolve = liveVideoResolver(async () => { calls++; return feed('veEzKWcJlY8'); }, 300000, () => clock);
   assert.equal(await resolve(YOUTUBE_CHANNEL_ID), 'veEzKWcJlY8');
   clock = 299000;
   assert.equal(await resolve(YOUTUBE_CHANNEL_ID), 'veEzKWcJlY8');
@@ -89,14 +94,13 @@ test('a discovered broadcast reaches chat; a failed lookup keeps the last known 
   assert.equal((await (await youtubeConfigResponse('abcdefghijk', YOUTUBE_CHANNEL_ID)).json()).videoId, 'abcdefghijk', 'needed a resolver to answer at all');
 });
 test('discovery rejects anything that is not a live video id', async () => {
-  const pages = [
-    '<html><head><title>Quiet Circuit</title></head></html>',
-    '<link rel="canonical" href="https://www.youtube.com/channel/UCV6R_O0gxuj2tNcQWq7yJ3g">',
-    '<link rel="canonical" href="https://www.youtube.com/watch?v=../../evil">',
-    '<link rel="canonical" href="https://evil.example/watch?v=abcdefghijk">',
+  const bodies = [
+    '<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"><yt:channelId>UCV6R_O0gxuj2tNcQWq7yJ3g</yt:channelId></feed>',
+    '<feed><yt:channelId>UCV6R_O0gxuj2tNcQWq7yJ3g</yt:channelId><entry><yt:videoId>../../evil</yt:videoId></entry></feed>',
+    '<html>not a feed at all</html>',
   ];
-  for (const page of pages) {
-    await assert.rejects(liveVideoResolver(async () => new Response(page))(YOUTUBE_CHANNEL_ID), undefined, page.slice(0, 40));
+  for (const body of bodies) {
+    await assert.rejects(liveVideoResolver(async () => new Response(body))(YOUTUBE_CHANNEL_ID), undefined, body.slice(0, 40));
   }
   await assert.rejects(liveVideoResolver(async () => new Response('', { status: 403 }))(YOUTUBE_CHANNEL_ID));
 });

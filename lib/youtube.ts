@@ -15,25 +15,30 @@ export function youtubeRuntimeConfig(value?: string, channel?: string): Broadcas
 }
 
 // Live chat can only be embedded for one concrete video, so the active broadcast
-// has to be resolved. YouTube's own channel live page redirects to whatever is
-// live and names it in its canonical link, which needs no API key, cloud project
-// or quota. It reads undocumented markup, so callers must treat a failure as
-// ordinary and keep their configured fallback.
+// has to be resolved. The channel's Atom feed answers that with no API key, cloud
+// project or quota, and unlike the channel's live page it survives being fetched
+// from a datacentre: YouTube serves those a variant whose canonical link is the
+// literal string "undefined". The feed is also 28KB rather than 1.1MB.
+//
+// It lists recent uploads newest first without marking which is live, so this
+// assumes the channel's newest entry is its current broadcast. That holds for a
+// channel that exists to stream; publishing an ordinary video while live would
+// point chat at that instead, and `YOUTUBE_VIDEO_ID` is the way back.
 const LOOKUP_TIMEOUT_MS = 10000;
 
 export async function findLiveVideo(channelId: string, request: typeof fetch = fetch) {
   if (!CHANNEL_ID.test(channelId)) throw Error('Invalid YouTube channel ID');
-  const response = await request(`https://www.youtube.com/channel/${channelId}/live`, {
-    redirect: 'follow',
+  const response = await request(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
     headers: { 'Accept-Language': 'en' },
     signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
   });
   if (!response.ok) throw Error('YouTube broadcast lookup failed');
-  // An offline channel keeps its own page as the canonical URL, so requiring a
-  // watch link is also the liveness test.
-  const canonical = /<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/.exec(await response.text());
-  if (!canonical) throw Error('No live broadcast found');
-  return canonical[1];
+  const feed = await response.text();
+  const owner = /<yt:channelId>(UC[\w-]{22})<\/yt:channelId>/.exec(feed);
+  if (!owner || owner[1] !== channelId) throw Error('Feed does not belong to the configured channel');
+  const newest = /<yt:videoId>([\w-]{11})<\/yt:videoId>/.exec(feed);
+  if (!newest) throw Error('No live broadcast found');
+  return newest[1];
 }
 
 export function liveVideoResolver(request: typeof fetch = fetch, ttlMs = 300000, now: () => number = Date.now) {
