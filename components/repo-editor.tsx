@@ -33,6 +33,14 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [floors,setFloors] = useState(1);
+  const [githubLogin,setGithubLogin] = useState<string | null>(null);
+  const [settingsMode,setSettingsMode] = useState<'website'|'file'>('website');
+  useEffect(()=>{
+    let stopped=false;
+    fetch('/api/github/session',{cache:'no-store'}).then(r=>r.json() as Promise<{login?:string}>).then(data=>{if(!stopped)setGithubLogin(data.login || null);}).catch(()=>{});
+    if(new URLSearchParams(window.location.search).get('github')==='error')setMessage('GitHub sign-in did not finish. Please connect again.');
+    return ()=>{stopped=true;};
+  },[]);
   const preview = useMemo<Repository>(() => ({ fullName: identity, name: identity.split('/')[1], stars: floors*10000, description: '', language: null, defaultBranch: 'main', fetchedAt: 0, configStatus: 'custom', building }), [identity, building, floors]);
   const update = (patch: Partial<BuildingStyle>) => setBuilding(old => ({ ...old, ...patch }));
   function apply(raw: string) {
@@ -45,19 +53,25 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     if (!/^[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+$/.test(name) || name.split('/')[1] === '.' || name.split('/')[1] === '..') { setMessage('Enter a public GitHub repository: owner/repo.'); return; }
     setBusy(true); setMessage('Loading settings…');
     try {
-      // Fixed public GitHub host; no credentials and no user-supplied fetch URL.
-      const response = await fetch(`https://raw.githubusercontent.com/${name}/HEAD/${CONFIG_PATH}`, { signal: AbortSignal.timeout(10000), credentials: 'omit' });
-      if (response.status === 404) { setIdentity(name); setBuilding(defaults()); setMessage('No public file found. Starting with defaults; check that the repository exists.'); return; }
-      if (!response.ok) throw Error(`Could not load settings (${response.status}). You can upload a local file instead.`);
-      if (Number(response.headers.get('content-length')) > 8192) throw Error('File exceeds 8 KB.');
-      const reader = response.body?.getReader();
-      if (!reader) throw Error('Empty response.');
-      let raw = '', size = 0; const decoder = new TextDecoder();
-      try { while (true) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; if (size > 8192) throw Error('File exceeds 8 KB.'); raw += decoder.decode(value, { stream: true }); } raw += decoder.decode(); }
-      finally { await reader.cancel(); }
-      apply(raw); setIdentity(name); setMessage('Loaded repository settings. Your edits stay in this preview until you commit the file.');
+      const response = await fetch(`/api/repositories/building?repository=${encodeURIComponent(name)}`, { signal: AbortSignal.timeout(25000), cache:'no-store' });
+      const data=await response.json() as {error?:string;repository:Repository;mode:string};
+      if(!response.ok)throw Error(data.error || 'Could not load settings.');
+      apply(JSON.stringify(data.repository.building)); setIdentity(data.repository.fullName);
+      setSettingsMode(data.mode==='website' || data.repository.configStatus!=='custom'?'website':'file');
+      setFloors(Math.min(50,Math.max(1,Math.floor(data.repository.stars/10000))));
+      setMessage('Loaded the current building. Choose Website-managed to save your edits here.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to load settings.'); }
     finally { setBusy(false); }
+  }
+  async function saveDesign() {
+    setBusy(true);setMessage('Verifying GitHub permissions…');
+    try {
+      const response=await fetch('/api/repositories/building',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repository:address,mode:settingsMode,building}),signal:AbortSignal.timeout(45000)});
+      const data=await response.json() as {error?:string};if(!response.ok)throw Error(data.error || 'Could not save.');
+      setMessage(settingsMode==='website'?'Saved! Your design is now on the shared road.':'File-managed settings restored. Website overrides have been removed.');
+      window.dispatchEvent(new Event('reporoad:directory-updated'));
+    } catch(error){setMessage(error instanceof Error?error.message:'Could not save. Your preview is still here.');}
+    finally{setBusy(false);}
   }
   function download() {
     const content = serializeBuildingConfig(building);
@@ -70,7 +84,9 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
   return <section className="place-editor">
     <h2>Add a place</h2>
     <RepoSubmit/>
-    <h3>Customize a building</h3><p className="muted">Try a design below. Repository maintainers can optionally publish it with a building file.</p>
+    <h3>Customize a building</h3><p className="muted">Owners and repository administrators can save a design here—no commits needed.</p>
+    {githubLogin ? <div className="fine">Connected as <strong>{githubLogin}</strong> · <button className="btn" onClick={async()=>{const r=await fetch('/api/github/session',{method:'DELETE'});if(r.ok)setGithubLogin(null);else setMessage('Could not disconnect. Please try again.');}}>Disconnect GitHub</button></div> : <a className="btn" href="https://reporoad.org/api/github/start" target="_top">Connect GitHub to claim and edit</a>}
+    <p className="fine">First <a href="https://github.com/apps/reporoad/installations/new" target="_blank" rel="noopener noreferrer">install RepoRoad</a> for the repository you manage. This grants read-only metadata access, not code-writing access. Connect before designing; sign-in reloads the page.</p>
     <label htmlFor="load-repo">Load an existing place <small>(optional)</small></label>
     <div className="place-load"><Github size={18}/><Input id="load-repo" placeholder="github.com/owner/repo" value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void load(); }}/><button className="btn" disabled={busy} onClick={load}>{busy ? 'Loading…' : 'Load'}</button></div>
     <label className="file-load"><Upload size={13}/> Or open a .reporoad.yml file<input type="file" accept=".yml,.yaml" disabled={busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; try { if (file.size > 8192) throw Error('File exceeds 8 KB.'); apply(await file.text()); setMessage('File loaded. Adjust the settings below.'); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); } }}/></label>
@@ -96,6 +112,9 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     <p className="fine">The heart indicates that the repository is seeking sponsorship. Visitors can open the repository to learn more.</p>
     <div className="place-export"><p>Optional: commit <code>{CONFIG_PATH}</code> at your repo’s root to publish this design.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
     {message && <p className="notice" role="status">{message}</p>}
-    <p className="fine">Preview edits are not saved to the road. Website-managed designs will require verified GitHub ownership; for now, use the optional file on the default branch and resubmit to refresh.</p>
+    <label htmlFor="building-source">Settings source</label>
+    <NativeSelect id="building-source" value={settingsMode} onChange={e=>setSettingsMode(e.target.value as 'website'|'file')}><NativeSelectOption value="website">Website-managed</NativeSelectOption><NativeSelectOption value="file">Repository file / defaults</NativeSelectOption></NativeSelect>
+    <p className="fine">Website-managed overrides the file. Switching back removes that override. GitHub owner or administrator permissions are checked on every save.</p>
+    <button className="btn primary" disabled={busy || !githubLogin || !address.trim()} onClick={saveDesign}>{busy?'Checking…':settingsMode==='website'?'Verify ownership & save design':'Use repository file / defaults'}</button>
   </section>;
 }

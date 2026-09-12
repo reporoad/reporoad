@@ -43,7 +43,7 @@ export default function RepoRoad() {
   const [dataStatus, setDataStatus] = useState(
     'Loading the shared road…',
   );
-  const [tab, setTab] = useState('chat');
+  const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get('tab') === 'add' ? 'add' : 'chat');
   const online = usePresence();
   const [mode, setMode] = useState<'live' | 'studio'>(supportPreview ? 'studio' : 'live');
   const [playing, setPlaying] = useState(

@@ -18,6 +18,8 @@ export type BuildingStyle = {
   support?: { sponsor?: boolean; helpWanted?: boolean };
 };
 export type Repository = {
+  githubId?: number;
+  ownerId?: number;
   fullName: string;
   name: string;
   description: string;
@@ -30,7 +32,7 @@ export type Repository = {
   configCheckedAt?: number;
   weeklyStars?: number;
   placement?: 'featured';
-  configSource?: 'curated-pr';
+  configSource?: 'curated-pr' | 'website';
 };
 export const STARS_PER_FLOOR = 10_000;
 /** Short labels never expose the owner prefix; long names wrap without distortion. */

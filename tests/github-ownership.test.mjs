@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+import { randomToken, digest, seal, unseal, mayManageRepository } from '../lib/github-crypto.ts';
+import { applyWebsiteSettings } from '../lib/building-settings.ts';
+test('OAuth and stored token encryption reject tampering and cross-purpose reuse',async()=>{
+  const secret=randomToken(), data={state:randomToken(),verifier:randomToken(),expires:Date.now()+600000};
+  const sealed=await seal(data,secret,'github-oauth');
+  assert.deepEqual(await unseal(sealed,secret,'github-oauth'),data);
+  await assert.rejects(unseal(sealed,secret,'github-token'));
+  await assert.rejects(unseal(sealed,randomToken(),'github-oauth'));
+  const [iv,payload]=sealed.split('.');
+  await assert.rejects(unseal(`${iv}.${payload[0]==='A'?'B':'A'}${payload.slice(1)}`,secret,'github-oauth'));
+  assert.equal((await digest(data.verifier)).length,43);
+  assert.equal(randomToken().length,43);
+});
+test('only an owner or administrator can manage a public building',()=>{
+  const repo={id:10,private:false,owner:{id:20},permissions:{admin:false}};
+  assert.equal(mayManageRepository(repo,20),true);
+  assert.equal(mayManageRepository(repo,30),false);
+  assert.equal(mayManageRepository({...repo,permissions:{admin:true}},30),true);
+  assert.equal(mayManageRepository({...repo,private:true},20),false);
+  assert.equal(mayManageRepository({...repo,id:undefined},20),false);
+  assert.equal(mayManageRepository({...repo,permissions:{push:true}},30),false);
+});
+test('website designs survive reload and are ignored after transfer or repository recreation',async()=>{
+  const sql=new DatabaseSync(':memory:');
+  sql.exec(readFileSync(new URL('../drizzle/0006_acoustic_james_howlett.sql',import.meta.url),'utf8'));
+  const settings=JSON.stringify({version:1,style:'cafe',color:'#778565',roof:'gable'});
+  sql.prepare('INSERT INTO building_settings VALUES (?,?,?,?,?,?)').run(10,20,'a/b',settings,20,123);
+  const db={prepare(query){return {async all(){return {results:sql.prepare(query).all()};}};}};
+  const repo={githubId:10,ownerId:20,building:{style:'woodland'},fullName:'a/b'};
+  const [saved]=await applyWebsiteSettings(db,[repo]);
+  assert.equal(saved.configSource,'website');assert.equal(saved.building.style,'cafe');
+  const [transferred]=await applyWebsiteSettings(db,[{...repo,ownerId:99}]);assert.equal(transferred.building.style,'woodland');
+  const [recreated]=await applyWebsiteSettings(db,[{...repo,githubId:11}]);assert.equal(recreated.building.style,'woodland');
+  sql.prepare('DELETE FROM building_settings WHERE repository_id=10').run();
+  assert.equal((await applyWebsiteSettings(db,[repo]))[0].building.style,'woodland');
+  sql.close();
+});

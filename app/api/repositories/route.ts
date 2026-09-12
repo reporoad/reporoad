@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers';
 import { database } from '@/lib/db';
 import { SAMPLE_ROAD } from '@/lib/road-seed';
 import { registeredRoad, mergeRoad } from '@/lib/road-registration';
+import { applyWebsiteSettings } from '@/lib/building-settings';
 import { discoverCategory, type CategoryData } from '@/lib/repository-categories';
 export const dynamic = 'force-dynamic';
 const CHECK_MS = 5 * 60 * 1000;
@@ -13,7 +14,7 @@ export async function GET() {
     const db = database(), now = Date.now(), id = 'road-yaml-v1';
     const registered = await registeredRoad(db, token);
     if (import.meta.env.DEV) return Response.json({
-      repositories: mergeRoad(SAMPLE_ROAD, registered), source: 'local-samples',
+      repositories: await applyWebsiteSettings(db,mergeRoad(SAMPLE_ROAD, registered)), source: 'local-samples',
       warning: `${registered.length} verified registrations · local sample buildings also shown.`,
     }, { headers });
     await db.prepare('INSERT OR IGNORE INTO repository_world_cache (id,payload,refreshed_at,refresh_after) VALUES (?,?,?,?)')
@@ -30,7 +31,7 @@ export async function GET() {
         .bind(JSON.stringify(data), now, id).run();
     }
     return Response.json({
-      repositories: mergeRoad(data.repositories.filter(r => r.configStatus === 'custom' && now - (r.configCheckedAt || 0) < 86400000), registered),
+      repositories: await applyWebsiteSettings(db,mergeRoad(data.repositories.filter(r => r.configStatus === 'custom' && now - (r.configCheckedAt || 0) < 86400000), registered)),
       source: 'github-cache', warning: data.warning ? 'Automatic GitHub discovery is unavailable. Direct repository submissions still work.' : undefined, refreshedAt: data.refreshedAt,
     }, { headers });
   } catch {

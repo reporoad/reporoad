@@ -55,6 +55,8 @@ export function publicRepository(
     return null;
   return {
     fullName: d.full_name,
+    githubId: Number.isSafeInteger(d.id) ? Number(d.id) : undefined,
+    ownerId: Number.isSafeInteger((d.owner as {id?:number})?.id) ? Number((d.owner as {id:number}).id) : undefined,
     name: d.full_name.split('/')[1],
     description:
       typeof d.description === 'string' ? d.description.slice(0, 240) : '',

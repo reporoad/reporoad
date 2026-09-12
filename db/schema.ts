@@ -1,4 +1,17 @@
 import { sqliteTable, integer, text, index, primaryKey } from 'drizzle-orm/sqlite-core';
+export const githubSessions = sqliteTable('github_sessions', {
+  id: text('id').primaryKey(), token: text('token').notNull(),
+  userId: integer('user_id').notNull(), login: text('login').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+}, t => [index('idx_github_session_expiry').on(t.expiresAt)]);
+export const buildingSettings = sqliteTable('building_settings', {
+  repositoryId: integer('repository_id').primaryKey(),
+  ownerId: integer('owner_id').notNull(),
+  name: text('name').notNull(),
+  settings: text('settings').notNull(),
+  updatedBy: integer('updated_by').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
 export const roadRegistrations = sqliteTable('road_registrations', {
   name: text('name').primaryKey(),
   payload: text('payload'),
