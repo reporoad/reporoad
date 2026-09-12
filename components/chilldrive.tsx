@@ -99,7 +99,7 @@ export default function RepoRoad() {
           data.warning ||
             (oldest
               ? `${data.source === 'github-cache' ? 'GitHub data' : 'Verified snapshot'} · checked ${new Date(oldest).toLocaleString()}`
-              : 'No verified building files discovered yet.'),
+              : 'No repositories yet. Add a public GitHub URL to start the road.'),
         );
       } catch {
         if (!stopped)

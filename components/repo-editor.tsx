@@ -68,7 +68,9 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     setMessage(`Downloaded ${CONFIG_PATH}. Commit it at the root of your public repository on its default branch.`);
   }
   return <section className="place-editor">
-    <h2>Create your place</h2><p className="muted">Start designing. No repo URL needed.</p>
+    <h2>Add a place</h2>
+    <RepoSubmit/>
+    <h3>Customize a building</h3><p className="muted">Try a design below. Repository maintainers can optionally publish it with a building file.</p>
     <label htmlFor="load-repo">Load an existing place <small>(optional)</small></label>
     <div className="place-load"><Github size={18}/><Input id="load-repo" placeholder="github.com/owner/repo" value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void load(); }}/><button className="btn" disabled={busy} onClick={load}>{busy ? 'Loading…' : 'Load'}</button></div>
     <label className="file-load"><Upload size={13}/> Or open a .reporoad.yml file<input type="file" accept=".yml,.yaml" disabled={busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; try { if (file.size > 8192) throw Error('File exceeds 8 KB.'); apply(await file.text()); setMessage('File loaded. Adjust the settings below.'); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); } }}/></label>
@@ -91,10 +93,9 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     <label className="place-toggle">Garden<input type="checkbox" role="switch" checked={building.garden !== false} onChange={e => update({ garden: e.target.checked })}/></label>
     <label className="place-toggle">Help wanted sign<input type="checkbox" role="switch" checked={!!building.support?.helpWanted} onChange={e => update({ support: { ...building.support, helpWanted: e.target.checked } })}/></label>
     <label className="place-toggle">Sponsor heart<input type="checkbox" role="switch" checked={!!building.support?.sponsor} onChange={e => update({ support: { ...building.support, sponsor: e.target.checked } })}/></label>
-    <p className="fine">The heart links to the owner’s GitHub Sponsors page. Enable it only if that page is active.</p>
-    <div className="place-export"><p>Commit <code>{CONFIG_PATH}</code> at your repo’s root to join the road.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
+    <p className="fine">The heart indicates that the repository is seeking sponsorship. Visitors can open the repository to learn more.</p>
+    <div className="place-export"><p>Optional: commit <code>{CONFIG_PATH}</code> at your repo’s root to publish this design.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
     {message && <p className="notice" role="status">{message}</p>}
-    <p className="fine">Public repositories only. Commit your file on the default branch, then submit below. Local preview edits are not published until committed.</p>
-    <RepoSubmit/>
+    <p className="fine">Preview edits are not saved to the road. Website-managed designs will require verified GitHub ownership; for now, use the optional file on the default branch and resubmit to refresh.</p>
   </section>;
 }

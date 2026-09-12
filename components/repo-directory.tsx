@@ -24,7 +24,7 @@ export default function RepoDirectory({ repositories, status }: { repositories: 
       </a>
       {r.building.support?.helpWanted && <div className="road-support"><a href={supportLinks(r.fullName)?.helpWanted} target="_blank" rel="noopener noreferrer">Help wanted ↗</a></div>}
     </li>)}</ol>
-    {!filtered.length && <p className="repo-empty">{query ? 'No matching repositories.' : 'Commit a .reporoad.yml using the Add tab, then submit your repository below.'}</p>}
+    {!filtered.length && <p className="repo-empty">{query ? 'No matching repositories.' : 'Add a public GitHub repository below. No building file needed.'}</p>}
     <nav className="road-pagination" aria-label="Repository pages"><small>{filtered.length ? start + 1 : 0}–{Math.min(start + 5, filtered.length)} of {filtered.length}</small><button aria-label="Previous page" disabled={current === 1} onClick={() => setPage(current - 1)}><ChevronLeft size={15}/></button>{numbers.map((n,i) => <span key={n}>{i > 0 && n > numbers[i-1] + 1 && <span className="page-gap">…</span>}<button aria-label={`Page ${n}`} aria-current={n === current ? 'page' : undefined} onClick={() => setPage(n)}>{n}</button></span>)}<button aria-label="Next page" disabled={current === pages} onClick={() => setPage(current + 1)}><ChevronRight size={15}/></button></nav>
     <p className="repo-data-status" role="status">{status}</p>
     <RepoSubmit/>

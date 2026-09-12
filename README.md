@@ -61,7 +61,9 @@ support:
 
 Styles: `woodland` (Cabin), `stone` (Workshop), `cafe`, `brick`, `greenhouse`, and `townhouse`. Blank sign text uses the repository name. Height comes from GitHub stars, not the file.
 
-After committing, use **Submit repository** in Explore or Add. RepoRoad verifies the public default-branch file directly and saves the registration in D1, without waiting for GitHub search indexing. Re-submit to refresh a changed file immediately (30-second submission cooldown). Registered files are also rechecked hourly as the directory is visited; missing or invalid files remove the building. Transient failures retain the last verified building for up to a day.
+Use **Submit repository** in Explore or Add with any public GitHub repository URL. No file is required: RepoRoad verifies the repository through GitHub and saves its registration in D1 without waiting for search indexing. Missing or invalid building files use a deterministic default style. A valid optional `.reporoad.yml` supplies maintainer-managed customization. Re-submit to refresh settings (30-second submission cooldown). Registrations are rechecked hourly as the directory is visited; private or deleted repositories are removed, while transient failures retain the last verified building for up to a day.
+
+Submitting a URL does not establish ownership. Website-managed customization and owner claiming are not enabled yet: they require a configured GitHub identity flow and server-side repository permission verification. Preview edits remain local until a maintainer commits the optional file. GitLab support is not implemented yet.
 
 `GITHUB_READ_TOKEN` is recommended for API rate limits and required only for the additional code-search discovery. The branch includes five requested initial repository identities; each must pass live validation before appearing. Local development merges verified registrations with the labelled sample buildings. Apply the new additive migration before testing. See [repository discovery and limits](docs/repository-road.md).
 

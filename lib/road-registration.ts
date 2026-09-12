@@ -2,7 +2,7 @@ import { checkPublicStyle, publicRepository } from './repository-categories.ts';
 import type { Repository } from './repositories.ts';
 
 // Explicitly requested starter registrations. They must pass the same live checks
-// as submissions; an unmerged/missing config never creates a building.
+// as submissions; missing building files use deterministic default styles.
 export const INITIAL_REGISTRATIONS = ['reporoad/reporoad', 'impresspress/impresspress',
   'wafer-run/wafer-run', 'gizza-ai/gizza-ai', 'wagmiphotos/wagmiphotos'];
 // Owner-approved exception: read only the reviewed PR commit, never an arbitrary
@@ -32,7 +32,6 @@ export async function verifyRepository(name: string, token?: string, request: ty
   const curated = safe === 'impresspress/impresspress';
   const checked = await checkPublicStyle(repo, request, curated ? IMPRESSPRESS_REVISION : 'HEAD');
   if (checked.configStatus === 'unavailable') throw new RegistrationError('Unable to read the repository file. Try again shortly.', 503);
-  if (checked.configStatus !== 'custom') throw new RegistrationError('Commit a valid .reporoad.yml at the root of the default branch first.');
   return curated ? {...checked, placement: 'featured', configSource: 'curated-pr'} : checked;
 }
 export const SAVE_REGISTRATION = `INSERT INTO road_registrations(name,payload,checked_at,refresh_after)
@@ -52,7 +51,7 @@ export async function registeredRoad(db: D1Database, token?: string, request: ty
     if (!lease.meta.changes) return;
     try { await saveRegistration(db, await verifyRepository(name, token, request), now); }
     catch (error) {
-      // Remove confirmed opt-outs/invalid files, but retain last good data during
+      // Remove unavailable/private repositories, but retain last good data during
       // transient GitHub outages (up to one day). Keep the identity for retries.
       if (error instanceof RegistrationError && error.status !== 503)
         await db.prepare('UPDATE road_registrations SET payload=NULL,checked_at=? WHERE name=? AND checked_at<?').bind(now, name, now).run();

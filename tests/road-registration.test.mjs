@@ -24,7 +24,12 @@ test('normalizes safe public repository identities, rejects arbitrary URLs and t
 test('validates public config directly without calling search',async()=>{
   const repo=await verifyRepository('wafer-run/wafer-run','secret',github());
   assert.equal(repo.configStatus,'custom');assert.equal(repo.building.style,'cafe');
-  for(const request of [github(404),github(200,'invalid: true'),github(200,'x'.repeat(9000))])await assert.rejects(verifyRepository('a/b',undefined,request),/Commit a valid/);
+  for(const request of [github(404),github(200,'invalid: true'),github(200,'x'.repeat(9000))]) {
+    const fallback=await verifyRepository('a/b',undefined,request);
+    assert.ok(['default','invalid'].includes(fallback.configStatus));
+    assert.ok(fallback.building.style);
+    assert.equal(fallback.building.support?.sponsor || false,false);
+  }
   await assert.rejects(verifyRepository('a/b',undefined,github(503)),/Unable to read/);
   await assert.rejects(verifyRepository('a/b',undefined,async()=>Response.json({full_name:'a/b',private:true,stargazers_count:0})),/Only public/);
 });
@@ -39,7 +44,8 @@ test('registrations persist, upsert case-insensitively and survive an empty sear
     assert.equal(mergeRoad([repo],result).length,result.length);
     const later=Date.now()+3600001;
     const transient=await registeredRoad(db,undefined,github(503),later);assert.equal(transient.length,result.length);
-    const gone=await registeredRoad(db,undefined,github(404),later+3600001);assert.equal(gone.length,0);
+    const withoutFiles=await registeredRoad(db,undefined,github(404),later+3600001);assert.equal(withoutFiles.length,result.length);
+    const gone=await registeredRoad(db,undefined,async()=>new Response('',{status:404}),later+7200002);assert.equal(gone.length,0);
   } finally{sql.close();}
 });
 test('directory capacity cannot silently hide a submitted repository',async()=>{
