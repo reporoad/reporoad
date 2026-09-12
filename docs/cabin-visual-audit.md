@@ -394,3 +394,14 @@ the warm highlight/shaded fascia separation. Remaining highlight deficit
 should be investigated as light distribution, not solved by indefinitely
 raising albedo toward white. Tests/type check/build passed; no world light
 or geometry was changed.
+# Pad recess tint — 2026-09-09
+
+The moulded passenger inset used vertex RGB multipliers0.32/0.40/0.58,
+in addition to actual recess shading. Softened these to0.60/0.64/0.72,
+preserving the six-millimetre recess, normals, topology and radio inset.
+Final `/tmp/reporoad-pad-recess-tint.png` retains a visible formed panel.
+Large top sample improved modestly from140.3/118.6/75.6 to143.4/121.0/76.7,
+still below reference161.3/129.5/78.3. Thus baked tint contributed but
+was not the sole source of the highlight deficit. Updated colour assertions;
+closed-edge/recess geometry checks remain unchanged. Full tests, type check
+and build pass. No extra lights or exterior changes.

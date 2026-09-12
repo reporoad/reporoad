@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { youtubeEmbedUrls, usesRenderedWorld, YOUTUBE_VIDEO_ID, YOUTUBE_CHANNEL_ID, youtubeRuntimeConfig, youtubeConfigResponse, liveVideoResolver, findLiveVideo } from '../lib/youtube.ts';
+import { youtubeEmbedUrls, YOUTUBE_VIDEO_ID, YOUTUBE_CHANNEL_ID, youtubeRuntimeConfig, youtubeConfigResponse, liveVideoResolver, findLiveVideo } from '../lib/youtube.ts';
 
 const feed = (...videoIds) => new Response(`<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"><yt:channelId>${YOUTUBE_CHANNEL_ID}</yt:channelId>
@@ -104,15 +104,12 @@ test('discovery rejects anything that is not a live video id', async () => {
   }
   await assert.rejects(liveVideoResolver(async () => new Response('', { status: 403 }))(YOUTUBE_CHANNEL_ID));
 });
-test('normal viewers do not render the broadcast source; source and local previews still do', () => {
-  assert.equal(usesRenderedWorld('', false), false);
-  assert.equal(usesRenderedWorld('?quality=minimal', false), false);
-  assert.equal(usesRenderedWorld('?broadcast=1', true), true);
-  assert.equal(usesRenderedWorld('?broadcast=1', false), false); // Exit source view
-  assert.equal(usesRenderedWorld('?preview=1', false), true);
-  assert.equal(usesRenderedWorld('?supportPreview=1', false), true);
+test('normal viewers render the shared scene and soundtrack, retaining YouTube only for chat', () => {
   const source = readFileSync(new URL('../components/chilldrive.tsx', import.meta.url), 'utf8');
-  assert.match(source, /if \(!renderWorld\) return;[\s\S]*await loadMusicLibrary\(\)/);
-  assert.match(source, /renderWorld \? scene : <YouTubeStream/);
+  assert.match(source, /await loadMusicLibrary\(\)/);
+  assert.match(source, /\{scene\}/);
+  assert.doesNotMatch(source, /YouTubeStream|renderWorld|usesRenderedWorld/);
+  assert.match(source, /useYouTubeConfig\(!broadcast\)/);
+  assert.match(source, /<YouTubeChat/);
   assert.doesNotMatch(source, /<LiveChat/);
 });

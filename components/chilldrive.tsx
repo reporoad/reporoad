@@ -20,8 +20,7 @@ import {
   NativeSelectOption,
 } from '@/components/ui/native-select';
 import RoadScene from './road-scene';
-import { YouTubeStream, YouTubeChat } from './youtube-stream';
-import { usesRenderedWorld } from '@/lib/youtube';
+import { YouTubeChat } from './youtube-stream';
 import { useYouTubeConfig } from './use-youtube-config';
 import { usePresence } from './use-presence';
 import { useChickens } from './use-chickens';
@@ -66,8 +65,8 @@ export default function RepoRoad() {
   const [broadcast, setBroadcast] = useState(
     () => new URLSearchParams(window.location.search).get('broadcast') === '1',
   );
-  const renderWorld = usesRenderedWorld(window.location.search, broadcast);
-  const youtubeConfig = useYouTubeConfig(!renderWorld);
+  // The site renders the shared road directly; YouTube is used only for chat.
+  const youtubeConfig = useYouTubeConfig(!broadcast);
   const [audioOn, setAudioOn] = useState(false),
     [volume, setVolume] = useState(30);
   const track = playlistMix((now - PLAYLIST_EPOCH) / 1000).index;
@@ -119,9 +118,7 @@ export default function RepoRoad() {
     };
   }, []);
   useEffect(() => {
-    // The YouTube video already contains music. Never start local MP3 playback
-    // for viewers, including after exiting the broadcast source.
-    if (!renderWorld) return;
+    // Every viewer hears the shared soundtrack through the local scene player.
     let disposed = false;
     async function startRadio() {
       try { await loadMusicLibrary(); }
@@ -146,7 +143,7 @@ export default function RepoRoad() {
       setAudioOn(false);
       window.removeEventListener('keydown', escape);
     };
-  }, [renderWorld]);
+  }, []);
   useEffect(() => {
     let stopped = false;
     async function sync() {
@@ -303,7 +300,7 @@ export default function RepoRoad() {
         </div>
         <div className="topbar-right">
           <span className="header-note">Every roadside place is a repo.</span>
-          {renderWorld && <Popover>
+          <Popover>
             <PopoverTrigger className="btn icon" aria-label="Music volume" title={audioOn ? 'Music volume' : 'Enable sound and adjust volume'} onClick={() => { if (!audioOn) void enableSound(); }}>
               {audioOn && volume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
             </PopoverTrigger>
@@ -316,7 +313,7 @@ export default function RepoRoad() {
               }} />
               {!audioOn && <button className="btn sound-enable" onClick={enableSound}>Enable sound</button>}
             </PopoverContent>
-          </Popover>}
+          </Popover>
           <a className="btn icon" href="https://github.com/reporoad/reporoad" target="_blank" rel="noopener noreferrer" aria-label="RepoRoad source on GitHub" title="View source on GitHub"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.605-2.665-.303-5.467-1.334-5.467-5.931 0-1.31.465-2.381 1.235-3.221-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23A11.5 11.5 0 0 1 12 6.098c1.02.005 2.045.138 3.003.404 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.911 1.23 3.221 0 4.609-2.805 5.625-5.475 5.922.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg></a>
         </div>
       </header>
@@ -333,7 +330,7 @@ export default function RepoRoad() {
               setPlaying(true);
             }}>Exit preview</button>
           </div>}
-          {renderWorld && <details className="drive-settings"><summary>Drive settings</summary><div className="live-toolbar">
+          <details className="drive-settings"><summary>Drive settings</summary><div className="live-toolbar">
             <div className="actions">
               <button
                 className={`btn ${mode === 'live' ? 'primary' : ''}`}
@@ -411,8 +408,8 @@ export default function RepoRoad() {
               </label>
             </div>
           )}
-          </details>}
-          {renderWorld ? scene : <YouTubeStream config={youtubeConfig}/>}
+          </details>
+          {scene}
         </section>
         <aside
           ref={directory}
@@ -432,7 +429,7 @@ export default function RepoRoad() {
               {chickens.error && <small role="status">{chickens.error}</small>}
             </div>
             <div className="tab-body">
-              {renderWorld && musicError && <p className="notice" role="alert">{musicError}</p>}
+              {musicError && <p className="notice" role="alert">{musicError}</p>}
               {notice && (
                 <output className="notice">
                   {notice}

@@ -89,8 +89,3 @@ export function youtubeEmbedUrls(hostname: string, config: BroadcastConfig = { v
   chat.search = new URLSearchParams({ v: videoId, embed_domain: hostname, dark_theme: '1' }).toString();
   return { player: player.href, chat: chat.href, watch: `https://www.youtube.com/watch?v=${videoId}` };
 }
-
-export function usesRenderedWorld(search: string, broadcast: boolean) {
-  const params = new URLSearchParams(search);
-  return broadcast || params.get('preview') === '1' || params.get('supportPreview') === '1';
-}

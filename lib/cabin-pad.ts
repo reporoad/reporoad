@@ -36,7 +36,7 @@ function moldedPadGeometry() {
       const fx = a * (1 - b), fz = c * (1 - e);
       y -= .006 * fx * fz;
       const inset = fx * fz;
-      colors.set([1 - .68 * inset, 1 - .60 * inset, 1 - .42 * inset], i * 3);
+      colors.set([1 - .40 * inset, 1 - .36 * inset, 1 - .28 * inset], i * 3);
       nx += .006 * (da * (1 - b) - a * db) * fz;
       nz += .006 * fx * (dc * (1 - e) - c * de);
       // A second, shallower molded detail above the radio matches the

@@ -37,10 +37,10 @@ test('molded pad has a bounded six-millimetre recess and closed triangle edges',
   assert.ok(recessed>=4);
   assert.ok(radioRecessed>=4, 'shallow central panel remains part of the closed pad');
   const colors=g.getAttribute('color');
-  assert.ok([...colors.array].every(v=>v>=.319999 && v<=1));
-  assert.ok([...colors.array].some(v=>Math.abs(v-.32)<1e-6));
-  assert.ok([...colors.array].some(v=>Math.abs(v-.40)<1e-6));
-  assert.ok([...colors.array].some(v=>Math.abs(v-.58)<1e-6));
+  assert.ok([...colors.array].every(v=>v>=.599999 && v<=1));
+  assert.ok([...colors.array].some(v=>Math.abs(v-.60)<1e-6));
+  assert.ok([...colors.array].some(v=>Math.abs(v-.64)<1e-6));
+  assert.ok([...colors.array].some(v=>Math.abs(v-.72)<1e-6));
   assert.ok([...g.getAttribute('cabinWood').array].every(v=>v===0));
   assert.ok(p.count<1000, 'local grid keeps the pad lightweight');
   const indices=g.getIndex().array,edges=new Map();
