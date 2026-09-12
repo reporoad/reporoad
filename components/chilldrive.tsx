@@ -20,8 +20,7 @@ import {
   NativeSelectOption,
 } from '@/components/ui/native-select';
 import RoadScene from './road-scene';
-import { YouTubeChat } from './youtube-stream';
-import { useYouTubeConfig } from './use-youtube-config';
+import LiveChat from './live-chat';
 import { usePresence } from './use-presence';
 import { useChickens } from './use-chickens';
 import { PLAYLIST, PLAYLIST_EPOCH, playlistMix, PlaylistPlayer, loadMusicLibrary } from '@/lib/playlist';
@@ -65,8 +64,6 @@ export default function RepoRoad() {
   const [broadcast, setBroadcast] = useState(
     () => new URLSearchParams(window.location.search).get('broadcast') === '1',
   );
-  // The site renders the shared road directly; YouTube is used only for chat.
-  const youtubeConfig = useYouTubeConfig(!broadcast);
   const [audioOn, setAudioOn] = useState(false),
     [volume, setVolume] = useState(30);
   const track = playlistMix((now - PLAYLIST_EPOCH) / 1000).index;
@@ -444,7 +441,7 @@ export default function RepoRoad() {
               )}
               <TabsContent value="repositories" keepMounted><RepoDirectory repositories={repositories} status={dataStatus}/></TabsContent>
               <TabsContent value="chat">
-                <YouTubeChat online={online} config={youtubeConfig} />
+                <LiveChat online={online} />
               </TabsContent>
               <TabsContent value="style" keepMounted><RepoEditor active={tab === 'style'}/></TabsContent>
             </div>

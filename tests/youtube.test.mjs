@@ -104,12 +104,11 @@ test('discovery rejects anything that is not a live video id', async () => {
   }
   await assert.rejects(liveVideoResolver(async () => new Response('', { status: 403 }))(YOUTUBE_CHANNEL_ID));
 });
-test('normal viewers render the shared scene and soundtrack, retaining YouTube only for chat', () => {
+test('normal viewers render the shared scene, soundtrack and site-wide chat', () => {
   const source = readFileSync(new URL('../components/chilldrive.tsx', import.meta.url), 'utf8');
   assert.match(source, /await loadMusicLibrary\(\)/);
   assert.match(source, /\{scene\}/);
   assert.doesNotMatch(source, /YouTubeStream|renderWorld|usesRenderedWorld/);
-  assert.match(source, /useYouTubeConfig\(!broadcast\)/);
-  assert.match(source, /<YouTubeChat/);
-  assert.doesNotMatch(source, /<LiveChat/);
+  assert.doesNotMatch(source, /useYouTubeConfig|YouTubeChat/);
+  assert.match(source, /<LiveChat online=\{online\}/);
 });
