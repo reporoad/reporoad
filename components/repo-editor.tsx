@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { Slider } from './ui/slider';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Download, Code2 as Github, Check, Upload } from 'lucide-react';
 import { Input } from './ui/input';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
@@ -34,7 +35,7 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [floors,setFloors] = useState(1);
   const [githubLogin,setGithubLogin] = useState<string | null>(null);
-  const [settingsMode,setSettingsMode] = useState<'website'|'file'>('website');
+  const [workflow,setWorkflow] = useState<'website'|'file'>('website');
   useEffect(()=>{
     let stopped=false;
     fetch('/api/github/session',{cache:'no-store'}).then(r=>r.json() as Promise<{login?:string}>).then(data=>{if(!stopped)setGithubLogin(data.login || null);}).catch(()=>{});
@@ -57,13 +58,12 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
       const data=await response.json() as {error?:string;repository:Repository;mode:string};
       if(!response.ok)throw Error(data.error || 'Could not load settings.');
       apply(JSON.stringify(data.repository.building)); setIdentity(data.repository.fullName);
-      setSettingsMode(data.mode==='website' || data.repository.configStatus!=='custom'?'website':'file');
       setFloors(Math.min(50,Math.max(1,Math.floor(data.repository.stars/10000))));
-      setMessage('Loaded the current building. Choose Website-managed to save your edits here.');
+      setMessage('Loaded the current building. Customize it below.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to load settings.'); }
     finally { setBusy(false); }
   }
-  async function saveDesign() {
+  async function saveDesign(settingsMode: 'website'|'file' = 'website') {
     setBusy(true);setMessage('Verifying GitHub permissions…');
     try {
       const response=await fetch('/api/repositories/building',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repository:address,mode:settingsMode,building}),signal:AbortSignal.timeout(45000)});
@@ -83,13 +83,20 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
   }
   return <section className="place-editor">
     <h2>Add a place</h2>
-    <RepoSubmit/>
-    <h3>Customize a building</h3><p className="muted">Owners and repository administrators can save a design here—no commits needed.</p>
+    <Tabs value={workflow} onValueChange={value=>{setWorkflow(value as 'website'|'file');setMessage('');}}>
+    <TabsList aria-label="How to add your repository" className="add-method-tabs">
+      <TabsTrigger value="website">Connect GitHub</TabsTrigger>
+      <TabsTrigger value="file">Use a file</TabsTrigger>
+    </TabsList>
+    <TabsContent value={workflow} className="place-editor">
+    {workflow==='website' ? <>
+    <p className="muted">Connect, choose your repository, and save your design. No files or commits.</p>
     {githubLogin ? <div className="fine">Connected as <strong>{githubLogin}</strong> · <button className="btn" onClick={async()=>{const r=await fetch('/api/github/session',{method:'DELETE'});if(r.ok)setGithubLogin(null);else setMessage('Could not disconnect. Please try again.');}}>Disconnect GitHub</button></div> : <a className="btn" href="https://reporoad.org/api/github/start" target="_top">Connect GitHub to claim and edit</a>}
     <p className="fine">First <a href="https://github.com/apps/reporoad/installations/new" target="_blank" rel="noopener noreferrer">install RepoRoad</a> for the repository you manage. This grants read-only metadata access, not code-writing access. Connect before designing; sign-in reloads the page.</p>
-    <label htmlFor="load-repo">Load an existing place <small>(optional)</small></label>
+    </> : <p className="muted">Design a building, download .reporoad.yml, and commit it to your repository. No GitHub connection needed to create the file.</p>}
+    <label htmlFor="load-repo">{workflow==='website'?'Your GitHub repository':'Load an existing place (optional)'}</label>
     <div className="place-load"><Github size={18}/><Input id="load-repo" placeholder="github.com/owner/repo" value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void load(); }}/><button className="btn" disabled={busy} onClick={load}>{busy ? 'Loading…' : 'Load'}</button></div>
-    <label className="file-load"><Upload size={13}/> Or open a .reporoad.yml file<input type="file" accept=".yml,.yaml" disabled={busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; try { if (file.size > 8192) throw Error('File exceeds 8 KB.'); apply(await file.text()); setMessage('File loaded. Adjust the settings below.'); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); } }}/></label>
+    {workflow==='file' && <label className="file-load"><Upload size={13}/> Or open a .reporoad.yml file<input type="file" accept=".yml,.yaml" disabled={busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; try { if (file.size > 8192) throw Error('File exceeds 8 KB.'); apply(await file.text()); setMessage('File loaded. Adjust the settings below.'); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); } }}/></label>}
     <div className="place-preview" aria-label="Live building preview">
       {active && <Canvas frameloop="demand" dpr={[1, 1.5]} camera={{ position: [11, 8, 16], fov: 42, near: 0.1, far: 2000 }}>
         <PreviewCamera floors={floors}/>
@@ -99,7 +106,7 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     </div>
     <label id="preview-floors-label">Preview height · {floors} {floors===1?'floor':'floors'}</label>
     <Slider aria-labelledby="preview-floors-label" min={1} max={50} step={1} value={[floors]} onValueChange={value=>setFloors(Array.isArray(value)?value[0]:value)}/>
-    <p className="fine">Preview only. Actual height comes from GitHub stars: one floor per 10,000 stars, with a minimum of one. Not saved in your repo file.</p>
+    <p className="fine">Preview only. Actual height comes from GitHub stars: one floor per 10,000 stars, with a minimum of one.</p>
     <label>Building</label><div className="building-choices">{(['woodland', 'stone', 'cafe', 'brick', 'greenhouse', 'townhouse'] as typeof BUILDING_STYLES[number][]).map(style => <button key={style} className={`building-choice ${building.style === style ? 'selected' : ''}`} aria-pressed={building.style === style} onClick={() => update({ style })}>
       <svg viewBox="0 0 80 60" aria-hidden="true"><rect x="15" y="25" width="50" height="30" fill={style === 'stone' ? '#81877d' : style === 'greenhouse' ? '#6f9e91' : building.color}/><path d={style === 'townhouse' ? 'M10 24H70V18H10Z' : 'M7 26L40 5L73 26Z'} fill="#55432f"/><rect x="34" y="35" width="13" height="20" fill="#443623"/><path d="M21 33h8v10h-8zm32 0h8v10h-8z" fill="#efc774"/>{style === 'cafe' && <path d="M12 28h56v8H12z" fill="#f1d3a1"/>}</svg>
       {building.style === style && <Check size={15}/>}<span>{LABELS[style]}</span></button>)}</div>
@@ -110,11 +117,18 @@ export default function RepoEditor({ active = true }: { active?: boolean }) {
     <label className="place-toggle">Help wanted sign<input type="checkbox" role="switch" checked={!!building.support?.helpWanted} onChange={e => update({ support: { ...building.support, helpWanted: e.target.checked } })}/></label>
     <label className="place-toggle">Sponsor heart<input type="checkbox" role="switch" checked={!!building.support?.sponsor} onChange={e => update({ support: { ...building.support, sponsor: e.target.checked } })}/></label>
     <p className="fine">The heart indicates that the repository is seeking sponsorship. Visitors can open the repository to learn more.</p>
-    <div className="place-export"><p>Optional: commit <code>{CONFIG_PATH}</code> at your repo’s root to publish this design.</p><button className="btn primary" onClick={download}><Download size={17}/> Get repo file</button><button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button></div>
+    {workflow==='website' ? <>
+      <button className="btn primary" disabled={busy || !githubLogin || !address.trim()} onClick={()=>void saveDesign('website')}>{busy?'Checking…':'Submit & save building'}</button>
+      <p className="fine">Only repository owners and administrators can save. Your website design takes priority over any existing building file.</p>
+    </> : <>
+      <div className="place-export"><p>Commit <code>{CONFIG_PATH}</code> at your repository’s root on its default branch.</p><button className="btn primary" onClick={download}><Download size={17}/> Download .reporoad.yml</button></div>
+      <RepoSubmit/>
+      <p className="fine">After committing, submit the repository to refresh its building. If you previously saved a website design, switch it back to file-managed settings below.</p>
+      {githubLogin && <button className="btn" disabled={busy || !address.trim()} onClick={()=>void saveDesign('file')}>Use file instead of website design</button>}
+    </>}
+    <button className="reset-place" onClick={() => { setBuilding(defaults()); setFloors(1); setIdentity('reporoad/your-repo'); setAddress(''); setMessage(''); }}>Reset changes</button>
     {message && <p className="notice" role="status">{message}</p>}
-    <label htmlFor="building-source">Settings source</label>
-    <NativeSelect id="building-source" value={settingsMode} onChange={e=>setSettingsMode(e.target.value as 'website'|'file')}><NativeSelectOption value="website">Website-managed</NativeSelectOption><NativeSelectOption value="file">Repository file / defaults</NativeSelectOption></NativeSelect>
-    <p className="fine">Website-managed overrides the file. Switching back removes that override. GitHub owner or administrator permissions are checked on every save.</p>
-    <button className="btn primary" disabled={busy || !githubLogin || !address.trim()} onClick={saveDesign}>{busy?'Checking…':settingsMode==='website'?'Verify ownership & save design':'Use repository file / defaults'}</button>
+    </TabsContent>
+    </Tabs>
   </section>;
 }

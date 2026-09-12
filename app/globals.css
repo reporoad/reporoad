@@ -1142,6 +1142,9 @@ button svg {
   .drive-settings .preview-controls { grid-template-columns: 1fr; }
 }
 .place-editor, .road-directory { padding: 8px 3px 18px; }
+.repo-panel .add-method-tabs { margin: 8px 0 12px; }
+.repo-panel .add-method-tabs [data-slot='tabs-trigger'] { font-size: 14px; padding: 8px 10px; }
+.place-editor .place-editor { padding: 0; }
 .place-editor h2, .road-directory h2 { font-size: 19px; font-weight: 650; margin-bottom: 4px; }
 .place-editor .muted, .road-directory .muted { color: #aaa79d; font-size: 12px; margin-bottom: 18px; }
 .place-editor > label { display: block; font-size: 12px; margin: 14px 0 6px; }
