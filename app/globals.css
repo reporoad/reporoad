@@ -1034,6 +1034,9 @@ button svg {
 .repo-brand-label { font-size: 14px; font-weight: 400; letter-spacing: 0; margin-left: 20px; }
 .header-note { color: var(--muted-foreground); font-size: 13px; }
 .header-volume-popup { background: #211d19; color: var(--foreground); border: 1px solid var(--border); padding: 18px; gap: 20px; width: 240px; }
+.welcome-dialog { background: #211d19; color: var(--foreground); border: 1px solid var(--border); padding: 28px; gap: 18px; }
+.welcome-dialog [data-slot="dialog-title"] { font-size: 1.35rem; padding-right: 22px; }
+.welcome-dialog [data-slot="dialog-description"] { font-size: 1rem; line-height: 1.65; color: #d1c5b3; }
 .repository-world .workspace { grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; align-items: stretch; }
 .repository-world .workspace > section { position: relative; display: flex; flex-direction: column; gap: 14px; }
 .repository-world .drive { height: max(430px, calc(100dvh - 186px)); border: 1px solid var(--border); border-radius: 9px; }
